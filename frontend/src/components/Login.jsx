@@ -30,6 +30,8 @@ const Login = () => {
         alert('Department Manager logged in');
       } else if (user.role === 'Financial Analyst') {
         alert('Financial Analyst logged in');
+      }else if (user.role === 'employee'){
+        alert('Employee logged in');
       } else {
         alert('Unknown role');
       }
