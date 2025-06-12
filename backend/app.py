@@ -56,21 +56,20 @@ def create_user():
     email = data.get("email")
     name = data.get("name")
     password = data.get("password")
-    role = data.get("role", "").strip().lower()  # ✅ Normalize role
+    role = data.get("role", "").strip().lower()
 
     if not email or not name or not password:
         return jsonify({"error": "All fields are required"}), 400
 
     if role not in ROLES:
-        return jsonify({"error": f"Invalid role: '{role}'"}), 400  # Show debug info
+        return jsonify({"error": f"Invalid role: '{role}'"}), 400
 
     if db.users.find_one({"email": email}):
         return jsonify({"error": "User already exists"}), 409
 
-    data["role"] = role  # ✅ Store normalized role
+    data["role"] = role
     db.users.insert_one(data)
     return jsonify({"message": "User created"}), 201
-
 
 
 @app.route('/api/users/<user_id>', methods=['DELETE'])
@@ -113,7 +112,10 @@ def leaderboard():
         user["_id"] = str(user["_id"])
     return jsonify(top_users)
 
-# Create Organisation
+
+# ----------------------------
+# Organisation Management
+# ----------------------------
 @app.route('/api/organisations', methods=['POST'])
 def create_organisation():
     data = request.json
@@ -129,6 +131,27 @@ def create_organisation():
     db.organisations.insert_one({"oid": oid, "name": name})
     return jsonify({"message": "Organisation created"}), 201
 
+
+@app.route('/api/organisations', methods=['GET'])
+def get_organisations():
+    organisations = list(db.organisations.find({}))
+    for org in organisations:
+        org["_id"] = str(org["_id"])
+    return jsonify(organisations)
+
+
+@app.route('/api/organisations/<oid>', methods=['DELETE'])
+def delete_organisation(oid):
+    result = db.organisations.delete_one({"oid": oid})
+    if result.deleted_count == 0:
+        return jsonify({"error": "Organisation not found"}), 404
+    db.departments.delete_many({"oid": oid})  # Clean up related departments
+    return jsonify({"message": "Organisation and related departments deleted"}), 200
+
+
+# ----------------------------
+# Department Management
+# ----------------------------
 @app.route('/api/departments', methods=['POST'])
 def create_department():
     data = request.json
@@ -149,21 +172,20 @@ def create_department():
     return jsonify({"message": "Department created"}), 201
 
 
-@app.route('/api/organisations/<oid>', methods=['DELETE'])
-def delete_organisation(oid):
-    result = db.organisations.delete_one({"oid": oid})
-    if result.deleted_count == 0:
-        return jsonify({"error": "Organisation not found"}), 404
-    # Optionally delete associated departments
-    db.departments.delete_many({"oid": oid})
-    return jsonify({"message": "Organisation and related departments deleted"}), 200
-
 @app.route('/api/departments/<did>', methods=['DELETE'])
 def delete_department(did):
     result = db.departments.delete_one({"did": did})
     if result.deleted_count == 0:
         return jsonify({"error": "Department not found"}), 404
     return jsonify({"message": "Department deleted"}), 200
+
+
+@app.route('/api/departments', methods=['GET'])
+def get_departments():
+    departments = list(db.departments.find({}))
+    for dept in departments:
+        dept["_id"] = str(dept["_id"])
+    return jsonify(departments)
 
 
 # ----------------------------
