@@ -1,85 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import CreateUserForm from './CreateUserForm';
+import DeleteUserForm from './DeleteUserForm';
+import EmployeeDirectory from './EmployeeDirectory';
 import './styles/ManageUsers.css';
 
 const ManageUsers = () => {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'employee'
-  });
-  const [deleteEmail, setDeleteEmail] = useState('');
-
-  const roles = ['admin', 'department_manager', 'project_manager', 'financial_analyst', 'employee'];
-
-  const handleAdd = async () => {
-    try {
-      await axios.post("http://127.0.0.1:5000/api/users", form);
-      alert("User added.");
-      setForm({ name: '', email: '', password: '', role: 'employee' });
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to add user');
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      const res = await axios.get("http://127.0.0.1:5000/api/users");
-      const user = res.data.find(u => u.email === deleteEmail);
-      if (user) {
-        await axios.delete(`http://127.0.0.1:5000/api/users/${user._id}`);
-        alert("User deleted.");
-        setDeleteEmail('');
-      } else {
-        alert("User not found.");
-      }
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete user');
-    }
-  };
-
   return (
     <div className="UserManagementContainer">
       <h2>Manage Users</h2>
 
-      <div className="card">
-        <h3>Create User</h3>
-        <input
-          placeholder="Name"
-          value={form.name}
-          onChange={e => setForm({ ...form, name: e.target.value })}
-        />
-        <input
-          placeholder="Email"
-          value={form.email}
-          onChange={e => setForm({ ...form, email: e.target.value })}
-        />
-        <input
-          placeholder="Password"
-          value={form.password}
-          onChange={e => setForm({ ...form, password: e.target.value })}
-        />
-        <select
-          value={form.role}
-          onChange={e => setForm({ ...form, role: e.target.value })}
-        >
-          {roles.map(role => <option key={role} value={role}>{role}</option>)}
-        </select>
-        <button onClick={handleAdd}>Add User</button>
-      </div>
+      <CreateUserForm />
+      <DeleteUserForm />
 
       <div className="card">
-        <h3>Delete User (by Email)</h3>
-        <input
-          placeholder="Email"
-          value={deleteEmail}
-          onChange={e => setDeleteEmail(e.target.value)}
-        />
-        <button onClick={handleDelete}>Delete</button>
+        <h3>Employee Directory</h3>
+        <EmployeeDirectory />
       </div>
 
       <button className="back-btn" onClick={() => navigate('/admin-dashboard')}>

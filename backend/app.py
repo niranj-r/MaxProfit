@@ -178,5 +178,13 @@ def get_departments():
         dept["_id"] = str(dept["_id"])
     return jsonify(departments)
 
+@app.route('/api/employees', methods=['GET'])
+def get_employees():
+    employees = list(db.users.find({"role": {"$in": ["employee", "admin"]}}))
+    for emp in employees:
+        emp["_id"] = str(emp["_id"])
+        emp.pop("password", None)  # Remove password for security
+    return jsonify(employees)
+
 if __name__ == '__main__':
     app.run(debug=True)

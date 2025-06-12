@@ -1,31 +1,54 @@
-// src/components/OrganisationList.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const OrganisationList = ({ organisations, onDeleted }) => {
-  const deleteOrg = async (oid) => {
-    if (window.confirm('Delete this organisation and all its departments?')) {
+const OrganisationsList = () => {
+  const [organisations, setOrganisations] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        await axios.delete(`http://127.0.0.1:5000/api/organisations/${oid}`);
-        alert('Organisation deleted!');
-        onDeleted();
-      } catch (err) {
-        alert(err.response?.data?.error || 'Error deleting organisation');
+        const orgRes = await axios.get('http://localhost:5000/api/organisations');
+        const deptRes = await axios.get('http://localhost:5000/api/departments');
+
+        setOrganisations(orgRes.data);
+        setDepartments(deptRes.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
-    }
+    };
+
+    fetchData();
+  }, []);
+
+  // Calculate department count for each organisation
+  const getDepartmentCount = (oid) => {
+    return departments.filter(dept => dept.oid === oid).length;
   };
 
   return (
-    <div className="list-section">
-      <h3>Existing Organisations</h3>
-      {organisations.map((org) => (
-        <div key={org.oid} className="list-item">
-          <strong>{org.name} (OID: {org.oid})</strong>
-          <button onClick={() => deleteOrg(org.oid)}>Delete</button>
-        </div>
-      ))}
+    <div>
+      <h2>Organisations</h2>
+      <table border="1" cellPadding="10" cellSpacing="0">
+        <thead>
+          <tr>
+            <th>Organisation ID</th>
+            <th>Name</th>
+            <th>Number of Departments</th>
+          </tr>
+        </thead>
+        <tbody>
+          {organisations.map(org => (
+            <tr key={org.oid}>
+              <td>{org.oid}</td>
+              <td>{org.name}</td>
+              <td>{getDepartmentCount(org.oid)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
-export default OrganisationList;
+export default OrganisationsList;
