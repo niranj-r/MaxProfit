@@ -19,9 +19,8 @@ db = client["dashboardDB"]
 # Valid roles
 ROLES = ["admin", "department_manager", "project_manager", "financial_analyst", "employee"]
 
-# ----------------------------
 # Authentication
-# ----------------------------
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -46,10 +45,8 @@ def login():
         "token": "dummy-token"
     })
 
-
-# ----------------------------
 # User Management
-# ----------------------------
+
 @app.route('/api/users', methods=['POST'])
 def create_user():
     data = request.json
@@ -101,10 +98,8 @@ def get_users():
         user["_id"] = str(user["_id"])
     return jsonify(users)
 
-
-# ----------------------------
 # Leaderboard
-# ----------------------------
+
 @app.route('/api/leaderboard', methods=['GET'])
 def leaderboard():
     top_users = list(db.users.find({"role": "employee"}).sort("working_hours", -1).limit(10))
@@ -112,10 +107,8 @@ def leaderboard():
         user["_id"] = str(user["_id"])
     return jsonify(top_users)
 
-
-# ----------------------------
 # Organisation Management
-# ----------------------------
+
 @app.route('/api/organisations', methods=['POST'])
 def create_organisation():
     data = request.json
@@ -148,10 +141,8 @@ def delete_organisation(oid):
     db.departments.delete_many({"oid": oid})  # Clean up related departments
     return jsonify({"message": "Organisation and related departments deleted"}), 200
 
-
-# ----------------------------
 # Department Management
-# ----------------------------
+
 @app.route('/api/departments', methods=['POST'])
 def create_department():
     data = request.json
@@ -187,9 +178,5 @@ def get_departments():
         dept["_id"] = str(dept["_id"])
     return jsonify(departments)
 
-
-# ----------------------------
-# Run Server
-# ----------------------------
 if __name__ == '__main__':
     app.run(debug=True)
