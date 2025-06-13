@@ -3,106 +3,130 @@ import './EmployeeDirectory.css';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
-import AddEmployee from './AddEmployee';
+
+const initialForm = { eid: '', fname: '', lname: '', email: '', did: '', password: '' };
 
 const EmployeeDirectory = () => {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [formMode, setFormMode] = useState('add'); // "add" or "edit"
+  const [form, setForm] = useState(initialForm);
+  const [selectedId, setSelectedId] = useState(null);
 
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
+  useEffect(() => fetchEmployees(), []);
 
   const fetchEmployees = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/employees');
       setEmployees(res.data);
-    } catch (err) {
-      console.error('Failed to fetch employees', err);
+    } catch (e) {
+      console.error('Failed to fetch employees', e);
     }
   };
 
-  const handleEdit = async (eid) => {
-    // Add edit modal logic if needed
+  const openAdd = () => {
+    setForm(initialForm);
+    setFormMode('add');
+    setSelectedId(null);
+    setShowModal(true);
   };
 
-  const handleDelete = async (eid) => {
+  const openEdit = emp => {
+    setForm({ eid: emp.eid, fname: emp.fname, lname: emp.lname, email: emp.email, did: emp.did, password: '' });
+    setFormMode('edit');
+    setSelectedId(emp.eid);
+    setShowModal(true);
+  };
+
+  const close = () => setShowModal(false);
+
+  const handleChange = e => { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    // Validate
+    const { eid, fname, lname, email, did, password } = form;
+    if (!eid || !fname || !lname || !email || !did || (formMode === 'add' && !password)) {
+      return alert('All fields required, and password for new employee');
+    }
     try {
-      await axios.delete(`http://localhost:5000/api/employees/${eid}`);
+      if (formMode === 'add') {
+        await axios.post('http://localhost:5000/api/employees', form);
+      } else {
+        await axios.put(`http://localhost:5000/api/employees/${selectedId}`, form);
+      }
+      close();
       fetchEmployees();
     } catch (err) {
-      console.error('Failed to delete employee', err);
+      console.error('Submit error', err.response?.data || err);
+      alert(err.response?.data?.error || 'Error submitting employee');
     }
   };
 
-  const filteredEmployees = employees.filter(emp =>
+  const handleDelete = async _id => {
+    if (!window.confirm('Delete employee?')) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/users/${_id}`);
+      fetchEmployees();
+    } catch (e) {
+      console.error('Delete error', e.response?.data || e);
+      alert('Error deleting employee');
+    }
+  };
+
+  const filtered = employees.filter(emp =>
     `${emp.fname} ${emp.lname}`.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="employee-table-container">
       <div className="table-header">
-        <h2>Employee Details</h2>
+        <h2>Employee Directory</h2>
         <div className="controls">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search employee..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button className="add-btn" onClick={() => setShowAddModal(true)}>
-            <FaPlus /> Add Employee
-          </button>
+          <input placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)} />
+          <button onClick={openAdd}><FaPlus /> Add Employee</button>
         </div>
       </div>
-
       <table className="employee-table">
         <thead>
           <tr>
-            <th>Employee ID</th>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Email</th>
-            <th>Department ID</th>
-            <th>Join Date</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>Employee ID</th><th>Name</th><th>Email</th><th>Department</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {filteredEmployees.map((emp) => (
+          {filtered.map(emp => (
             <tr key={emp._id}>
               <td>{emp.eid}</td>
-              <td>{emp.fname}</td>
-              <td>{emp.lname}</td>
+              <td>{emp.fname} {emp.lname}</td>
               <td>{emp.email}</td>
               <td>{emp.did}</td>
-              <td>{emp.joinDate || '—'}</td>
-              <td>{emp.status || '—'}</td>
               <td>
-                <FaEdit className="icon edit-icon" onClick={() => handleEdit(emp.eid)} />
-                <FaTrash className="icon delete-icon" onClick={() => handleDelete(emp.eid)} />
+                <FaEdit onClick={() => openEdit(emp)} className="icon edit-icon" />
+                <FaTrash onClick={() => handleDelete(emp._id)} className="icon delete-icon" />
               </td>
             </tr>
           ))}
-          {filteredEmployees.length === 0 && (
-            <tr>
-              <td colSpan="8" className="no-data">No matching employees found.</td>
-            </tr>
+          {filtered.length === 0 && (
+            <tr><td colSpan="5">No employees found.</td></tr>
           )}
         </tbody>
       </table>
 
-      {showAddModal && (
-        <ModalWrapper onClose={() => setShowAddModal(false)}>
-          <AddEmployee
-            onClose={() => {
-              setShowAddModal(false);
-              fetchEmployees(); // refresh list
-            }}
-          />
+      {showModal && (
+        <ModalWrapper onClose={close}>
+          <form className="modal-form" onSubmit={handleSubmit}>
+            <h3>{formMode === 'add' ? 'Add Employee' : 'Edit Employee'}</h3>
+            <input name="eid" placeholder="Employee ID" value={form.eid} onChange={handleChange} disabled={formMode === 'edit'} />
+            <input name="fname" placeholder="First Name" value={form.fname} onChange={handleChange} />
+            <input name="lname" placeholder="Last Name" value={form.lname} onChange={handleChange} />
+            <input name="email" placeholder="Email" value={form.email} onChange={handleChange} />
+            <input name="did" placeholder="Department ID" value={form.did} onChange={handleChange} />
+            {formMode === 'add' && (
+              <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleChange} />
+            )}
+            <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
+          </form>
         </ModalWrapper>
       )}
     </div>

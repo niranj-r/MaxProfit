@@ -382,6 +382,27 @@ def delete_project(project_id):
     if result.deleted_count == 0:
         return jsonify({"error": "Project not found"}), 404
     return jsonify({"message": "Project deleted"}), 200
+
+@app.route('/api/employees/<eid>', methods=['PUT'])
+def update_employee(eid):
+    data = request.json or {}
+    updates = {}
+    for field in ["fname", "lname", "email", "did", "status", "joinDate"]:
+        if field in data:
+            updates[field] = data[field]
+    if not updates:
+        return jsonify({"error": "No fields to update"}), 400
+
+    updates["updatedAt"] = datetime.utcnow()
+    result = db.users.update_one({"eid": eid}, {"$set": updates})
+    if result.matched_count == 0:
+        return jsonify({"error": "Employee not found"}), 404
+
+    emp = db.users.find_one({"eid": eid})
+    emp["_id"] = str(emp["_id"])
+    emp.pop("password", None)
+    return jsonify(emp), 200
+
 # ------------------ MAIN ------------------
 
 if __name__ == '__main__':
