@@ -1,36 +1,29 @@
-// src/components/AddOrganisation.js
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
-const AddOrganisation = ({ onAdded }) => {
-  const [org, setOrg] = useState({ oid: '', name: '' });
 
-  const handleOrgSubmit = async () => {
+const AddOrganisation = ({ onClose, onSuccess }) => {
+  const [org, setOrg] = useState({ name: "", oid: "" });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await axios.post('http://127.0.0.1:5000/api/organisations', org);
-      alert('Organisation added!');
-      setOrg({ oid: '', name: '' });
-      onAdded();
+      const res = await axios.post("http://127.0.0.1:5000/api/organisations", org);
+      onSuccess(res.data); // notify parent
+      onClose();           // close modal
     } catch (err) {
-      alert(err.response?.data?.error || 'Error adding organisation');
+      console.error("Error adding organisation", err);
+      alert("Failed to add organisation.");
     }
   };
 
   return (
-    <div className="form-card">
+    <form onSubmit={handleSubmit}>
       <h3>Add Organisation</h3>
-      <input
-        placeholder="Organisation ID"
-        value={org.oid}
-        onChange={(e) => setOrg({ ...org, oid: e.target.value })}
-      />
-      <input
-        placeholder="Organisation Name"
-        value={org.name}
-        onChange={(e) => setOrg({ ...org, name: e.target.value })}
-      />
-      <button onClick={handleOrgSubmit}>Add Organisation</button>
-    </div>
+      <input placeholder="Name" onChange={e => setOrg({ ...org, name: e.target.value })} />
+      <input placeholder="Org ID" onChange={e => setOrg({ ...org, oid: e.target.value })} />
+      <button type="submit">Add</button>
+    </form>
   );
 };
 

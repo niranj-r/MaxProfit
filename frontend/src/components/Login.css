@@ -1,66 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@600&display=swap');
+
+
+html, body {
+  margin: 0;
+  font-family: 'Oswald', sans-serif;
+  background: #FDFEFE;
+}
+
 .login-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f4f6f8;
+  background: radial-gradient(circle at top left, #dbeafe, #bfdbfe, #93c5fd);
+  backdrop-filter: blur(10px);
 }
 
 .login-form {
-  background: white;
+  background: rgba(255, 255, 255, 0.15);
   padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px #0011ff5e;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 2.5px solid rgb(249, 249, 255);
   width: 100%;
   max-width: 400px;
+  color: white;
 }
 
 .login-form h2 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 32px;
+  letter-spacing: 1px;
+  color: #2e0d5f;
+  margin-top: 0px;
   margin-bottom: 20px;
-  color: #1976d2;
+  text-align: center;
 }
 
+
 .login-form input {
-  width: 100%;
+  width: 94%;
   padding: 12px;
   margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: none;
+  border-radius: 10px;
   font-size: 16px;
+  background: rgba(255, 255, 255, 0.25);
+  color: #0e012a;
+  backdrop-filter: blur(4px);
+  outline: none;
+}
+
+.login-form input::placeholder {
+  color: #0e012a;
 }
 
 .login-form button {
   width: 100%;
   padding: 12px;
-  background-color: #1976d2;
+  background: linear-gradient(0deg, #5a67d8, #2b087e);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 16px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background 0.3s ease;
 }
 
 .login-form button:hover {
-  background-color: #155aac;
+  background: linear-gradient(135deg, #5a67d8, #6b46c1);
 }
 
 .error {
-  color: #d32f2f;
+  color: #ff6b6b;
   margin-bottom: 10px;
   text-align: center;
 }
+
 .login-form .register-link {
   display: block;
   margin-top: 15px;
   text-align: center;
-  color: #1976d2;
+  color: #ffffff;
   text-decoration: none;
   font-size: 15px;
   transition: color 0.2s;
 }
 
 .login-form .register-link:hover {
-  color: #155aac;
+  color: #e0e0e0;
   text-decoration: underline;
 }

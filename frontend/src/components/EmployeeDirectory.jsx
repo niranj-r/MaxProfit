@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import './EmployeeDirectory.css'; // Ensure you have this CSS file for styling
+import './EmployeeDirectory.css';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import axios from 'axios';
+import ModalWrapper from './ModalWrapper';
+import AddEmployee from './AddEmployee';
 
 const EmployeeDirectory = () => {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -20,48 +23,21 @@ const EmployeeDirectory = () => {
     }
   };
 
-  const handleEdit = (id) => {
-    const emp = employees.find(e => e._id === id);
-    const updated = {
-      ...emp,
-      name: prompt('Edit name', emp.name) || emp.name,
-      email: prompt('Edit email', emp.email) || emp.email,
-      phone: prompt('Edit phone', emp.phone) || emp.phone,
-      joinDate: prompt('Edit join date', emp.joinDate) || emp.joinDate
-    };
-    setEmployees(prev => prev.map(e => (e._id === id ? updated : e)));
-    // Optionally send PUT to backend here
+  const handleEdit = async (eid) => {
+    // Add edit modal logic if needed
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this employee?')) return;
+  const handleDelete = async (eid) => {
     try {
-      await axios.delete(`http://localhost:5000/api/employees/${id}`);
-      setEmployees(prev => prev.filter(e => e._id !== id));
+      await axios.delete(`http://localhost:5000/api/employees/${eid}`);
+      fetchEmployees();
     } catch (err) {
       console.error('Failed to delete employee', err);
     }
   };
 
-  const handleAdd = async () => {
-    const name = prompt('Enter name');
-    const email = prompt('Enter email');
-    const phone = prompt('Enter phone number');
-    const joinDate = prompt('Enter join date (YYYY-MM-DD)');
-    if (!name || !email || !phone || !joinDate) return;
-
-    try {
-      const res = await axios.post('http://localhost:5000/api/employees', {
-        name, email, phone, joinDate
-      });
-      setEmployees(prev => [...prev, res.data]);
-    } catch (err) {
-      console.error('Failed to add employee', err);
-    }
-  };
-
   const filteredEmployees = employees.filter(emp =>
-    emp.name.toLowerCase().includes(search.toLowerCase())
+    `${emp.fname} ${emp.lname}`.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -76,7 +52,7 @@ const EmployeeDirectory = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={handleAdd}>
+          <button className="add-btn" onClick={() => setShowAddModal(true)}>
             <FaPlus /> Add Employee
           </button>
         </div>
@@ -85,33 +61,50 @@ const EmployeeDirectory = () => {
       <table className="employee-table">
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Employee ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
             <th>Email</th>
-            <th>Phone Number</th>
+            <th>Department ID</th>
             <th>Join Date</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {filteredEmployees.map((emp) => (
             <tr key={emp._id}>
-              <td>{emp.name}</td>
+              <td>{emp.eid}</td>
+              <td>{emp.fname}</td>
+              <td>{emp.lname}</td>
               <td>{emp.email}</td>
-              <td>{emp.phone}</td>
-              <td>{emp.joinDate}</td>
+              <td>{emp.did}</td>
+              <td>{emp.joinDate || '—'}</td>
+              <td>{emp.status || '—'}</td>
               <td>
-                <FaEdit className="icon edit-icon" onClick={() => handleEdit(emp._id)} />
-                <FaTrash className="icon delete-icon" onClick={() => handleDelete(emp._id)} />
+                <FaEdit className="icon edit-icon" onClick={() => handleEdit(emp.eid)} />
+                <FaTrash className="icon delete-icon" onClick={() => handleDelete(emp.eid)} />
               </td>
             </tr>
           ))}
           {filteredEmployees.length === 0 && (
             <tr>
-              <td colSpan="5" className="no-data">No matching employees found.</td>
+              <td colSpan="8" className="no-data">No matching employees found.</td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {showAddModal && (
+        <ModalWrapper onClose={() => setShowAddModal(false)}>
+          <AddEmployee
+            onClose={() => {
+              setShowAddModal(false);
+              fetchEmployees(); // refresh list
+            }}
+          />
+        </ModalWrapper>
+      )}
     </div>
   );
 };

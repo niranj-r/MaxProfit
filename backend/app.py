@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from dotenv import load_dotenv
 
@@ -19,7 +21,7 @@ db = client["dashboardDB"]
 # Valid roles
 ROLES = ["admin", "department_manager", "project_manager", "financial_analyst", "employee"]
 
-# Authentication
+# ------------------ AUTH ------------------
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -32,7 +34,7 @@ def login():
 
     user = db.users.find_one({"email": email})
     
-    if not user or user.get("password") != password:
+    if not user or not check_password_hash(user.get("password", ""), password):
         return jsonify({"error": "Invalid email or password"}), 401
 
     return jsonify({
@@ -45,7 +47,7 @@ def login():
         "token": "dummy-token"
     })
 
-# User Management
+# ------------------ USERS ------------------
 
 @app.route('/api/users', methods=['POST'])
 def create_user():
@@ -55,7 +57,7 @@ def create_user():
     password = data.get("password")
     role = data.get("role", "").strip().lower()
 
-    if not email or not name or not password:
+    if not all([email, name, password]):
         return jsonify({"error": "All fields are required"}), 400
 
     if role not in ROLES:
@@ -64,10 +66,17 @@ def create_user():
     if db.users.find_one({"email": email}):
         return jsonify({"error": "User already exists"}), 409
 
-    data["role"] = role
-    db.users.insert_one(data)
-    return jsonify({"message": "User created"}), 201
+    user_data = {
+        "email": email,
+        "name": name,
+        "password": generate_password_hash(password),
+        "role": role,
+        "working_hours": 0,
+        "createdAt": datetime.utcnow()
+    }
 
+    db.users.insert_one(user_data)
+    return jsonify({"message": "User created"}), 201
 
 @app.route('/api/users/<user_id>', methods=['DELETE'])
 def delete_user(user_id):
@@ -75,7 +84,6 @@ def delete_user(user_id):
     if result.deleted_count == 1:
         return jsonify({"message": "User deleted"}), 200
     return jsonify({"error": "User not found"}), 404
-
 
 @app.route('/api/users/<user_id>/role', methods=['PATCH'])
 def update_role(user_id):
@@ -90,24 +98,25 @@ def update_role(user_id):
         return jsonify({"message": "Role updated"}), 200
     return jsonify({"error": "User not found"}), 404
 
-
 @app.route('/api/users', methods=['GET'])
 def get_users():
     users = list(db.users.find({}))
     for user in users:
         user["_id"] = str(user["_id"])
+        user.pop("password", None)
     return jsonify(users)
 
-# Leaderboard
+# ------------------ LEADERBOARD ------------------
 
 @app.route('/api/leaderboard', methods=['GET'])
 def leaderboard():
     top_users = list(db.users.find({"role": "employee"}).sort("working_hours", -1).limit(10))
     for user in top_users:
         user["_id"] = str(user["_id"])
+        user.pop("password", None)
     return jsonify(top_users)
 
-# Organisation Management
+# ------------------ ORGANISATIONS ------------------
 
 @app.route('/api/organisations', methods=['POST'])
 def create_organisation():
@@ -121,9 +130,15 @@ def create_organisation():
     if db.organisations.find_one({"oid": oid}):
         return jsonify({"error": "Organisation already exists"}), 409
 
-    db.organisations.insert_one({"oid": oid, "name": name})
-    return jsonify({"message": "Organisation created"}), 201
+    new_org = {
+        "oid": oid,
+        "name": name,
+        "createdAt": datetime.utcnow()
+    }
 
+    result = db.organisations.insert_one(new_org)
+    new_org["_id"] = str(result.inserted_id)
+    return jsonify(new_org), 201
 
 @app.route('/api/organisations', methods=['GET'])
 def get_organisations():
@@ -132,16 +147,35 @@ def get_organisations():
         org["_id"] = str(org["_id"])
     return jsonify(organisations)
 
-
 @app.route('/api/organisations/<oid>', methods=['DELETE'])
 def delete_organisation(oid):
     result = db.organisations.delete_one({"oid": oid})
     if result.deleted_count == 0:
         return jsonify({"error": "Organisation not found"}), 404
-    db.departments.delete_many({"oid": oid})  # Clean up related departments
+    db.departments.delete_many({"oid": oid})
     return jsonify({"message": "Organisation and related departments deleted"}), 200
 
-# Department Management
+@app.route('/api/organisations/<oid>', methods=['PUT'])
+def update_organisation(oid):
+    data = request.json
+    name = data.get("name", "").strip()
+
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+
+    result = db.organisations.find_one_and_update(
+        {"oid": oid},
+        {"$set": {"name": name, "updatedAt": datetime.utcnow()}},
+        return_document=True
+    )
+
+    if not result:
+        return jsonify({"error": "Organisation not found"}), 404
+
+    result["_id"] = str(result["_id"])
+    return jsonify(result), 200
+
+# ------------------ DEPARTMENTS ------------------
 
 @app.route('/api/departments', methods=['POST'])
 def create_department():
@@ -149,8 +183,9 @@ def create_department():
     did = data.get("did", "").strip()
     name = data.get("name", "").strip()
     oid = data.get("oid", "").strip()
+    managerId = data.get("managerId", "").strip()
 
-    if not did or not name or not oid:
+    if not all([did, name, oid, managerId]):
         return jsonify({"error": "All fields required"}), 400
 
     if not db.organisations.find_one({"oid": oid}):
@@ -159,17 +194,16 @@ def create_department():
     if db.departments.find_one({"did": did}):
         return jsonify({"error": "Department already exists"}), 409
 
-    db.departments.insert_one({"did": did, "name": name, "oid": oid})
+    db.departments.insert_one({
+        "did": did,
+        "name": name,
+        "oid": oid,
+        "managerId": managerId,
+        "createdAt": datetime.utcnow(),
+        "updatedAt": datetime.utcnow()
+    })
+
     return jsonify({"message": "Department created"}), 201
-
-
-@app.route('/api/departments/<did>', methods=['DELETE'])
-def delete_department(did):
-    result = db.departments.delete_one({"did": did})
-    if result.deleted_count == 0:
-        return jsonify({"error": "Department not found"}), 404
-    return jsonify({"message": "Department deleted"}), 200
-
 
 @app.route('/api/departments', methods=['GET'])
 def get_departments():
@@ -178,13 +212,177 @@ def get_departments():
         dept["_id"] = str(dept["_id"])
     return jsonify(departments)
 
+@app.route('/api/departments/<did>', methods=['PUT'])
+def update_department(did):
+    data = request.json
+    name = data.get("name", "").strip()
+    oid = data.get("oid", "").strip()
+    managerId = data.get("managerId", "").strip()
+
+    if not all([name, oid, managerId]):
+        return jsonify({"error": "All fields required"}), 400
+
+    result = db.departments.find_one_and_update(
+        {"did": did},
+        {
+            "$set": {
+                "name": name,
+                "oid": oid,
+                "managerId": managerId,
+                "updatedAt": datetime.utcnow()
+            }
+        },
+        return_document=True
+    )
+
+    if not result:
+        return jsonify({"error": "Department not found"}), 404
+
+    result["_id"] = str(result["_id"])
+    return jsonify(result), 200
+
+@app.route('/api/departments/<did>', methods=['DELETE'])
+def delete_department(did):
+    result = db.departments.delete_one({"did": did})
+    if result.deleted_count == 0:
+        return jsonify({"error": "Department not found"}), 404
+    return jsonify({"message": "Department deleted"}), 200
+
+# ------------------ EMPLOYEES ------------------
+
 @app.route('/api/employees', methods=['GET'])
 def get_employees():
     employees = list(db.users.find({"role": {"$in": ["employee", "admin"]}}))
     for emp in employees:
         emp["_id"] = str(emp["_id"])
-        emp.pop("password", None)  # Remove password for security
+        emp.pop("password", None)
     return jsonify(employees)
+
+@app.route('/api/employees', methods=['POST'])
+def add_employee():
+    data = request.json
+    eid = data.get("eid")
+    fname = data.get("fname")
+    lname = data.get("lname")
+    email = data.get("email")
+    did = data.get("did")
+    password = data.get("password")
+
+    if not all([eid, fname, lname, email, did, password]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    if db.users.find_one({"email": email}):
+        return jsonify({"error": "Email already exists"}), 409
+
+    employee = {
+        "eid": eid,
+        "fname": fname,
+        "lname": lname,
+        "email": email,
+        "did": did,
+        "role": "employee",
+        "password": generate_password_hash(password),
+        "working_hours": 0,
+        "createdAt": datetime.utcnow()
+    }
+
+    result = db.users.insert_one(employee)
+    employee["_id"] = str(result.inserted_id)
+    employee.pop("password", None)
+    return jsonify(employee), 201
+
+@app.route('/api/projects', methods=['GET'])
+def get_projects():
+    projects = list(db.projects.find({}))
+    for proj in projects:
+        proj["_id"] = str(proj["_id"])
+        if isinstance(proj.get("startDate"), datetime):
+            proj["startDate"] = proj["startDate"].strftime('%Y-%m-%d')
+        if isinstance(proj.get("endDate"), datetime):
+            proj["endDate"] = proj["endDate"].strftime('%Y-%m-%d')
+        if isinstance(proj.get("createdAt"), datetime):
+            proj["createdAt"] = proj["createdAt"].strftime('%Y-%m-%d')
+    return jsonify(projects), 200
+
+@app.route('/api/projects', methods=['POST'])
+def create_project():
+    data = request.json or {}
+    name = data.get("name", "").strip()
+    departmentId = data.get("departmentId", "").strip()
+    startDate = data.get("startDate", "").strip()
+    endDate = data.get("endDate", "").strip()
+    budget = data.get("budget")
+
+    if not all([name, departmentId, startDate, endDate, budget]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    try:
+        new_project = {
+            "name": name,
+            "departmentId": departmentId,
+            "startDate": datetime.strptime(startDate, "%Y-%m-%d"),
+            "endDate": datetime.strptime(endDate, "%Y-%m-%d"),
+            "budget": float(budget),
+            "createdAt": datetime.utcnow()
+        }
+    except ValueError:
+        return jsonify({"error": "Invalid date or budget format"}), 400
+
+    result = db.projects.insert_one(new_project)
+    new_project["_id"] = str(result.inserted_id)
+    new_project["startDate"] = startDate
+    new_project["endDate"] = endDate
+    new_project["createdAt"] = new_project["createdAt"].strftime('%Y-%m-%d')
+
+    return jsonify(new_project), 201
+
+@app.route('/api/projects/<project_id>', methods=['PUT'])
+def update_project(project_id):
+    data = request.json or {}
+    name = data.get("name", "").strip()
+    departmentId = data.get("departmentId", "").strip()
+    startDate = data.get("startDate", "").strip()
+    endDate = data.get("endDate", "").strip()
+    budget = data.get("budget")
+
+    if not all([name, departmentId, startDate, endDate, budget]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    try:
+        updated_data = {
+            "name": name,
+            "departmentId": departmentId,
+            "startDate": datetime.strptime(startDate, "%Y-%m-%d"),
+            "endDate": datetime.strptime(endDate, "%Y-%m-%d"),
+            "budget": float(budget),
+            "updatedAt": datetime.utcnow()
+        }
+    except ValueError:
+        return jsonify({"error": "Invalid date or budget format"}), 400
+
+    result = db.projects.find_one_and_update(
+        {"_id": ObjectId(project_id)},
+        {"$set": updated_data},
+        return_document=True
+    )
+
+    if not result:
+        return jsonify({"error": "Project not found"}), 404
+
+    result["_id"] = str(result["_id"])
+    result["startDate"] = result["startDate"].strftime('%Y-%m-%d')
+    result["endDate"] = result["endDate"].strftime('%Y-%m-%d')
+    result["updatedAt"] = result["updatedAt"].strftime('%Y-%m-%d')
+
+    return jsonify(result), 200
+
+@app.route('/api/projects/<project_id>', methods=['DELETE'])
+def delete_project(project_id):
+    result = db.projects.delete_one({"_id": ObjectId(project_id)})
+    if result.deleted_count == 0:
+        return jsonify({"error": "Project not found"}), 404
+    return jsonify({"message": "Project deleted"}), 200
+# ------------------ MAIN ------------------
 
 if __name__ == '__main__':
     app.run(debug=True)

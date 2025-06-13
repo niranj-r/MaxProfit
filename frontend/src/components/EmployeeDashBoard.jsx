@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import RecentActivities from './RecentActivities';  
+import EmployeeDirectory from './EmployeeDirectory';
+import './styles/Dashboard.css';
 import Navbar from './Navbar';
-import './styles/AdminDashboard.css';
-import DashboardSummary from './DashboardSummary'; // Assuming you have a summary component
-const AdminDashboard = () => {
+
+const EmployeeDashboard = () => {
   const navigate = useNavigate();
 
   return (
@@ -14,12 +14,8 @@ const AdminDashboard = () => {
       <Navbar />
     </div>
 
-    <div className="dashboard-welcome">
-      <DashboardSummary />
-    </div>
-
     <div className="dashboard-directory">
-      <RecentActivities />
+      <EmployeeDirectory />
     </div>
   </div>
 </div>
@@ -27,4 +23,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default EmployeeDashboard;

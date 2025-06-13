@@ -1,47 +1,66 @@
-// src/components/AddDepartment.js
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
-const AddDepartment = ({ organisations, onAdded }) => {
-  const [dept, setDept] = useState({ did: '', name: '', oid: '' });
+const AddDepartment = () => {
+  const [dept, setDept] = useState({
+    name: "",
+    did: "",
+    oid: "",
+    managerId: ""
+  });
 
-  const handleDeptSubmit = async () => {
+  const handleChange = (e) => {
+    setDept({ ...dept, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const { name, did, oid, managerId } = dept;
+    if (!name || !did || !oid || !managerId) {
+      alert("All fields are required.");
+      return;
+    }
+
     try {
-      await axios.post('http://127.0.0.1:5000/api/departments', dept);
-      alert('Department added!');
-      setDept({ did: '', name: '', oid: '' });
-      onAdded();
+      await axios.post("http://127.0.0.1:5000/api/departments", dept);
+      alert("Department added!");
+      setDept({ name: "", did: "", oid: "", managerId: "" });
     } catch (err) {
-      alert(err.response?.data?.error || 'Error adding department');
+      console.error("Error adding department", err);
+      alert("Failed to add department.");
     }
   };
 
   return (
-    <div className="form-card">
-      <h3>Add Department to Existing Organisation</h3>
-      <select
-        value={dept.oid}
-        onChange={(e) => setDept({ ...dept, oid: e.target.value })}
-      >
-        <option value="">-- Select Organisation --</option>
-        {organisations.map((org) => (
-          <option key={org.oid} value={org.oid}>
-            {org.name}
-          </option>
-        ))}
-      </select>
+    <form onSubmit={handleSubmit}>
+      <h3>Add Department</h3>
       <input
+        name="name"
+        placeholder="Name"
+        value={dept.name}
+        onChange={handleChange}
+      />
+      <input
+        name="did"
         placeholder="Department ID"
         value={dept.did}
-        onChange={(e) => setDept({ ...dept, did: e.target.value })}
+        onChange={handleChange}
       />
       <input
-        placeholder="Department Name"
-        value={dept.name}
-        onChange={(e) => setDept({ ...dept, name: e.target.value })}
+        name="oid"
+        placeholder="Organisation ID"
+        value={dept.oid}
+        onChange={handleChange}
       />
-      <button onClick={handleDeptSubmit}>Add Department</button>
-    </div>
+      <input
+        name="managerId"
+        placeholder="Manager ID"
+        value={dept.managerId}
+        onChange={handleChange}
+      />
+      <button type="submit">Add</button>
+    </form>
   );
 };
 

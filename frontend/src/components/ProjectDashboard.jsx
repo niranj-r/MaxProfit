@@ -1,9 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import RecentActivities from './RecentActivities';  
+import ProjectDirectory from './ProjectDirectory';
 import Navbar from './Navbar';
-import './styles/AdminDashboard.css';
-import DashboardSummary from './DashboardSummary'; // Assuming you have a summary component
+import './styles/Dashboard.css';
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
@@ -14,12 +13,8 @@ const AdminDashboard = () => {
       <Navbar />
     </div>
 
-    <div className="dashboard-welcome">
-      <DashboardSummary />
-    </div>
-
     <div className="dashboard-directory">
-      <RecentActivities />
+      <ProjectDirectory />
     </div>
   </div>
 </div>
