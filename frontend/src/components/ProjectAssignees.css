@@ -41,7 +41,7 @@
   margin-bottom: 16px;
 }
 .search-bar-assign {
-  width: 100%;
+  width: 96%;
   padding: 10px 12px;
   font-size: 1rem;
   border: 1px solid #ccc;
@@ -107,6 +107,7 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.2s;
+  align-items: right;
 }
 .confirm-btn {
   background: #4f46e5;
