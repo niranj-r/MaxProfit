@@ -75,8 +75,7 @@ const RecentActivities = () => {
                 {new Date(activity.timestamp).toLocaleString()}
               </p>
               <p>
-                <strong>{activity.user}</strong> {activity.action.toLowerCase()}{" "}
-                <strong>{activity.entity}</strong>
+                <strong>{activity.entity} </strong><strong>{activity.user}</strong> {activity.action.toLowerCase()}{" "}
               </p>
             </div>
           </li>
