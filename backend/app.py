@@ -8,7 +8,7 @@ import os
 from sqlalchemy import and_
 from jwt_utils import token_required, generate_token
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-
+from datetime import datetime, timedelta
   # use a secure, secret value
 
 
@@ -88,9 +88,20 @@ class ActivityLog(db.Model):
 # ------------------ HELPERS ------------------
 
 
-def log_activity(type_, name, action):
-    db.session.add(ActivityLog(type=type_, name=name, action=action))
-    db.session.commit()
+def log_activity(entity_type, entity_name, action):
+    try:
+        new_log = ActivityLog(
+            type=entity_type,
+            name=entity_name,
+            action=action,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(new_log)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Failed to log activity: {str(e)}")
+
 
 def user_to_json(u):
     return {
@@ -179,6 +190,7 @@ def create_user():
     )
     db.session.add(user)
     db.session.commit()
+    log_activity("Employee", f"{user.fname} {user.lname}", "created")
     return jsonify({"message": "User created", "user": user_to_json(user)}), 201
 
 @app.route('/api/users', methods=['GET'])
@@ -195,6 +207,7 @@ def delete_user(user_id):
         return jsonify({"error": "User not found"}), 404
     db.session.delete(user)
     db.session.commit()
+    log_activity("Employee", f"{user.fname} {user.lname}", "deleted")
     return jsonify({"message": "User deleted"}), 200
 
 @app.route('/api/users/<eid>', methods=['PUT'])
@@ -212,6 +225,7 @@ def update_user(eid):
     if data.get("password"):
         user.password = generate_password_hash(data["password"])
     db.session.commit()
+    log_activity("Employee", f"{user.fname} {user.lname}", "updated")
     return jsonify({"message": "User updated", "user": user_to_json(user)}), 200
 
 
@@ -226,6 +240,7 @@ def create_organisation():
     org = Organisation(oid=data["oid"], name=data["name"])
     db.session.add(org)
     db.session.commit()
+    log_activity("Organisation", org.name, "created")
     return jsonify({
         "message": "Organisation created",
         "organisation": {"oid": org.oid, "name": org.name}
@@ -255,6 +270,7 @@ def delete_organisation(oid):
     Department.query.filter_by(oid=oid).delete()
     db.session.delete(org)
     db.session.commit()
+    log_activity("Organisation", org.name, "deleted")
     return jsonify({"message": "Organisation and related departments deleted"}), 200
 
 @app.route('/api/organisations/<oid>', methods=['PUT'])
@@ -267,6 +283,7 @@ def update_organisation(oid):
     data = request.json
     org.name = data.get("name", org.name)
     db.session.commit()
+    log_activity("Organisation", org.name, "updated")
 
     return jsonify({
         "oid": org.oid,
@@ -290,6 +307,7 @@ def create_department():
     )
     db.session.add(dept)
     db.session.commit()
+    log_activity("Department", dept.name, "created")
     return jsonify({"message": "Department created"}), 201
 
 @app.route('/api/departments', methods=['GET'])
@@ -314,6 +332,7 @@ def delete_department(did):
         return jsonify({"error": "Department not found"}), 404
     db.session.delete(dept)
     db.session.commit()
+    log_activity("Department", dept.name, "deleted")
     return jsonify({"message": "Department deleted"}), 200
 
 @app.route('/api/departments/<did>', methods=['PUT'])
@@ -329,6 +348,7 @@ def update_department(did):
     dept.managerId = data.get('managerId', dept.managerId)
 
     db.session.commit()
+    log_activity("Department", dept.name, "updated")
 
     return jsonify({
         'did': dept.did,
@@ -353,6 +373,7 @@ def create_project():
     )
     db.session.add(project)
     db.session.commit()
+    log_activity("Project", project.name, "created")
     return jsonify({"message": "Project created"}), 201
 
 @app.route('/api/projects', methods=['GET'])
@@ -378,6 +399,7 @@ def delete_project(project_id):
         return jsonify({"error": "Project not found"}), 404
     db.session.delete(proj)
     db.session.commit()
+    log_activity("Project", proj.name, "deleted")
     return jsonify({"message": "Project deleted"}), 200
 
 @app.route('/api/projects/<int:project_id>', methods=['PUT'])
@@ -393,7 +415,7 @@ def update_project(project_id):
     project.budget = float(data['budget'])
 
     db.session.commit()
-
+    log_activity("Project", project.name, "updated")
     return jsonify({
         'id': project.id,
         'name': project.name,
@@ -402,6 +424,32 @@ def update_project(project_id):
         'endDate': project.endDate.strftime('%Y-%m-%d'),
         'budget': project.budget
     }), 200
+
+@app.route('/api/project-budgets', methods=['GET'])
+@jwt_required()
+def get_project_budgets():
+    projects = Project.query.with_entities(Project.name, Project.budget).all()
+    result = [{"name": name, "budget": budget} for name, budget in projects]
+    return jsonify(result), 200
+
+@app.route('/api/projects/upcoming-deadlines', methods=['GET'])
+@jwt_required()
+def get_upcoming_deadlines():
+    today = datetime.today().date()
+    upcoming = (
+        Project.query
+        .filter(Project.endDate >= today)
+        .order_by(Project.endDate)
+        .limit(5)
+        .all()
+    )
+    result = [{
+        "id": p.id,
+        "name": p.name,
+        "endDate": p.endDate.strftime('%Y-%m-%d')
+    } for p in upcoming]
+
+    return jsonify(result), 200
 
 # ------------------ ASSIGNEES ROUTES ------------------
 @app.route("/api/projects/<int:project_id>/assignees", methods=["GET"])
@@ -495,7 +543,22 @@ def remove_assignee(project_id, eid):
     )
     db.session.commit()
     return jsonify({"message": "Assignee removed"}), 200
-    
+
+# ------------------ RECENT ACTIVITY ------------------
+@app.route("/api/recent-activities", methods=["GET"])
+@jwt_required()
+def get_recent_activities():
+    activities = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
+    result = [
+        {
+            "entity": a.type,
+            "user": a.name,
+            "action": a.action,
+            "timestamp": a.timestamp.isoformat()
+        }
+        for a in activities
+    ]
+    return jsonify(result), 200
 
 
 

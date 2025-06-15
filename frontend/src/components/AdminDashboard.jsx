@@ -5,7 +5,8 @@ import Navbar from './Navbar';
 import './styles/AdminDashboard.css';
 import DashboardSummary from './DashboardSummary'; // Assuming you have a summary component
 import FXRateChart from './FXRateChart';
-import BudgetChart from './BudgetChart'; // Assuming you have a budget chart component
+import BudgetChart from './BudgetChart'; // Assuming you have a budget chart 
+import UpcomingDeadlines from './UpcomingDeadlines';
 const API = process.env.REACT_APP_API_BASE_URL;
 
 
@@ -29,6 +30,7 @@ const AdminDashboard = () => {
           </div>
           <div className="dashboard-directory">
             <RecentActivities />
+            <UpcomingDeadlines />
             <FXRateChart />
           </div>
         </div>

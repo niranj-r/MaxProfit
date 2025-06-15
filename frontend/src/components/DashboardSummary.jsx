@@ -87,7 +87,7 @@ const DashboardSummary = () => {
       {cards.map((card, index) => (
         <div className="card" key={index} style={{ borderLeftColor: card.color }}>
           <div className="card-body">
-            <div className="card-icon" style={{ backgroundColor: card.color }}>
+            <div className="card-icon1" style={{ backgroundColor: card.color }}>
               {card.icon}
             </div>
             <div className="card-text">

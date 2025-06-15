@@ -18,7 +18,7 @@ import FXRateChart from './components/FXRateChart';
 import BudgetChart from './components/BudgetChart';
 import ModalWrapper from './components/ModalWrapper';
 import ProjectAssignees from './components/ProjectAssignees'; 
-
+import UpcomingDeadlines from './components/UpcomingDeadlines'; 
 
 function App() {
   return (
@@ -42,6 +42,7 @@ function App() {
       <Route path="/modal-wrapper" element={<ModalWrapper />} />
       <Route path="/project-assignees" element={<ProjectAssignees />} />
       <Route path="/projects/:id/assignees" element={<ProjectAssignees />} />
+      <Route path="/upcoming-deadlines" element={<UpcomingDeadlines />} />
 
       {/* Add more routes as needed */}
     </Routes>

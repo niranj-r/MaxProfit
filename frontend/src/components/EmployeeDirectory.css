@@ -77,16 +77,18 @@
 .icon {
   font-size: 18px;
   cursor: pointer;
-  margin-right: 10px;
   vertical-align: middle;
 }
 
 .edit-icon {
   color: #4b6cb7;
+  margin-right: 10px;
+
 }
 
 .delete-icon {
   color: #e63946;
+  margin-right: 10px;
 }
 
 .no-data {
