@@ -21,6 +21,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+const API = process.env.REACT_APP_API_BASE_URL;
 
 
 const BudgetChart = () => {
@@ -30,7 +31,7 @@ const BudgetChart = () => {
   });
 
   useEffect(() => {
-axios.get("http://localhost:5000/api/project-budgets")
+    axios.get(`${API}/api/project-budgets`)
       .then(res => {
         const projectNames = res.data.map(p => p.name);
         const budgets = res.data.map(p => p.budget);

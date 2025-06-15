@@ -6,6 +6,8 @@ import './styles/AdminDashboard.css';
 import DashboardSummary from './DashboardSummary'; // Assuming you have a summary component
 import FXRateChart from './FXRateChart';
 import BudgetChart from './BudgetChart'; // Assuming you have a budget chart component
+const API = process.env.REACT_APP_API_BASE_URL;
+
 
 const AdminDashboard = () => {
   const navigate = useNavigate();

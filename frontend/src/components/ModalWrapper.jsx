@@ -1,6 +1,8 @@
 import React from 'react';
 import './styles/ModalWrapper.css';
 
+const API = process.env.REACT_APP_API_BASE_URL;
+
 const ModalWrapper = ({ title, children, onClose }) => {
   return (
     <div className="modal-overlay">

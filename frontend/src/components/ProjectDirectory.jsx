@@ -6,6 +6,7 @@ import ModalWrapper from './ModalWrapper';
 import { useNavigate } from 'react-router-dom';
 import ProjectAssignee from './ProjectAssignees';
 
+const API = process.env.REACT_APP_API_BASE_URL;
 
 const ProjectDirectory = () => {
   const [projects, setProjects] = useState([]);
@@ -33,7 +34,7 @@ const [selectedProject, setSelectedProject] = useState(null);
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/projects');
+      const res = await axios.get(`${API}/api/projects`);
       setProjects(res.data);
     } catch (err) {
       console.error('Failed to fetch projects', err);
@@ -78,11 +79,11 @@ const [selectedProject, setSelectedProject] = useState(null);
 
     try {
       if (formMode === 'add') {
-        const res = await axios.post('http://localhost:5000/api/projects', currentProject);
+        const res = await axios.post(`${API}/api/projects`, currentProject);
         setProjects(prev => [...prev, res.data]);
         alert('Project added successfully');
       } else {
-        const res = await axios.put(`http://localhost:5000/api/projects/${editId}`, currentProject);
+        const res = await axios.put(`${API}/api/projects/${editId}`, currentProject);
         setProjects(prev => prev.map(p => p.id === editId ? res.data : p));
         alert('Project updated successfully');
       }
@@ -104,7 +105,7 @@ const handleAssigneesClick = (project) => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this project?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/projects/${id}`);
+      await axios.delete(`${API}/api/projects/${id}`);
       setProjects(prev => prev.filter(p => p._id !== id));
       alert('Project deleted');
       fetchProjects();

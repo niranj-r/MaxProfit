@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+from sqlalchemy import and_
 
 # ------------------ CONFIGURATION ------------------
 
@@ -21,9 +22,11 @@ ROLES = ["admin", "department_manager", "project_manager", "financial_analyst", 
 
 # ------------------ MODELS ------------------
 
-project_assignees = db.Table('project_assignees',
+project_assignees = db.Table(
+    'project_assignees',
     db.Column('project_id', db.Integer, db.ForeignKey('project.id'), primary_key=True),
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('role', db.String(100))
 )
 
 
@@ -67,7 +70,7 @@ class Project(db.Model):
     budget = db.Column(db.Float)
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, onupdate=datetime.utcnow)
-
+    
 class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(50))
@@ -374,43 +377,77 @@ def update_project(project_id):
     }), 200
 
 # ------------------ ASSIGNEES ROUTES ------------------
-
-@app.route('/api/projects/<int:project_id>/assignees', methods=['GET'])
+@app.route("/api/projects/<int:project_id>/assignees", methods=["GET"])
 def get_assignees(project_id):
-    project = Project.query.get(project_id)
-    if not project:
-        return jsonify({"error": "Project not found"}), 404
+    results = db.session.execute(
+        db.select(User, project_assignees.c.role)
+        .join(project_assignees, User.id == project_assignees.c.user_id)
+        .where(project_assignees.c.project_id == project_id)
+    )
 
-    assignees = db.session.query(User).join(project_assignees).filter(project_assignees.c.project_id == project_id).all()
-    return jsonify([user_to_json(u) for u in assignees]), 200
+    assignees = []
+    for user, role in results:
+        assignees.append({
+            "eid": user.eid,
+            "fname": user.fname,
+            "lname": user.lname,
+            "email": user.email,
+            "role": role  # Include the role
+        })
+
+    return jsonify(assignees), 200
 
 
 @app.route('/api/projects/<int:project_id>/assignees', methods=['POST'])
 def add_assignee(project_id):
     data = request.json
     eid = data.get("eid")
-    if not eid:
-        return jsonify({"error": "EID required"}), 400
+    role = data.get("role", "").strip()
 
-    project = Project.query.get(project_id)
+    if not eid or not role:
+        return jsonify({"error": "EID and role required"}), 400
+
+    # Fetch project & user
+    project = db.session.get(Project, project_id)
     user = User.query.filter_by(eid=eid).first()
     if not project or not user:
         return jsonify({"error": "Project or user not found"}), 404
 
+    # Prevent duplicate assignment
     exists = db.session.execute(
         project_assignees.select().where(
-            project_assignees.c.project_id == project_id,
-            project_assignees.c.user_id == user.id
+            and_(
+                project_assignees.c.project_id == project_id,
+                project_assignees.c.user_id == user.id
+            )
         )
     ).first()
-
     if exists:
         return jsonify({"error": "Employee already assigned"}), 409
 
-    db.session.execute(project_assignees.insert().values(project_id=project_id, user_id=user.id))
-    db.session.commit()
-    return jsonify({"message": "Assignee added"}), 200
+    # 🔒 Enforce single Project Manager
+    if role == "Project Manager":
+        pm_exists = db.session.execute(
+            project_assignees.select().where(
+                and_(
+                    project_assignees.c.project_id == project_id,
+                    project_assignees.c.role == "Project Manager"
+                )
+            )
+        ).first()
+        if pm_exists:
+            return jsonify({"error": "This project already has a Project Manager"}), 409
 
+    # Insert with role
+    db.session.execute(
+        project_assignees.insert().values({
+            "project_id": project_id,
+            "user_id": user.id,
+            "role": role
+        })
+    )
+    db.session.commit()
+    return jsonify({"message": "Assignee added with role"}), 200
 
 @app.route('/api/projects/<int:project_id>/assignees/<eid>', methods=['DELETE'])
 def remove_assignee(project_id, eid):
@@ -418,10 +455,14 @@ def remove_assignee(project_id, eid):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    db.session.execute(project_assignees.delete().where(
-        project_assignees.c.project_id == project_id,
-        project_assignees.c.user_id == user.id
-    ))
+    db.session.execute(
+        project_assignees.delete().where(
+            and_(
+                project_assignees.c.project_id == project_id,
+                project_assignees.c.user_id == user.id
+            )
+        )
+    )
     db.session.commit()
     return jsonify({"message": "Assignee removed"}), 200
     

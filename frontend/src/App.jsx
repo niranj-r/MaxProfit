@@ -5,7 +5,6 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminSignup from './components/AdminSignup';
 import EmployeeDashboard from './components/EmployeeDashBoard';
 import EmployeeDirectory from './components/EmployeeDirectory';
-import AddEmployee from './components/AddEmployee'; // ✅ NEW
 import ProjectDashboard from './components/ProjectDashboard';
 import ProjectDirectory from './components/ProjectDirectory';
 import DepartmentDirectory from './components/DeptDirectory';
@@ -29,7 +28,6 @@ function App() {
       <Route path="/admin-signup" element={<AdminSignup />} />
       <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
       <Route path="/employee-directory" element={<EmployeeDirectory />} />
-      <Route path="/add-employee" element={<AddEmployee />} /> {/* ✅ NEW ROUTE */}
       <Route path="/project-dashboard" element={<ProjectDashboard />} />
       <Route path="/project-directory" element={<ProjectDirectory />} />
       <Route path="/dept-dashboard" element={<DeptDashboard />} />

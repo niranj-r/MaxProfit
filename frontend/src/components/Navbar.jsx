@@ -1,6 +1,8 @@
 import React from "react";
 import { FaUserCircle } from "react-icons/fa";
 import "./Navbar.css";
+const API = process.env.REACT_APP_API_BASE_URL;
+
 const Navbar = () => {
     return (
         <nav className="navbar">

@@ -1,6 +1,8 @@
 import React from "react";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, CategoryScale } from "chart.js";
+const API = process.env.REACT_APP_API_BASE_URL;
+
 
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, CategoryScale);
 
