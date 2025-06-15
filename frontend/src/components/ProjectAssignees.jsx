@@ -23,7 +23,10 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
     const fetchAssignees = async () => {
         try {
-            const res = await axios.get(`${API}/api/projects/${projectId}/assignees`);
+            const res = await axios.get(`${API}/api/projects/${projectId}/assignees`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+
             setAssignees(res.data);
         } catch (err) {
             console.error('Failed to fetch assignees', err);
@@ -38,7 +41,11 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
             return;
         }
         try {
-            const res = await axios.get(`${API}/api/search/users`, { params: { q } });
+            const res = await axios.get(`${API}/api/search/users`, {
+                params: { q },
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+
             setSearchResults(res.data.filter(emp => emp && emp.eid && emp.fname && emp.lname));
         } catch (err) {
             console.error('Search error', err);
@@ -61,8 +68,10 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
         try {
             await axios.post(
                 `${API}/api/projects/${projectId}/assignees`,
-                { eid: pending.eid, role: selectedRole }
+                { eid: pending.eid, role: selectedRole },
+                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
             );
+
             setAssignees(a => [...a, { ...pending, role: selectedRole }]);
             setPending(null);
             setSearch('');
@@ -74,7 +83,10 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
     const removeAssignee = async emp => {
         try {
-            await axios.delete(`${API}/api/projects/${projectId}/assignees/${emp.eid}`);
+            await axios.delete(
+                `${API}/api/projects/${projectId}/assignees/${emp.eid}`,
+                { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+            );
             setAssignees(a => a.filter(x => x.eid !== emp.eid));
         } catch (err) {
             console.error('Remove error', err);

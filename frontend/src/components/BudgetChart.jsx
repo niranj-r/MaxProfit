@@ -31,7 +31,13 @@ const BudgetChart = () => {
   });
 
   useEffect(() => {
-    axios.get(`${API}/api/project-budgets`)
+    const token = localStorage.getItem("token");
+    axios.get(`${API}/api/project-budgets`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
       .then(res => {
         const projectNames = res.data.map(p => p.name);
         const budgets = res.data.map(p => p.budget);
@@ -74,11 +80,11 @@ const BudgetChart = () => {
     }
   };
 
-return (
-  <div style={{ width: "95%", height: "400px", margin: "0 auto" }}>
-    <Line data={chartData} options={options} />
-  </div>
-);
+  return (
+    <div style={{ width: "95%", height: "400px", margin: "0 auto" }}>
+      <Line data={chartData} options={options} />
+    </div>
+  );
 };
 
 export default BudgetChart;

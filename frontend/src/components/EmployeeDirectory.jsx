@@ -4,7 +4,14 @@ import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
 import './ModalWrapper.css';
+
 const API = process.env.REACT_APP_API_BASE_URL;
+const token = localStorage.getItem("token");
+const authHeader = {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+};
 
 
 const initialForm = { eid: '', fname: '', lname: '', email: '', did: '', password: '' };
@@ -27,12 +34,14 @@ const EmployeeDirectory = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get(`${API}/api/employees`);
+      console.log("Token:", token);
+      const res = await axios.get(`${API}/api/employees`, authHeader);
       setEmployees(res.data);
     } catch (e) {
-      console.error('Failed to fetch employees', e);
+      console.error('Failed to fetch employees', e.response?.data || e);
     }
   };
+
 
   const openAdd = () => {
     setForm(initialForm);
@@ -61,10 +70,10 @@ const EmployeeDirectory = () => {
     }
     try {
       if (formMode === 'add') {
-        await axios.post(`${API}/api/employees`, form);
+        await axios.post(`${API}/api/employees`, form, authHeader);
         alert('Employee added successfully');
       } else {
-        await axios.put(`${API}/api/employees/${selectedId}`, form);
+        await axios.put(`${API}/api/employees/${selectedId}`, form, authHeader);
         alert('Employee updated successfully');
       }
       close();
@@ -78,7 +87,7 @@ const EmployeeDirectory = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete employee?')) return;
     try {
-      await axios.delete(`${API}/api/users/${id}`);
+      await axios.delete(`${API}/api/users/${id}`, authHeader);
       alert('Employee deleted successfully');
       fetchEmployees();
     } catch (e) {

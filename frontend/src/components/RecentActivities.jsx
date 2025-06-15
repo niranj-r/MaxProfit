@@ -28,7 +28,12 @@ const RecentActivities = () => {
 
   useEffect(() => {
     axios
-      .get(`${API}/api/recent-activities`)
+      .get(`${API}/api/recent-activities`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+
       .then((res) => {
         setActivities(res.data);
         setLoading(false);
@@ -59,17 +64,24 @@ const RecentActivities = () => {
         <p>No recent activity yet.</p>
       )}
 
-<ul className="custom-list">
-  {activities.map((activity, index) => (
-    <li key={index} className="activity">
-      <div className="content">
-        <p className="timestamp">
-          {new Date(activity.timestamp).toLocaleString()}
-        </p>
-      </div>
-    </li>
-  ))}
-</ul>
+      <ul className="custom-list">
+        {activities.map((activity, index) => (
+          <li key={index} className="activity">
+            <div className="icon-wrapper">
+              {iconMap[activity.entity] || <ActivityIcon className="icon" />}
+            </div>
+            <div className="content">
+              <p className="timestamp">
+                {new Date(activity.timestamp).toLocaleString()}
+              </p>
+              <p>
+                {activity.user} {activity.action} {activity.entity}
+              </p>
+            </div>
+          </li>
+
+        ))}
+      </ul>
 
     </div>
   );

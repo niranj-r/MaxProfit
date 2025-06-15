@@ -22,6 +22,8 @@ const Login = () => {
       const res = await axios.post(`${API}/api/login`, credentials);
       const { user, token } = res.data;
 
+       localStorage.setItem('token', token);
+
       if (user.role === 'admin' || user.role === 'Admin') {
         navigate('/admin-dashboard');
       } else if (user.role === 'employee') {

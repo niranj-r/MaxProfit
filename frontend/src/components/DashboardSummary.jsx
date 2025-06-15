@@ -17,12 +17,20 @@ const DashboardSummary = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const headers = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
         const [projectsRes, employeesRes, orgsRes, deptsRes] = await Promise.all([
-          axios.get(`${API}/api/projects`),
-          axios.get(`${API}/api/employees`),
-          axios.get(`${API}/api/organisations`),
-          axios.get(`${API}/api/departments`),
+          axios.get(`${API}/api/projects`, headers),
+          axios.get(`${API}/api/employees`, headers),
+          axios.get(`${API}/api/organisations`, headers),
+          axios.get(`${API}/api/departments`, headers),
         ]);
+
 
         const totalBudget = projectsRes.data.reduce((sum, p) => sum + (parseFloat(p.budget) || 0), 0);
 

@@ -158,7 +158,8 @@ const AdminSignup = () => {
         </button>
 
         <div className="form-footer">
-          <p>Already have an account? <Link to="http://localhost:3000/" className="login-link">Login here</Link></p>
+          <p>Already have an account? <Link to="/" className="login-link">Login here</Link>
+          </p>
         </div>
       </form>
     </div>

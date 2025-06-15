@@ -12,7 +12,7 @@ const ManageUsers = () => {
     name: '',
     email: '',
     password: '',
-    phone:'',
+    phone: '',
     joinDate: '',
     role: 'employee'
   });
@@ -22,7 +22,12 @@ const ManageUsers = () => {
 
   const handleAdd = async () => {
     try {
-      await axios.post(`${API}/api/users`, form);
+      await axios.post(`${API}/api/users`, form, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
       alert("User added.");
       setForm({ name: '', email: '', password: '', role: 'employee' });
     } catch (err) {
@@ -32,10 +37,18 @@ const ManageUsers = () => {
 
   const handleDelete = async () => {
     try {
-      const res = await axios.get(`${API}/api/users`);
+      const res = await axios.get(`${API}/api/users`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       const user = res.data.find(u => u.email === deleteEmail);
       if (user) {
-        await axios.delete(`${API}/api/users/${user._id}`);
+        await axios.delete(`${API}/api/users/${user._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         alert("User deleted.");
         setDeleteEmail('');
       } else {

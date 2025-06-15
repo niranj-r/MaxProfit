@@ -20,7 +20,10 @@ const OrganisationDirectory = () => {
 
   const fetchOrganisations = async () => {
     try {
-      const res = await axios.get(`${API}/api/organisations`);
+      const res = await axios.get(`${API}/api/organisations`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
       setOrganisations(res.data);
     } catch (err) {
       console.error('Failed to fetch organisations', err);
@@ -44,7 +47,10 @@ const OrganisationDirectory = () => {
   const handleDelete = async (oid) => {
     if (!window.confirm('Are you sure you want to delete this organisation?')) return;
     try {
-      await axios.delete(`${API}/api/organisations/${oid}`);
+      await axios.delete(`${API}/api/organisations/${oid}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
       setOrganisations(prev => prev.filter(o => o.oid !== oid));
       alert('Organisation deleted successfully');
     } catch (err) {
@@ -63,11 +69,17 @@ const OrganisationDirectory = () => {
 
     try {
       if (formMode === 'add') {
-        const res = await axios.post(`${API}/api/organisations`, currentOrganisation);
+        const res = await axios.post(`${API}/api/organisations`, currentOrganisation, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+
         setOrganisations(prev => [...prev, res.data]);
         alert("Organisation added successfully!");
       } else if (formMode === 'edit' && editOid) {
-        const res = await axios.put(`${API}/api/organisations/${editOid}`, { name });
+        const res = await axios.put(`${API}/api/organisations/${editOid}`, { name }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+
         setOrganisations(prev => prev.map(o => o.oid === editOid ? res.data : o));
         alert("Organisation updated successfully!");
       }

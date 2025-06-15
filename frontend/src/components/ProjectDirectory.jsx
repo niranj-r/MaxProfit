@@ -22,8 +22,8 @@ const ProjectDirectory = () => {
   });
   const [editId, setEditId] = useState(null);
 
-const [showAssigneesModal, setShowAssigneesModal] = useState(false);
-const [selectedProject, setSelectedProject] = useState(null);
+  const [showAssigneesModal, setShowAssigneesModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
 
 
   const navigate = useNavigate();
@@ -34,7 +34,10 @@ const [selectedProject, setSelectedProject] = useState(null);
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(`${API}/api/projects`);
+      const res = await axios.get(`${API}/api/projects`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
       setProjects(res.data);
     } catch (err) {
       console.error('Failed to fetch projects', err);
@@ -79,11 +82,15 @@ const [selectedProject, setSelectedProject] = useState(null);
 
     try {
       if (formMode === 'add') {
-        const res = await axios.post(`${API}/api/projects`, currentProject);
+        const res = await axios.post(`${API}/api/projects`, currentProject, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
         setProjects(prev => [...prev, res.data]);
         alert('Project added successfully');
       } else {
-        const res = await axios.put(`${API}/api/projects/${editId}`, currentProject);
+        const res = await axios.put(`${API}/api/projects/${editId}`, currentProject, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
         setProjects(prev => prev.map(p => p.id === editId ? res.data : p));
         alert('Project updated successfully');
       }
@@ -95,17 +102,20 @@ const [selectedProject, setSelectedProject] = useState(null);
     }
   };
 
-const handleAssigneesClick = (project) => {
-  setSelectedProject(project);
-  setShowAssigneesModal(true);
-};
+  const handleAssigneesClick = (project) => {
+    setSelectedProject(project);
+    setShowAssigneesModal(true);
+  };
 
 
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this project?')) return;
     try {
-      await axios.delete(`${API}/api/projects/${id}`);
+      await axios.delete(`${API}/api/projects/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
       setProjects(prev => prev.filter(p => p._id !== id));
       alert('Project deleted');
       fetchProjects();
@@ -115,7 +125,7 @@ const handleAssigneesClick = (project) => {
     }
   };
 
-const convertToIST = (isoString) => {
+  const convertToIST = (isoString) => {
     if (!isoString) return '-';
     const utcDate = new Date(isoString);
 
@@ -246,24 +256,24 @@ const convertToIST = (isoString) => {
         </ModalWrapper>
       )}
 
-{showAssigneesModal && selectedProject && (
-  <ModalWrapper
-    title={`Assign Users to "${selectedProject.name}"`}
-    onClose={() => {
-      setShowAssigneesModal(false);
-      setSelectedProject(null);
-    }}
-  >
-    <ProjectAssignee
-      projectId={selectedProject.id}
-      projectName={selectedProject.name}
-      onClose={() => {
-        setShowAssigneesModal(false);
-        setSelectedProject(null);
-      }}
-    />
-  </ModalWrapper>
-)}
+      {showAssigneesModal && selectedProject && (
+        <ModalWrapper
+          title={`Assign Users to "${selectedProject.name}"`}
+          onClose={() => {
+            setShowAssigneesModal(false);
+            setSelectedProject(null);
+          }}
+        >
+          <ProjectAssignee
+            projectId={selectedProject.id}
+            projectName={selectedProject.name}
+            onClose={() => {
+              setShowAssigneesModal(false);
+              setSelectedProject(null);
+            }}
+          />
+        </ModalWrapper>
+      )}
 
     </div>
   );

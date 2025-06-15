@@ -3,7 +3,14 @@ import './EmployeeDirectory.css';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
+
 const API = process.env.REACT_APP_API_BASE_URL;
+const token = localStorage.getItem("token");
+const authHeader = {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+};
 
 
 const DepartmentDirectory = () => {
@@ -25,7 +32,8 @@ const DepartmentDirectory = () => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await axios.get(`${API}/api/departments`);
+      const res = await axios.get(`${API}/api/departments`, authHeader);
+
       setDepartments(res.data);
     } catch (err) {
       console.error('Failed to fetch departments', err);
@@ -36,7 +44,7 @@ const DepartmentDirectory = () => {
     if (!window.confirm("Are you sure you want to delete this department?")) return;
 
     try {
-      await axios.delete(`${API}/api/departments/${did}`);
+      await axios.delete(`${API}/api/departments/${did}`, authHeader);
       setDepartments(prev => prev.filter(dept => dept.did !== did));
     } catch (err) {
       console.error("Failed to delete department", err);
@@ -76,14 +84,14 @@ const DepartmentDirectory = () => {
 
     try {
       if (formMode === 'add') {
-        const res = await axios.post(`${API}/api/departments`, currentDept);
+        const res = await axios.post(`${API}/api/departments`, currentDept, authHeader);
         setDepartments(prev => [...prev, { ...currentDept, _id: res.data._id || Math.random().toString() }]);
         alert("Department added.");
         fetchDepartments(); // Refresh list after adding
       } else {
         const res = await axios.put(
           `${API}/api/departments/${editId}`,
-          currentDept
+          currentDept, authHeader
         );
         setDepartments(prev =>
           prev.map(dept => dept.did === editId ? { ...dept, ...currentDept } : dept)
