@@ -5,7 +5,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-import re 
 from sqlalchemy import and_
 from jwt_utils import token_required, generate_token
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
@@ -126,55 +125,12 @@ def login():
     user = User.query.filter_by(email=data.get("email")).first()
     if not user or not check_password_hash(user.password, data.get("password")):
         return jsonify({"error": "Invalid email or password"}), 401
-    token = None
-    if user.role == "admin":
-        token = generate_token(user)
+    token = generate_token(user)
     return jsonify({
         "message": "Login successful",
         "user": user_to_json(user),
         "token": token  
     })
-
-@app.route('/api/admin/signup', methods=['POST'])
-def admin_signup():
-    try:
-        data = request.get_json()
-        print("Received data:", data)
-
-        fname = data.get("name")
-        email = data.get("email")
-        password = data.get("password")
-        role = data.get("role", "admin")
-
-        if not fname or not email or not password:
-            print("Missing fields")
-            return jsonify({"error": "All fields are required"}), 400
-
-        # Check if user already exists
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return jsonify({"error": "User already exists"}), 400
-
-        # Hash the password
-        hashed_pw = generate_password_hash(data["password"])
-
-        # Create user
-        new_user = User(
-            fname=fname,
-            email=email,
-            password=hashed_pw,
-            role=role
-        )
-
-        db.session.add(new_user)
-        db.session.commit()
-
-        return jsonify({"message": "Admin created successfully"}), 201
-
-    except Exception as e:
-        print("Error in admin signup route:", str(e))
-        return jsonify({"error": "Internal server error"}), 500
-
 
 # ------------------ USER ROUTES ------------------
 
@@ -219,16 +175,8 @@ def search_users():
 @jwt_required()
 def create_user():
     data = request.json
-
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "User already exists"}), 409
-
-    did = data.get("did", "").strip()
-
-    # ✅ Validate did before using it
-    if not did or not did.isalpha():
-        return jsonify({"error": "Department ID must contain only alphabets"}), 400
-
     user = User(
         eid=data.get("eid"),
         fname=data.get("fname"),
@@ -236,17 +184,14 @@ def create_user():
         email=data["email"],
         password=generate_password_hash(data["password"]),
         role=data.get("role", "employee"),
-        did=did,
+        did=data.get("did"),
         joinDate=datetime.strptime(data["joinDate"], "%Y-%m-%d") if data.get("joinDate") else None,
         status=data.get("status", "active")
     )
-
     db.session.add(user)
     db.session.commit()
     log_activity("Employee", f"{user.fname} {user.lname}", "created")
-
     return jsonify({"message": "User created", "user": user_to_json(user)}), 201
-
 
 @app.route('/api/users', methods=['GET'])
 @jwt_required()

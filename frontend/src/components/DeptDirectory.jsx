@@ -154,8 +154,6 @@ const DepartmentDirectory = () => {
             <th>Name</th>
             <th>Organisation ID</th>
             <th>Manager ID</th>
-            <th>Created At (IST)</th>
-            <th>Updated At (IST)</th>
             <th>Actions</th>
           </tr>
         </thead>

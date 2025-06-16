@@ -143,8 +143,6 @@ const OrganisationDirectory = () => {
           <tr>
             <th>Organisation ID</th>
             <th>Name</th>
-            <th>Created At (IST)</th>
-            <th>Updated At (IST)</th>
             <th>Actions</th>
           </tr>
         </thead>
