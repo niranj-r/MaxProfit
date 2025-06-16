@@ -62,27 +62,66 @@ const EmployeeDirectory = () => {
   const handleChange = e => { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); };
 
   const handleSubmit = async e => {
-    e.preventDefault();
-    // Validate
-    const { eid, fname, lname, email, did, password } = form;
-    if (!eid || !fname || !lname || !email || !did || (formMode === 'add' && !password)) {
-      return alert('All fields required, and password for new employee');
+  e.preventDefault();
+
+  const { eid, fname, lname, email, did, password } = form;
+
+  // Required fields check
+  if (!eid || !fname || !lname || !email || !did || (formMode === 'add' && !password)) {
+    return alert('All fields are required. Password is required for new employees.');
+  }
+
+  // Trim check
+  if (
+    !eid.trim() || !fname.trim() || !lname.trim() || !email.trim() || !did.trim() ||
+    (formMode === 'add' && !password.trim())
+  ) {
+    return alert('Fields cannot be empty or just whitespace.');
+  }
+
+  // ✅ EmpID: Must match E001, E123 etc.
+  const empIdPattern = /^E\d{3}$/;
+  if (!empIdPattern.test(eid)) {
+    return alert('Employee ID must be in the format E001, E123, etc.');
+  }
+
+  // ✅ First Name: 3 to 30 characters
+  if (fname.length < 3 || fname.length > 30) {
+    return alert('First name must be between 3 and 30 characters.');
+  }
+
+  // ✅ Last Name: 1 to 30 characters
+  if (lname.length < 1 || lname.length > 30) {
+    return alert('Last name must be between 1 and 30 characters.');
+  }
+
+  // ✅ Email format check
+  if (!email.includes('@') || !email.includes('.')) {
+    return alert('Email must be a valid format (contain "@" and ".").');
+  }
+
+  // ✅ Password length (only for add mode)
+  if (formMode === 'add' && password.length < 6) {
+    return alert('Password must be at least 6 characters long.');
+  }
+
+  try {
+    if (formMode === 'add') {
+      await axios.post(`${API}/api/employees`, form, authHeader);
+      alert('Employee added successfully');
+    } else {
+      await axios.put(`${API}/api/employees/${selectedId}`, form, authHeader);
+      alert('Employee updated successfully');
     }
-    try {
-      if (formMode === 'add') {
-        await axios.post(`${API}/api/employees`, form, authHeader);
-        alert('Employee added successfully');
-      } else {
-        await axios.put(`${API}/api/employees/${selectedId}`, form, authHeader);
-        alert('Employee updated successfully');
-      }
-      close();
-      fetchEmployees();
-    } catch (err) {
-      console.error('Submit error', err.response?.data || err);
-      alert(err.response?.data?.error || 'Error submitting employee');
-    }
-  };
+
+    close(); // Close modal
+    fetchEmployees(); // Refresh list
+  } catch (err) {
+    console.error('Submit error', err.response?.data || err);
+    alert(err.response?.data?.error || 'Error submitting employee');
+  }
+};
+
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete employee?')) return;

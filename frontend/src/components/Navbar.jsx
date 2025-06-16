@@ -1,18 +1,34 @@
 import React from "react";
 import { FaUserCircle } from "react-icons/fa";
+import { NavLink } from "react-router-dom";
 import "./Navbar.css";
-const API = process.env.REACT_APP_API_BASE_URL;
 
 const Navbar = () => {
     return (
         <nav className="navbar">
             <div className="navbar-left">
-                <a href="/admin-dashboard"><div className="logo"></div></a>
+                <NavLink to="/admin-dashboard"><div className="logo"></div></NavLink>
                 <ul className="nav-links">
-                    <li><a href="/employee-dashboard">Manage Users</a></li>
-                    <li><a href="/org-dashboard">Manage Organisation</a></li>
-                    <li><a href="/dept-dashboard">Manage Departments</a></li>
-                    <li><a href="/project-dashboard">Manage Projects</a></li>
+                    <li>
+                        <NavLink to="/employee-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
+                            Users
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/org-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
+                            Organisation
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/dept-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
+                            Departments
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink to="/project-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
+                            Projects
+                        </NavLink>
+                    </li>
                 </ul>
             </div>
             <div className="profile-icon">

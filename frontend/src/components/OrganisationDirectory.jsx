@@ -125,9 +125,16 @@ const OrganisationDirectory = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={openAddModal}>
-            <FaPlus /> Add Organisation
-          </button>
+          <button
+  className="add-btn"
+  onClick={openAddModal}
+  disabled={organisations.length >= 1}
+  title={organisations.length >= 1 ? "Only one organisation allowed" : ""}
+  style={{ opacity: organisations.length >= 1 ? 0.5 : 1, cursor: organisations.length >= 1 ? 'not-allowed' : 'pointer' }}
+>
+  <FaPlus /> Add Organisation
+</button>
+
         </div>
       </div>
 
