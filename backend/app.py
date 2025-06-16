@@ -583,6 +583,106 @@ def remove_assignee(project_id, eid):
     db.session.commit()
     return jsonify({"message": "Assignee removed"}), 200
 
+@app.route('/assign-task', methods=['POST'])
+@jwt_required()
+def assign_task():
+    try:
+        # Validate request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        # Extract and validate required fields
+        user_id = data.get('user_id')
+        assignments = data.get('assignments', [])
+        
+        if not user_id or not isinstance(user_id, int):
+            return jsonify({"error": "Valid user_id is required"}), 400
+            
+        if not assignments or not isinstance(assignments, list):
+            return jsonify({"error": "Assignments must be a non-empty array"}), 400
+
+        # Constants and initialization
+        TOTAL_HOURS = 8
+        validated_assignments = []
+        total_percentage = 0
+
+        # Validate each assignment
+        for assignment in assignments:
+            if not all(key in assignment for key in ['project_id', 'percentage', 'billing_rate']):
+                return jsonify({"error": "Each assignment requires project_id, percentage, and billing_rate"}), 400
+
+            try:
+                project_id = int(assignment['project_id'])
+                percentage = float(assignment['percentage'])
+                billing_rate = float(assignment['billing_rate'])
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid numeric values in assignment"}), 400
+
+            if percentage <= 0:
+                return jsonify({"error": "Percentage must be positive"}), 400
+
+            validated_assignments.append({
+                'project_id': project_id,
+                'percentage': percentage,
+                'billing_rate': billing_rate
+            })
+            total_percentage += percentage
+
+        # Validate total percentage
+        if total_percentage > 100:
+            return jsonify({
+                "error": f"Total percentage exceeds 100% (current: {total_percentage}%)",
+                "total_percentage": total_percentage
+            }), 400
+
+        # Process assignments
+        allocations = []
+        for assignment in validated_assignments:
+            hours = (assignment['percentage'] / 100) * TOTAL_HOURS
+            cost = hours * assignment['billing_rate']
+            
+            allocation = {
+                'user_id': user_id,
+                'project_id': assignment['project_id'],
+                'allocated_percentage': assignment['percentage'],
+                'allocated_hours': round(hours, 2),
+                'cost': round(cost, 2)
+            }
+            allocations.append(allocation)
+
+            # Create or update assignment
+            existing = ProjectAssignment.query.filter_by(
+                user_id=user_id,
+                project_id=assignment['project_id']
+            ).first()
+
+            if existing:
+                existing.allocated_percentage = assignment['percentage']
+                existing.allocated_hours = hours
+                existing.cost = cost
+            else:
+                db.session.add(ProjectAssignment(**allocation))
+
+        # Commit all changes
+        db.session.commit()
+
+        return jsonify({
+            "message": "Tasks assigned successfully",
+            "allocations": allocations,
+            "total_percentage": total_percentage,
+            "total_hours": TOTAL_HOURS
+        }), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        app.logger.error(f"Database error: {str(e)}")
+        return jsonify({"error": "Database operation failed"}), 500
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
 # ------------------ RECENT ACTIVITY ------------------
 @app.route("/api/recent-activities", methods=["GET"])
 @jwt_required()
