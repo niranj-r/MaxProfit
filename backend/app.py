@@ -132,6 +132,45 @@ def login():
         "token": token  
     })
 
+@app.route('/api/admin/signup', methods=['POST'])
+def admin_signup():
+    try:
+        data = request.get_json()
+        print("Received data:", data)
+
+        fname = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role", "admin")
+
+        if not fname or not email or not password:
+            print("Missing fields")
+            return jsonify({"error": "All fields are required"}), 400
+
+        # Check if user already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({"error": "User already exists"}), 400
+
+        # Hash the password
+        hashed_pw = generate_password_hash(data["password"])
+
+        # Create user
+        new_user = User(
+            fname=fname,
+            email=email,
+            password=hashed_pw,
+            role=role
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        return jsonify({"message": "Admin created successfully"}), 201
+
+    except Exception as e:
+        print("Error in admin signup route:", str(e))
+        return jsonify({"error": "Internal server error"}), 500
 # ------------------ USER ROUTES ------------------
 
 # GET all employees, POST new employee
