@@ -26,6 +26,8 @@ const ProjectDirectory = () => {
   const [generalError, setGeneralError] = useState('');
   const [showAssigneesModal, setShowAssigneesModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [projectCosts, setProjectCosts] = useState({});
+
 
 
   const navigate = useNavigate();
@@ -34,6 +36,27 @@ const ProjectDirectory = () => {
     fetchProjects();
     fetchDepartments();
   }, []);
+
+  useEffect(() => {
+    if (projects.length > 0) {
+      fetchProjectCosts();
+    }
+  }, [projects]);
+
+  const fetchProjectCosts = async () => {
+    const costs = {};
+    try {
+      for (const proj of projects) {
+        const res = await axios.get(`${API}/api/projects/${proj.id}/total-cost`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        costs[proj.id] = res.data.totalCost;
+      }
+      setProjectCosts(costs);
+    } catch (err) {
+      console.error('Failed to fetch project costs', err);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -261,6 +284,7 @@ const ProjectDirectory = () => {
             <th>Start Date</th>
             <th>End Date</th>
             <th>Budget</th>
+            <th>Total Cost</th>
             <th>Actions</th>
             <th>Assign</th>
           </tr>
@@ -273,6 +297,7 @@ const ProjectDirectory = () => {
               <td>{proj.startDate ? proj.startDate.substring(0, 10) : '—'}</td>
               <td>{proj.endDate ? proj.endDate.substring(0, 10) : '—'}</td>
               <td>{proj.budget}</td>
+              <td>₹ {projectCosts[proj.id] || 0}</td>
               <td>
                 <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
                 <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />

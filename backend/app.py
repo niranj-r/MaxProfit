@@ -53,9 +53,6 @@ class ProjectAssignment(db.Model):
     user = db.relationship('User', backref='assignments')
     project = db.relationship('Project', backref='assignments')
 
-
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     eid = db.Column(db.String(20), unique=True)
@@ -639,6 +636,15 @@ def get_project_budgets():
     result = [{"name": name, "budget": budget} for name, budget in projects]
     return jsonify(result), 200
 
+@app.route('/api/projects/<int:project_id>/total-cost', methods=['GET'])
+@jwt_required()
+def get_project_total_cost(project_id):
+    total_cost = db.session.query(db.func.sum(ProjectAssignment.cost))\
+        .filter_by(project_id=project_id).scalar()
+
+    return jsonify({"totalCost": float(total_cost or 0)})
+
+
 @app.route('/api/projects/upcoming-deadlines', methods=['GET'])
 @jwt_required()
 def get_upcoming_deadlines():
@@ -659,26 +665,29 @@ def get_upcoming_deadlines():
     return jsonify(result), 200
 
 # ------------------ ASSIGNEES ROUTES ------------------
-@app.route("/api/projects/<int:project_id>/assignees", methods=["GET"])
+@app.route('/api/projects/<int:project_id>/assignees', methods=['GET'])
 @jwt_required()
 def get_assignees(project_id):
-    results = db.session.execute(
-        db.select(User, project_assignees.c.role)
-        .join(project_assignees, User.id == project_assignees.c.user_id)
-        .where(project_assignees.c.project_id == project_id)
+    assignments = (
+        db.session.query(ProjectAssignment, User)
+        .join(User, ProjectAssignment.user_id == User.id)
+        .filter(ProjectAssignment.project_id == project_id)
+        .all()
     )
 
-    assignees = []
-    for user, role in results:
-        assignees.append({
-            "eid": user.eid,
-            "fname": user.fname,
-            "lname": user.lname,
-            "email": user.email,
-            "role": role  # Include the role
+    result = []
+    for pa, user in assignments:
+        result.append({
+            'eid': user.eid,
+            'fname': user.fname,
+            'lname': user.lname,
+            'email': user.email,
+            'role': user.role,
+            'cost': pa.cost,
         })
 
-    return jsonify(assignees), 200
+    return jsonify(result)
+
 
 
 @app.route('/api/projects/<int:project_id>/assignees', methods=['POST'])

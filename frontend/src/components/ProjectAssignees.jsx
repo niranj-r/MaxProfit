@@ -194,6 +194,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
+              <th>Cost</th>
               <th>Remove</th>
             </tr>
           </thead>
@@ -204,6 +205,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <td>{emp.fname} {emp.lname}</td>
                 <td>{emp.email}</td>
                 <td>{emp.role}</td>
+                <td>{emp.cost ?? '—'}</td>
                 <td>
                   <button className="remove-btn" onClick={() => removeAssignee(emp)}>
                     Remove
