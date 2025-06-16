@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import re 
 from sqlalchemy import and_
 from jwt_utils import token_required, generate_token
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
@@ -218,8 +219,16 @@ def search_users():
 @jwt_required()
 def create_user():
     data = request.json
+
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "User already exists"}), 409
+
+    did = data.get("did", "").strip()
+
+    # ✅ Validate did before using it
+    if not did or not did.isalpha():
+        return jsonify({"error": "Department ID must contain only alphabets"}), 400
+
     user = User(
         eid=data.get("eid"),
         fname=data.get("fname"),
@@ -227,14 +236,17 @@ def create_user():
         email=data["email"],
         password=generate_password_hash(data["password"]),
         role=data.get("role", "employee"),
-        did=data.get("did"),
+        did=did,
         joinDate=datetime.strptime(data["joinDate"], "%Y-%m-%d") if data.get("joinDate") else None,
         status=data.get("status", "active")
     )
+
     db.session.add(user)
     db.session.commit()
     log_activity("Employee", f"{user.fname} {user.lname}", "created")
+
     return jsonify({"message": "User created", "user": user_to_json(user)}), 201
+
 
 @app.route('/api/users', methods=['GET'])
 @jwt_required()
