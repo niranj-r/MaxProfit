@@ -162,21 +162,29 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
               ))}
             </select>
 
-            <input
-              type="number"
-              placeholder="Allocation %"
-              value={percentage}
-              onChange={(e) => setPercentage(e.target.value)}
-              style={{ width: '120px', marginLeft: '10px' }}
-            />
-            <input
-              type="number"
-              placeholder="Billing Rate"
-              value={billingRate}
-              onChange={(e) => setBillingRate(e.target.value)}
-              style={{ width: '120px', marginLeft: '10px' }}
-            />
+            <div className="assign-inputs-row">
+              <div className="floating-field">
+                <input
+                  type="number"
+                  value={percentage}
+                  onChange={(e) => setPercentage(e.target.value)}
+                  placeholder=" "
+                  required
+                />
+                <label>Allocation %</label>
+              </div>
 
+              <div className="floating-field">
+                <input
+                  type="number"
+                  value={billingRate}
+                  onChange={(e) => setBillingRate(e.target.value)}
+                  placeholder=" "
+                  required
+                />
+                <label>Billing Rate</label>
+              </div>
+            </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
               <button className="confirm-btn" onClick={confirmAdd}>Confirm</button>
               <button className="cancel-btn" onClick={cancelAdd}>Cancel</button>
