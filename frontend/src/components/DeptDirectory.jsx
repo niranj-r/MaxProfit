@@ -108,8 +108,14 @@ const DepartmentDirectory = () => {
           errorMsg = 'Department ID cannot be empty or just spaces.';
         } else {
           const didRegex = /^D\d{3}$/;
-          if (!didRegex.test(value.trim()) || value.trim().length > 5) {
-            errorMsg = 'Department ID must be in the format D000 and max 5 characters.';
+          const trimmedValue = value.trim();
+
+          if (!didRegex.test(trimmedValue)) {
+            errorMsg = 'Department ID must be in the format D000.';
+          } else if (trimmedValue.length > 5) {
+            errorMsg = 'Department ID must be at most 5 characters long.';
+          } else if (formMode === 'add' && departments.some(dep => dep.did === trimmedValue)) {
+            errorMsg = `Department ID '${trimmedValue}' already exists. Please use a different one.`;
           }
         }
         break;

@@ -10,6 +10,7 @@ from jwt_utils import token_required, generate_token
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from flask_cors import CORS, cross_origin
+from sqlalchemy.exc import SQLAlchemyError
 
 
 # ------------------ CONFIGURATION ------------------
@@ -35,6 +36,24 @@ project_assignees = db.Table(
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('role', db.String(100))
 )
+
+class ProjectAssignment(db.Model):
+    __tablename__ = 'project_assignment'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # <- This must exist
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+    allocated_percentage = db.Column(db.Float)
+    allocated_hours = db.Column(db.Float)
+    billing_rate = db.Column(db.Float)
+    cost = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref='assignments')
+    project = db.relationship('Project', backref='assignments')
+
+
 
 
 class User(db.Model):
@@ -84,6 +103,132 @@ class ActivityLog(db.Model):
     name = db.Column(db.String(100))
     action = db.Column(db.String(50))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+@app.route('/api/assign-task', methods=['POST'])
+@jwt_required()
+def assign_task():
+    try:
+        print("📥 Received request to /api/assign-task")
+
+        data = request.get_json()
+        print(f"🔍 Request JSON: {data}")
+
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        project_id = data.get('project_id')
+        assignments = data.get('assignments', [])
+        print(f"📌 project_id: {project_id}, Assignments count: {len(assignments)}")
+
+        if project_id is None:
+            return jsonify({"error": "project_id is required"}), 400
+
+        try:
+            project_id = int(project_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "project_id must be an integer"}), 400
+
+        if not assignments or not isinstance(assignments, list):
+            return jsonify({"error": "Assignments must be a non-empty array"}), 400
+
+        project = Project.query.get(project_id)
+        if not project:
+            print(f"🚫 Project {project_id} not found.")
+            return jsonify({"error": "Project not found"}), 404
+
+        TOTAL_HOURS = 8
+        validated_assignments = []
+        total_percentage = 0
+
+        for assignment in assignments:
+            print(f"🧪 Validating assignment: {assignment}")
+
+            if not all(key in assignment for key in ['user_id', 'percentage', 'billing_rate']):
+                return jsonify({"error": "Each assignment requires user_id, percentage, and billing_rate"}), 400
+
+            try:
+                user_id = int(assignment['user_id'])
+                percentage = float(assignment['percentage'])
+                billing_rate = float(assignment['billing_rate'])
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid numeric values in assignment"}), 400
+
+            user = User.query.get(user_id)
+            if not user:
+                print(f"🚫 User with ID {user_id} not found.")
+                return jsonify({"error": f"User with ID {user_id} not found"}), 404
+
+            if percentage <= 0 or percentage > 100:
+                return jsonify({"error": "Percentage must be between 0 and 100"}), 400
+
+            validated_assignments.append({
+                'user_id': user_id,
+                'percentage': percentage,
+                'billing_rate': billing_rate
+            })
+            total_percentage += percentage
+
+        if total_percentage > 100:
+            print(f"⚠️ Total percentage exceeds 100%: {total_percentage}")
+            return jsonify({
+                "error": f"Total percentage exceeds 100% (current: {total_percentage}%)",
+                "total_percentage": total_percentage
+            }), 400
+
+        allocations = []
+        for assignment in validated_assignments:
+            hours = (assignment['percentage'] / 100) * TOTAL_HOURS
+            cost = hours * assignment['billing_rate']
+
+            allocation_data = {
+                'user_id': assignment['user_id'],  # ✅ correct key
+                'project_id': project_id,
+                'allocated_percentage': assignment['percentage'],
+                'allocated_hours': round(hours, 2),
+                'cost': round(cost, 2),
+                'billing_rate': assignment['billing_rate']
+        }
+
+            allocations.append(allocation_data)
+
+            existing = ProjectAssignment.query.filter_by(
+                user_id=assignment['user_id'],  # ✅ correct column
+                project_id=project_id
+            ).first()
+
+
+            if existing:
+                print(f"✏️ Updating existing assignment for {assignment['user_id']}")
+                existing.allocated_percentage = assignment['percentage']
+                existing.allocated_hours = hours
+                existing.cost = cost
+                existing.billing_rate = assignment['billing_rate']
+            else:
+                print(f"➕ Creating new assignment for {assignment['user_id']}")
+                new_assignment = ProjectAssignment(**allocation_data)
+                db.session.add(new_assignment)
+
+        db.session.commit()
+        print("✅ Assignments committed to DB")
+
+        return jsonify({
+            "message": "Tasks assigned successfully",
+            "allocations": allocations,
+            "total_percentage": total_percentage,
+            "total_hours": TOTAL_HOURS
+        }), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"❌ Database error: {str(e)}")
+        return jsonify({"error": "Database operation failed"}), 500
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"❗ Unexpected error: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
 
 # ------------------ HELPERS ------------------
 
@@ -621,7 +766,6 @@ def get_recent_activities():
         for a in activities
     ]
     return jsonify(result), 200
-
 
 
 # ------------------ MAIN ------------------

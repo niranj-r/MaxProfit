@@ -10,10 +10,11 @@ const API = process.env.REACT_APP_API_BASE_URL;
 
 const ProjectDirectory = () => {
   const [projects, setProjects] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [formMode, setFormMode] = useState('add'); // 'add' or 'edit'
-  const [currentProject, setCurrentProject] = useState({
+  const [form, setForm] = useState({
     name: '',
     departmentId: '',
     startDate: '',
@@ -21,7 +22,8 @@ const ProjectDirectory = () => {
     budget: ''
   });
   const [editId, setEditId] = useState(null);
-
+  const [formErrors, setFormErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
   const [showAssigneesModal, setShowAssigneesModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
 
@@ -30,6 +32,7 @@ const ProjectDirectory = () => {
 
   useEffect(() => {
     fetchProjects();
+    fetchDepartments();
   }, []);
 
   const fetchProjects = async () => {
@@ -37,70 +40,153 @@ const ProjectDirectory = () => {
       const res = await axios.get(`${API}/api/projects`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-
       setProjects(res.data);
     } catch (err) {
       console.error('Failed to fetch projects', err);
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const res = await axios.get(`${API}/api/departments`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setDepartments(res.data);
+    } catch (err) {
+      console.error('Failed to load departments', err);
+    }
+  };
+
   const openAddModal = () => {
+    setForm({ name: '', departmentId: '', startDate: '', endDate: '', budget: '' });
     setFormMode('add');
-    setCurrentProject({
-      name: '',
-      departmentId: '',
-      startDate: '',
-      endDate: '',
-      budget: ''
-    });
     setEditId(null);
+    setFormErrors({});
+    setGeneralError('');
     setShowModal(true);
   };
 
   const openEditModal = (project) => {
-    setFormMode('edit');
-    setCurrentProject({
+    setForm({
       name: project.name || '',
       departmentId: project.departmentId || '',
-      startDate: project.startDate ? project.startDate.substring(0, 10) : '',
-      endDate: project.endDate ? project.endDate.substring(0, 10) : '',
-      budget: project.budget || ''
+      startDate: project.startDate?.substring(0, 10) || '',
+      endDate: project.endDate?.substring(0, 10) || '',
+      budget: project.budget?.toString() || ''
     });
+    setFormMode('edit');
     setEditId(project.id);
+    setFormErrors({});
+    setGeneralError('');
     setShowModal(true);
   };
 
-  const handleInputChange = (e) =>
-    setCurrentProject(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const closeModal = () => {
+    setShowModal(false);
+    setFormErrors({});
+    setGeneralError('');
+  };
 
-  const handleSubmit = async (e) => {
+  const validateField = (name, value) => {
+    let errorMsg = '';
+    const trimmed = value.trim();
+
+    switch (name) {
+      case 'name':
+        if (!trimmed) errorMsg = 'Project name is required.';
+        else if (trimmed.length < 3 || trimmed.length > 30)
+          errorMsg = 'Must be 3–30 characters.';
+        else if (!/^[A-Za-z\s]+$/.test(trimmed))
+          errorMsg = 'Only letters and spaces allowed.';
+        break;
+
+      case 'departmentId':
+        if (!trimmed) errorMsg = 'Department ID is required.';
+        else if (!departments.some(dep => dep.did === trimmed))
+          errorMsg = 'Invalid department ID.';
+        break;
+
+      case 'startDate':
+        if (!trimmed) errorMsg = 'Start date is required.';
+        else {
+          const start = new Date(trimmed);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (start < today) errorMsg = 'Start date cannot be in the past.';
+        }
+        break;
+
+      case 'endDate':
+        if (!trimmed) errorMsg = 'End date is required.';
+        else {
+          const start = new Date(form.startDate);
+          const end = new Date(trimmed);
+          if (start >= end) errorMsg = 'End date must be after start date.';
+        }
+        break;
+
+      case 'budget':
+        const num = parseFloat(trimmed);
+        if (!trimmed) errorMsg = 'Budget is required.';
+        else if (isNaN(num) || num <= 0) errorMsg = 'Budget must be a positive number.';
+        else if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) errorMsg = 'Up to 2 decimal places only.';
+        break;
+
+      default:
+        break;
+    }
+
+    return errorMsg;
+  };
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    const errorMsg = validateField(name, value);
+    setFormErrors(prev => ({ ...prev, [name]: errorMsg }));
+    if (generalError) setGeneralError('');
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    const { name, departmentId, startDate, endDate, budget } = currentProject;
-    if (!name || !departmentId || !startDate || !endDate || !budget) {
-      return alert('All fields are required.');
+    setGeneralError('');
+    setFormErrors({});
+
+    const newErrors = {};
+    for (const key in form) {
+      const error = validateField(key, form[key]);
+      if (error) newErrors[key] = error;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setFormErrors(newErrors);
+      setGeneralError('Please correct the errors in the form.');
+      return;
     }
 
     try {
       if (formMode === 'add') {
-        const res = await axios.post(`${API}/api/projects`, currentProject, {
+        const res = await axios.post(`${API}/api/projects`, form, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setProjects(prev => [...prev, res.data]);
         alert('Project added successfully');
       } else {
-        const res = await axios.put(`${API}/api/projects/${editId}`, currentProject, {
+        const res = await axios.put(`${API}/api/projects/${editId}`, form, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setProjects(prev => prev.map(p => p.id === editId ? res.data : p));
         alert('Project updated successfully');
       }
-      setShowModal(false);
+      closeModal();
       fetchProjects();
     } catch (err) {
       console.error('Error submitting project', err);
-      alert('Error submitting project. Check console.');
+      const errorMsg = err.response?.data?.error || 'Error submitting project';
+      setGeneralError(errorMsg);
     }
   };
+
 
   const handleAssigneesClick = (project) => {
     setSelectedProject(project);
@@ -213,42 +299,106 @@ const ProjectDirectory = () => {
           onClose={() => setShowModal(false)}
           title={formMode === 'add' ? 'Add Project' : 'Edit Project'}
         >
-          <form className="modal-form" onSubmit={handleSubmit}>
-            <input
-              name="name"
-              placeholder="Project Name"
-              value={currentProject.name}
-              onChange={handleInputChange}
-            />
-            <input
-              name="departmentId"
-              placeholder="Department ID"
-              value={currentProject.departmentId}
-              onChange={handleInputChange}
-            />
-            <label htmlFor="startDate">Start Date</label>
-            <input
-              type="date"
-              id="startDate"
-              name="startDate"
-              value={currentProject.startDate}
-              onChange={handleInputChange}
-            />
-            <label htmlFor="EndDate">End Date</label>
-            <input
-              type="date"
-              name="endDate"
-              value={currentProject.endDate}
-              onChange={handleInputChange}
-            />
-            <input
-              name="budget"
-              placeholder="Budget"
-              value={currentProject.budget}
-              onChange={handleInputChange}
-            />
+          <form onSubmit={handleSubmit} className="modal-form">
+            {generalError && (
+              <div
+                className="form-error"
+                style={{
+                  backgroundColor: '#fee',
+                  color: '#c33',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  marginBottom: '15px',
+                  border: '1px solid #fcc',
+                }}
+              >
+                {generalError}
+              </div>
+            )}
+
+            <div className="floating-label">
+              <input
+                name="name"
+                type="text"
+                value={form.name}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.name ? { borderColor: '#c33' } : {}}
+              />
+              <label>Project Name</label>
+              {formErrors.name && (
+                <div className="field-error">{formErrors.name}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                name="departmentId"
+                type="text"
+                value={form.departmentId}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.departmentId ? { borderColor: '#c33' } : {}}
+              />
+              <label>Department ID</label>
+              {formErrors.departmentId && (
+                <div className="field-error">{formErrors.departmentId}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                type="date"
+                name="startDate"
+                value={form.startDate}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.startDate ? { borderColor: '#c33' } : {}}
+              />
+              <label>Start Date</label>
+              {formErrors.startDate && (
+                <div className="field-error">{formErrors.startDate}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                type="date"
+                name="endDate"
+                value={form.endDate}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.endDate ? { borderColor: '#c33' } : {}}
+              />
+              <label>End Date</label>
+              {formErrors.endDate && (
+                <div className="field-error">{formErrors.endDate}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                name="budget"
+                type="number"
+                value={form.budget}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.budget ? { borderColor: '#c33' } : {}}
+              />
+              <label>Budget</label>
+              {formErrors.budget && (
+                <div className="field-error">{formErrors.budget}</div>
+              )}
+            </div>
+
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
+
         </ModalWrapper>
       )}
 

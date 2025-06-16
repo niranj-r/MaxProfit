@@ -78,6 +78,8 @@ const EmployeeDirectory = () => {
           const empIdPattern = /^E\d{3}$/;
           if (!empIdPattern.test(value)) {
             errorMsg = 'Employee ID must be in the format E001, E123, etc.';
+          } else if (formMode === 'add' && employees.some(emp => emp.eid === value)) {
+            errorMsg = `Employee ID '${value}' already exists. Please use a different one.`;
           }
         }
         break;
@@ -265,7 +267,7 @@ const EmployeeDirectory = () => {
   return (
     <div className="employee-table-container">
       <div className="table-header">
-        <h2>Employee Directory</h2>
+        <h2>User Directory</h2>
         <div className="controls">
           <input
             type="text"
