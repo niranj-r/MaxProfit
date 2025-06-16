@@ -9,6 +9,9 @@ from sqlalchemy import and_
 from jwt_utils import token_required, generate_token
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
+from sqlalchemy.exc import SQLAlchemyError
+from flask_migrate import Migrate
+
   # use a secure, secret value
 
 
@@ -22,7 +25,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET')
 jwt = JWTManager(app)
 db = SQLAlchemy(app)
-
+migrate = Migrate(app, db)
 # ------------------ CONSTANTS ------------------
 
 ROLES = ["admin", "department_manager", "project_manager", "financial_analyst", "employee"]
@@ -84,6 +87,19 @@ class ActivityLog(db.Model):
     name = db.Column(db.String(100))
     action = db.Column(db.String(50))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ProjectAssignment(db.Model):
+    __tablename__ = 'project_assignment'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer)
+    project_id = db.Column(db.Integer)
+    allocated_percentage = db.Column(db.Float)
+    allocated_hours = db.Column(db.Float)
+    billing_rate = db.Column(db.Float)  # This was missing
+    cost = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
 # ------------------ HELPERS ------------------
 
@@ -583,7 +599,7 @@ def remove_assignee(project_id, eid):
     db.session.commit()
     return jsonify({"message": "Assignee removed"}), 200
 
-@app.route('/assign-task', methods=['POST'])
+@app.route('/api/assign-task', methods=['POST'])
 @jwt_required()
 def assign_task():
     try:
@@ -593,37 +609,52 @@ def assign_task():
             return jsonify({"error": "No data provided"}), 400
 
         # Extract and validate required fields
-        user_id = data.get('user_id')
+        project_id = data.get('project_id')
         assignments = data.get('assignments', [])
         
-        if not user_id or not isinstance(user_id, int):
-            return jsonify({"error": "Valid user_id is required"}), 400
+        if project_id is None:
+            return jsonify({"error": "project_id is required"}), 400
+            
+        try:
+            project_id = int(project_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "project_id must be an integer"}), 400
             
         if not assignments or not isinstance(assignments, list):
             return jsonify({"error": "Assignments must be a non-empty array"}), 400
 
+        # Verify project exists
+        project = Project.query.get(project_id)
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
         # Constants and initialization
-        TOTAL_HOURS = 8
+        TOTAL_HOURS = 8  # Standard working hours per day
         validated_assignments = []
         total_percentage = 0
 
         # Validate each assignment
         for assignment in assignments:
-            if not all(key in assignment for key in ['project_id', 'percentage', 'billing_rate']):
-                return jsonify({"error": "Each assignment requires project_id, percentage, and billing_rate"}), 400
+            if not all(key in assignment for key in ['user_id', 'percentage', 'billing_rate']):
+                return jsonify({"error": "Each assignment requires user_id, percentage, and billing_rate"}), 400
 
             try:
-                project_id = int(assignment['project_id'])
+                user_id = int(assignment['user_id'])
                 percentage = float(assignment['percentage'])
                 billing_rate = float(assignment['billing_rate'])
             except (ValueError, TypeError):
                 return jsonify({"error": "Invalid numeric values in assignment"}), 400
 
-            if percentage <= 0:
-                return jsonify({"error": "Percentage must be positive"}), 400
+            # Verify user exists
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({"error": f"User with ID {user_id} not found"}), 404
+
+            if percentage <= 0 or percentage > 100:
+                return jsonify({"error": "Percentage must be between 0 and 100"}), 400
 
             validated_assignments.append({
-                'project_id': project_id,
+                'user_id': user_id,
                 'percentage': percentage,
                 'billing_rate': billing_rate
             })
@@ -642,27 +673,31 @@ def assign_task():
             hours = (assignment['percentage'] / 100) * TOTAL_HOURS
             cost = hours * assignment['billing_rate']
             
-            allocation = {
-                'user_id': user_id,
-                'project_id': assignment['project_id'],
+            allocation_data = {
+                'user_id': assignment['user_id'],
+                'project_id': project_id,
                 'allocated_percentage': assignment['percentage'],
                 'allocated_hours': round(hours, 2),
-                'cost': round(cost, 2)
+                'cost': round(cost, 2),
+                'billing_rate': assignment['billing_rate']
             }
-            allocations.append(allocation)
+            allocations.append(allocation_data)
 
             # Create or update assignment
             existing = ProjectAssignment.query.filter_by(
-                user_id=user_id,
-                project_id=assignment['project_id']
+                user_id=assignment['user_id'],
+                project_id=project_id
             ).first()
 
             if existing:
                 existing.allocated_percentage = assignment['percentage']
                 existing.allocated_hours = hours
                 existing.cost = cost
+                existing.billing_rate = assignment['billing_rate']
+                # updated_at will auto-update due to onupdate
             else:
-                db.session.add(ProjectAssignment(**allocation))
+                new_assignment = ProjectAssignment(**allocation_data)
+                db.session.add(new_assignment)
 
         # Commit all changes
         db.session.commit()
@@ -676,33 +711,17 @@ def assign_task():
 
     except SQLAlchemyError as e:
         db.session.rollback()
-        app.logger.error(f"Database error: {str(e)}")
+        # Use app.logger only if configured, otherwise print
+        print(f"Database error: {str(e)}")
         return jsonify({"error": "Database operation failed"}), 500
         
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"Unexpected error: {str(e)}")
+        print(f"Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
-# ------------------ RECENT ACTIVITY ------------------
-@app.route("/api/recent-activities", methods=["GET"])
-@jwt_required()
-def get_recent_activities():
-    activities = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
-    result = [
-        {
-            "entity": a.type,
-            "user": a.name,
-            "action": a.action,
-            "timestamp": a.timestamp.isoformat()
-        }
-        for a in activities
-    ]
-    return jsonify(result), 200
-
-
-
 # ------------------ MAIN ------------------
 
+# Change your main block to:
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
