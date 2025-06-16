@@ -68,7 +68,7 @@ const AdminSignup = () => {
       };
 
       // Make API call to create admin user
-      const response = await axios.post(`${API}/api/users`, adminData);
+      const response = await axios.post(`${API}/api/admin/signup`, adminData);
 
       alert('Admin account created successfully!');
       
