@@ -175,8 +175,6 @@ const ProjectDirectory = () => {
             <th>Start Date</th>
             <th>End Date</th>
             <th>Budget</th>
-            <th>Created At</th>
-            <th>Updated At</th>
             <th>Actions</th>
             <th>Assign</th>
           </tr>
@@ -189,8 +187,6 @@ const ProjectDirectory = () => {
               <td>{proj.startDate ? proj.startDate.substring(0, 10) : '—'}</td>
               <td>{proj.endDate ? proj.endDate.substring(0, 10) : '—'}</td>
               <td>{proj.budget}</td>
-              <td>{convertToIST(proj.createdAt)}</td>
-              <td>{convertToIST(proj.updatedAt)}</td>
               <td>
                 <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
                 <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />

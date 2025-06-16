@@ -13,7 +13,6 @@ const authHeader = {
   },
 };
 
-
 const initialForm = { eid: '', fname: '', lname: '', email: '', did: '', password: '' };
 
 const EmployeeDirectory = () => {
@@ -23,6 +22,8 @@ const EmployeeDirectory = () => {
   const [formMode, setFormMode] = useState('add'); // "add" or "edit"
   const [form, setForm] = useState(initialForm);
   const [selectedId, setSelectedId] = useState(null);
+  const [formErrors, setFormErrors] = useState({}); // Object to store field-specific errors
+  const [generalError, setGeneralError] = useState(''); // General form error
 
   useEffect(() => {
     const load = async () => {
@@ -31,7 +32,6 @@ const EmployeeDirectory = () => {
     load();
   }, []);
 
-
   const fetchEmployees = async () => {
     try {
       console.log("Token:", token);
@@ -39,14 +39,16 @@ const EmployeeDirectory = () => {
       setEmployees(res.data);
     } catch (e) {
       console.error('Failed to fetch employees', e.response?.data || e);
+      alert('Failed to fetch employees. Please try again.');
     }
   };
-
 
   const openAdd = () => {
     setForm(initialForm);
     setFormMode('add');
     setSelectedId(null);
+    setFormErrors({}); // Clear any previous errors
+    setGeneralError(''); // Clear general error
     setShowModal(true);
   };
 
@@ -54,74 +56,176 @@ const EmployeeDirectory = () => {
     setForm({ eid: emp.eid, fname: emp.fname, lname: emp.lname, email: emp.email, did: emp.did, password: '' });
     setFormMode('edit');
     setSelectedId(emp.eid);
+    setFormErrors({}); // Clear any previous errors
+    setGeneralError(''); // Clear general error
     setShowModal(true);
   };
 
-  const close = () => setShowModal(false);
+  const close = () => {
+    setShowModal(false);
+    setFormErrors({}); // Clear errors when closing
+    setGeneralError(''); // Clear general error
+  };
 
-  const handleChange = e => { setForm(prev => ({ ...prev, [e.target.name]: e.target.value })); };
+  const validateField = (name, value) => {
+    let errorMsg = '';
 
-  const handleSubmit = async e => {
-  e.preventDefault();
+    switch (name) {
+      case 'eid':
+        if (value.trim() === '') {
+          errorMsg = 'Employee ID cannot be empty.';
+        } else {
+          const empIdPattern = /^E\d{3}$/;
+          if (!empIdPattern.test(value)) {
+            errorMsg = 'Employee ID must be in the format E001, E123, etc.';
+          }
+        }
+        break;
 
-  const { eid, fname, lname, email, did, password } = form;
+      case 'fname':
+        if (value.trim() === '') {
+          errorMsg = 'First name cannot be empty.';
+        } else {
+          // Check for special characters - only allow alphabetic characters
+          const alphabeticOnlyPattern = /^[A-Za-z]+$/;
+          if (!alphabeticOnlyPattern.test(value)) {
+            errorMsg = 'First name must contain only alphabetic characters (no numbers or special symbols).';
+          } else if (value.length < 3) {
+            errorMsg = 'First name must be more than 3 characters long.';
+          } else if (value.length > 30) {
+            errorMsg = 'First name must not exceed 30 characters.';
+          }
+        }
+        break;
 
-  // Required fields check
-  if (!eid || !fname || !lname || !email || !did || (formMode === 'add' && !password)) {
-    return alert('All fields are required. Password is required for new employees.');
-  }
+      case 'lname':
+        if (value.trim() === '') {
+          errorMsg = 'Last name cannot be empty.';
+        } else {
+          const alphabeticAndSpacePattern = /^[A-Za-z\s]+$/;
+          if (!alphabeticAndSpacePattern.test(value)) {
+            errorMsg = 'Last name must contain only alphabetic characters and spaces.';
+          } else if (value.length < 1 || value.length > 30) {
+            errorMsg = 'Last name must be between 1 and 30 characters.';
+          }
+        }
+        break;
 
-  // Trim check
-  if (
-    !eid.trim() || !fname.trim() || !lname.trim() || !email.trim() || !did.trim() ||
-    (formMode === 'add' && !password.trim())
-  ) {
-    return alert('Fields cannot be empty or just whitespace.');
-  }
 
-  // ✅ EmpID: Must match E001, E123 etc.
-  const empIdPattern = /^E\d{3}$/;
-  if (!empIdPattern.test(eid)) {
-    return alert('Employee ID must be in the format E001, E123, etc.');
-  }
+      case 'email':
+        if (value.trim() === '') {
+          errorMsg = 'Email cannot be empty.';
+        } else if (!value.includes('@') || !value.includes('.')) {
+          errorMsg = 'Email must be a valid format (contain "@" and ".").';
+        }
+        break;
 
-  // ✅ First Name: 3 to 30 characters
-  if (fname.length < 3 || fname.length > 30) {
-    return alert('First name must be between 3 and 30 characters.');
-  }
+      case 'did':
+        const alphabeticOnlyPattern = /^[A-Za-z]+$/;
+        if (value.trim() === '') {
+          errorMsg = 'Department cannot be empty.';
+        } else {
+          // Check if department is purely numeric
+          const isNumeric = /^\d+$/.test(value.trim());
+          if (isNumeric) {
+            errorMsg = 'Department cannot be a number. Please enter a department name.';
+          }
+          else if (!alphabeticOnlyPattern.test(value)) {
+            errorMsg = 'Department must contain only alphabetic characters (no numbers or special symbols).';
+          }
+        }
+        break;
 
-  // ✅ Last Name: 1 to 30 characters
-  if (lname.length < 1 || lname.length > 30) {
-    return alert('Last name must be between 1 and 30 characters.');
-  }
+      case 'password':
+        if (formMode === 'add') {
+          if (value.trim() === '') {
+            errorMsg = 'Password cannot be empty.';
+          } else if (value.length < 6) {
+            errorMsg = 'Password must be at least 6 characters long.';
+          }
+        }
+        break;
 
-  // ✅ Email format check
-  if (!email.includes('@') || !email.includes('.')) {
-    return alert('Email must be a valid format (contain "@" and ".").');
-  }
-
-  // ✅ Password length (only for add mode)
-  if (formMode === 'add' && password.length < 6) {
-    return alert('Password must be at least 6 characters long.');
-  }
-
-  try {
-    if (formMode === 'add') {
-      await axios.post(`${API}/api/employees`, form, authHeader);
-      alert('Employee added successfully');
-    } else {
-      await axios.put(`${API}/api/employees/${selectedId}`, form, authHeader);
-      alert('Employee updated successfully');
+      default:
+        break;
     }
 
-    close(); // Close modal
-    fetchEmployees(); // Refresh list
-  } catch (err) {
-    console.error('Submit error', err.response?.data || err);
-    alert(err.response?.data?.error || 'Error submitting employee');
-  }
-};
+    return errorMsg;
+  };
 
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+
+    // Real-time validation
+    const errorMsg = validateField(name, value);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: errorMsg
+    }));
+
+    // Clear general error when user starts typing
+    if (generalError) {
+      setGeneralError('');
+    }
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setGeneralError(''); // Clear previous errors
+    setFormErrors({}); // Clear field errors
+
+    const { eid, fname, lname, email, did, password } = form;
+
+    // Final validation check before submission
+    const fields = [
+      { name: 'eid', value: eid },
+      { name: 'fname', value: fname },
+      { name: 'lname', value: lname },
+      { name: 'email', value: email },
+      { name: 'did', value: did },
+      ...(formMode === 'add' ? [{ name: 'password', value: password }] : [])
+    ];
+
+    const newErrors = {};
+    let hasErrors = false;
+
+    for (const field of fields) {
+      const errorMsg = validateField(field.name, field.value);
+      if (errorMsg) {
+        newErrors[field.name] = errorMsg;
+        hasErrors = true;
+      }
+    }
+
+    // Check for empty fields
+    if (!eid || !fname || !lname || !email || !did || (formMode === 'add' && !password)) {
+      setGeneralError('All fields are required. Password is required for new employees.');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      setFormErrors(newErrors);
+      return;
+    }
+
+    try {
+      if (formMode === 'add') {
+        await axios.post(`${API}/api/employees`, form, authHeader);
+        alert('Employee added successfully');
+      } else {
+        await axios.put(`${API}/api/employees/${selectedId}`, form, authHeader);
+        alert('Employee updated successfully');
+      }
+
+      close(); // Close modal
+      fetchEmployees(); // Refresh list
+    } catch (err) {
+      console.error('Submit error', err.response?.data || err);
+      const errorMsg = err.response?.data?.error || 'Error submitting employee';
+      setGeneralError(errorMsg);
+    }
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete employee?')) return;
@@ -158,7 +262,6 @@ const EmployeeDirectory = () => {
     `${emp.fname} ${emp.lname}`.toLowerCase().includes(search.toLowerCase())
   );
 
-
   return (
     <div className="employee-table-container">
       <div className="table-header">
@@ -171,12 +274,13 @@ const EmployeeDirectory = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={openAdd}><FaPlus /> Add Employee</button>        </div>
+          <button className="add-btn" onClick={openAdd}><FaPlus /> Add Employee</button>
+        </div>
       </div>
       <table className="employee-table">
         <thead>
           <tr>
-            <th>Employee ID</th><th>Name</th><th>Email</th><th>Department</th><th>Created At (IST)</th><th>Updated At (IST)</th><th>Actions</th>
+            <th>Employee ID</th><th>Name</th><th>Email</th><th>Department</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -186,8 +290,6 @@ const EmployeeDirectory = () => {
               <td>{emp.fname} {emp.lname}</td>
               <td>{emp.email}</td>
               <td>{emp.did}</td>
-              <td>{convertToIST(emp.createdAt)}</td>
-              <td>{convertToIST(emp.updatedAt)}</td>
               <td>
                 <FaEdit onClick={() => openEdit(emp)} className="icon edit-icon" />
                 <FaTrash onClick={() => handleDelete(emp.id || emp._id)} className="icon delete-icon" />
@@ -195,10 +297,9 @@ const EmployeeDirectory = () => {
             </tr>
           ))}
           {filtered.length === 0 && (
-            <tr><td colSpan="5">No employees found.</td></tr>
+            <tr><td colSpan="7">No employees found.</td></tr>
           )}
         </tbody>
-
       </table>
 
       {showModal && (
@@ -207,46 +308,116 @@ const EmployeeDirectory = () => {
           title={formMode === 'add' ? 'Add Employee' : 'Edit Employee'}
         >
           <form className="modal-form" onSubmit={handleSubmit}>
-            <input
-              name="eid"
-              placeholder="Employee ID"
-              value={form.eid}
-              onChange={handleChange}
-              disabled={formMode === 'edit'}
-            />
-            <input
-              name="fname"
-              placeholder="First Name"
-              value={form.fname}
-              onChange={handleChange}
-            />
-            <input
-              name="lname"
-              placeholder="Last Name"
-              value={form.lname}
-              onChange={handleChange}
-            />
-            <input
-              name="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
-            />
-            <input
-              name="did"
-              placeholder="Department ID"
-              value={form.did}
-              onChange={handleChange}
-            />
-            {formMode === 'add' && (
-              <input
-                name="password"
-                type="password"
-                placeholder="Password"
-                value={form.password}
-                onChange={handleChange}
-              />
+            {generalError && (
+              <div
+                className="form-error"
+                style={{
+                  backgroundColor: '#fee',
+                  color: '#c33',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  marginBottom: '15px',
+                  border: '1px solid #fcc',
+                }}
+              >
+                {generalError}
+              </div>
             )}
+
+            <div className="floating-label">
+              <input
+                name="eid"
+                value={form.eid}
+                onChange={handleChange}
+                disabled={formMode === 'edit'}
+                placeholder=" "
+                required
+                style={formErrors.eid ? { borderColor: '#c33' } : {}}
+              />
+              <label>Employee ID</label>
+              {formErrors.eid && (
+                <div className="field-error">{formErrors.eid}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                name="fname"
+                value={form.fname}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.fname ? { borderColor: '#c33' } : {}}
+              />
+              <label>First Name</label>
+              {formErrors.fname && (
+                <div className="field-error">{formErrors.fname}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                name="lname"
+                value={form.lname}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.lname ? { borderColor: '#c33' } : {}}
+              />
+              <label>Last Name</label>
+              {formErrors.lname && (
+                <div className="field-error">{formErrors.lname}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.email ? { borderColor: '#c33' } : {}}
+              />
+              <label>Email</label>
+              {formErrors.email && (
+                <div className="field-error">{formErrors.email}</div>
+              )}
+            </div>
+
+            <div className="floating-label">
+              <input
+                name="did"
+                value={form.did}
+                onChange={handleChange}
+                placeholder=" "
+                required
+                style={formErrors.did ? { borderColor: '#c33' } : {}}
+              />
+              <label>Department</label>
+              {formErrors.did && (
+                <div className="field-error">{formErrors.did}</div>
+              )}
+            </div>
+
+            {formMode === 'add' && (
+              <div className="floating-label">
+                <input
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder=" "
+                  required
+                  style={formErrors.password ? { borderColor: '#c33' } : {}}
+                />
+                <label>Password</label>
+                {formErrors.password && (
+                  <div className="field-error">{formErrors.password}</div>
+                )}
+              </div>
+            )}
+
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
         </ModalWrapper>

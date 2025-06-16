@@ -109,3 +109,15 @@
   align-items: center;
   gap: 6px;
 }
+.modal-form label {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.field-error {
+  color: #c33;
+  font-size: 12px;
+  margin-top: 4px;
+}

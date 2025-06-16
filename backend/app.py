@@ -5,12 +5,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-import re 
 from sqlalchemy import and_
 from jwt_utils import token_required, generate_token
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
-  # use a secure, secret value
+from flask_cors import CORS, cross_origin
 
 
 # ------------------ CONFIGURATION ------------------
@@ -126,9 +125,7 @@ def login():
     user = User.query.filter_by(email=data.get("email")).first()
     if not user or not check_password_hash(user.password, data.get("password")):
         return jsonify({"error": "Invalid email or password"}), 401
-    token = None
-    if user.role == "admin":
-        token = generate_token(user)
+    token = generate_token(user)
     return jsonify({
         "message": "Login successful",
         "user": user_to_json(user),
@@ -175,7 +172,6 @@ def admin_signup():
         print("Error in admin signup route:", str(e))
         return jsonify({"error": "Internal server error"}), 500
 
-
 # ------------------ USER ROUTES ------------------
 
 # GET all employees, POST new employee
@@ -219,16 +215,8 @@ def search_users():
 @jwt_required()
 def create_user():
     data = request.json
-
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": "User already exists"}), 409
-
-    did = data.get("did", "").strip()
-
-    # ✅ Validate did before using it
-    if not did or not did.isalpha():
-        return jsonify({"error": "Department ID must contain only alphabets"}), 400
-
     user = User(
         eid=data.get("eid"),
         fname=data.get("fname"),
@@ -236,23 +224,23 @@ def create_user():
         email=data["email"],
         password=generate_password_hash(data["password"]),
         role=data.get("role", "employee"),
-        did=did,
+        did=data.get("did"),
         joinDate=datetime.strptime(data["joinDate"], "%Y-%m-%d") if data.get("joinDate") else None,
         status=data.get("status", "active")
     )
-
     db.session.add(user)
     db.session.commit()
     log_activity("Employee", f"{user.fname} {user.lname}", "created")
-
     return jsonify({"message": "User created", "user": user_to_json(user)}), 201
-
 
 @app.route('/api/users', methods=['GET'])
 @jwt_required()
 def get_users():
-    users = User.query.filter_by(role='employee').all()
+    allowed_roles = ["employee", "admin"]  # customize as needed
+    users = User.query.filter(User.role.in_(allowed_roles)).all()
     return jsonify([user_to_json(u) for u in users])
+
+
 
 @app.route('/api/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
@@ -260,10 +248,29 @@ def delete_user(user_id):
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
-    db.session.delete(user)
-    db.session.commit()
-    log_activity("Employee", f"{user.fname} {user.lname}", "deleted")
-    return jsonify({"message": "User deleted"}), 200
+
+    try:
+        # Step 1: Remove from project_assignees table
+        db.session.execute(
+            project_assignees.delete().where(project_assignees.c.user_id == user_id)
+        )
+
+        # Step 2: Log the action
+        log_activity("Employee", f"{user.fname} {user.lname}", "deleted")
+
+        # Step 3: Delete the user
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({"message": "User deleted"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print("Error deleting user:", str(e))
+        return jsonify({"error": "Internal server error"}), 500
+
+
+
 
 @app.route('/api/users/<eid>', methods=['PUT'])
 @jwt_required() 

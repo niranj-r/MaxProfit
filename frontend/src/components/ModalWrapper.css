@@ -72,7 +72,7 @@
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0px;
 }
 
 .modal-form-row {
@@ -124,3 +124,45 @@
     opacity: 1;
   }
 }
+
+.floating-label {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.floating-label input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: none;
+  outline: none;
+}
+
+.floating-label label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  color: #888;
+  font-size: 14px;
+  transition: 0.2s;
+  pointer-events: none;
+}
+
+.floating-label input:focus + label,
+.floating-label input:not(:placeholder-shown) + label {
+  top: -10px;
+  left: 10px;
+  font-size: 12px;
+  background: white;
+  padding: 0 4px;
+}
+
+.field-error {
+  color: #c33;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+
