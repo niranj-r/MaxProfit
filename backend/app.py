@@ -226,6 +226,40 @@ def assign_task():
         print(f"❗ Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
 
+@app.route('/api/assign-task/<int:project_id>/<eid>', methods=['DELETE'])
+@jwt_required()
+def remove_task_assignment(project_id, eid):
+    try:
+        print(f"🗑️ Removing assignment: project_id={project_id}, eid={eid}")
+
+        user = User.query.filter_by(eid=eid).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        assignment = ProjectAssignment.query.filter_by(
+            project_id=project_id,
+            user_id=user.id
+        ).first()
+
+        if not assignment:
+            return jsonify({"error": "Assignment not found"}), 404
+
+        db.session.delete(assignment)
+        db.session.commit()
+        print("✅ Assignment deleted")
+        return jsonify({"message": "Assignment removed successfully"}), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"❌ DB error: {str(e)}")
+        return jsonify({"error": "Failed to remove assignment"}), 500
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"❗ Unexpected error: {str(e)}")
+        return jsonify({"error": "Unexpected error"}), 500
+
+
 
 # ------------------ HELPERS ------------------
 

@@ -106,18 +106,24 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
       alert(`❌ Failed: ${err.response?.data?.error || 'Unknown error'}`);
     }
   };
+const removeAssignee = async (eid) => {
+  try {
+    await axios.delete(
+      `${API}/api/assign-task/${projectId}/${eid}`,
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      }
+    );
 
-  const removeAssignee = async emp => {
-    try {
-      await axios.delete(
-        `${API}/api/projects/${projectId}/assignees/${emp.eid}`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      );
-      setAssignees(a => a.filter(x => x.eid !== emp.eid));
-    } catch (err) {
-      console.error('Remove error', err);
-    }
-  };
+    // Remove by eid instead of id
+    setAssignees((a) => a.filter((x) => x.eid !== eid));
+  } catch (err) {
+    console.error('❌ Remove assignment error:', err.response?.data || err);
+    alert(err.response?.data?.error || 'Failed to remove task assignment.');
+  }
+};
+
+
 
   const hasPM = assignees.some(a => a.role === 'Project Manager');
 
@@ -215,9 +221,10 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <td>{emp.role}</td>
                 <td>{emp.cost ?? '—'}</td>
                 <td>
-                  <button className="remove-btn" onClick={() => removeAssignee(emp)}>
+                  <button className="remove-btn" onClick={() => removeAssignee(emp.eid)}>
                     Remove
                   </button>
+
                 </td>
               </tr>
             ))}
