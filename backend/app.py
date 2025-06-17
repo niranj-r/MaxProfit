@@ -442,6 +442,10 @@ def get_users():
     allowed_roles = ["employee", "admin"]  # customize as needed
     users = User.query.filter(User.role.in_(allowed_roles)).all()
     return jsonify([user_to_json(u) for u in users])
+def get_users_dept():
+    allowed_roles = ["employee"]  # customize as needed
+    users = User.query.filter(User.role.in_(allowed_roles)).all()
+    return jsonify([user_to_json(u) for u in users])
 
 
 
@@ -557,6 +561,15 @@ def update_organisation(oid):
     }), 200
 
 # ------------------ DEPARTMENTS ------------------
+#For Department table manager id
+@app.route('/api/employees/dept', methods=['GET', 'POST'])
+@jwt_required()
+def employees_dept():
+    if request.method == 'GET':
+        return get_users_dept()
+    elif request.method == 'POST':
+        return create_user()
+
 
 @app.route('/api/departments', methods=['POST'])
 @jwt_required()
