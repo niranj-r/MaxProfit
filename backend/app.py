@@ -443,7 +443,7 @@ def get_users():
     users = User.query.filter(User.role.in_(allowed_roles)).all()
     return jsonify([user_to_json(u) for u in users])
 def get_users_dept():
-    allowed_roles = ["employee"]  # customize as needed
+    allowed_roles = ["employee","department_manager"]  # customize as needed
     users = User.query.filter(User.role.in_(allowed_roles)).all()
     return jsonify([user_to_json(u) for u in users])
 
