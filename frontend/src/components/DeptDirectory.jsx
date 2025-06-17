@@ -3,7 +3,7 @@ import './EmployeeDirectory.css';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
-import'./ModalWrapper.css';
+import './ModalWrapper.css';
 
 const API = process.env.REACT_APP_API_BASE_URL;
 const token = localStorage.getItem("token");
@@ -27,9 +27,12 @@ const DepartmentDirectory = () => {
     oid: '',
     managerId: ''
   });
+  const [existingDepartments, setExistingDepartments] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [editId, setEditId] = useState(null);
   const [formErrors, setFormErrors] = useState({}); // Object to store field-specific errors
-  const [generalError, setGeneralError] = useState(''); // General form error
+  const [generalError, setGeneralError] = useState('');
+  // General form error
 
   // Fetch all required data
   useEffect(() => {
@@ -42,10 +45,13 @@ const DepartmentDirectory = () => {
     try {
       const res = await axios.get(`${API}/api/departments`, authHeader);
       setDepartments(res.data);
+      // Populate existing department names (in lowercase)
+      setExistingDepartments(res.data.map(dept => dept.name.toLowerCase()));
     } catch (err) {
       console.error('Failed to fetch departments', err);
     }
   };
+
 
   const fetchOrganisations = async () => {
     try {
@@ -121,15 +127,27 @@ const DepartmentDirectory = () => {
         break;
 
       case 'name':
-        if (!value) {
+        if (!value.trim()) {
           errorMsg = 'Department name cannot be empty.';
         } else {
           const nameRegex = /^[A-Za-z ]{2,50}$/;
-          if (!nameRegex.test(value.trim())) {
+          const trimmedValue = value.trim();
+
+          if (!nameRegex.test(trimmedValue)) {
             errorMsg = 'Department name must be 2-50 letters and cannot contain numbers or special characters.';
+          } else {
+            const duplicate = departments.find(
+              dept =>
+                dept.name.toLowerCase() === trimmedValue.toLowerCase() &&
+                (formMode !== 'edit' || dept.did !== currentDept.did)
+            );
+            if (duplicate) {
+              errorMsg = 'This department name already exists. Please choose a different name.';
+            }
           }
         }
         break;
+
 
       case 'oid':
         if (!value.trim()) {
