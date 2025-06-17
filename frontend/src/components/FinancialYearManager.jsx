@@ -63,10 +63,10 @@ const FinancialYearManager = () => {
     };
 
     return (
-        /*<div className="financial-year-manager">
+        <div className="financial-year-manager">
             <div className="dashboard-header">
                 <Navbar />
-            </div>*/
+            </div>
             <div className="fy-container">
                 <h2>Financial Year Manager</h2>
                 <div className="fy-input">
@@ -101,7 +101,7 @@ const FinancialYearManager = () => {
                     })}
                 </ul>
             </div>
-        //</div>
+        </div>
     );
 };
 
