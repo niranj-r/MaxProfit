@@ -37,6 +37,21 @@ project_assignees = db.Table(
     db.Column('role', db.String(100))
 )
 
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    role = db.Column(db.String(100), unique=True, nullable=False)
+    privileges = db.Column(db.String(255))
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow)
+    updatedAt = db.Column(db.DateTime, onupdate=datetime.utcnow)
+
+# In app.py or routes.py
+@app.route('/api/roles', methods=['GET'])
+@jwt_required()
+def get_roles():
+    roles = Role.query.all()
+    return jsonify([r.role for r in roles])
+
+
 class FinancialYear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     label = db.Column(db.String(20), nullable=False, unique=True)  # e.g., "2024-2025"
@@ -935,25 +950,45 @@ def get_upcoming_deadlines():
 @app.route('/api/projects/<int:project_id>/assignees', methods=['GET'])
 @jwt_required()
 def get_assignees(project_id):
-    assignments = (
-        db.session.query(ProjectAssignment, User)
-        .join(User, ProjectAssignment.user_id == User.id)
-        .filter(ProjectAssignment.project_id == project_id)
-        .all()
-    )
+    result = db.session.query(
+        User.eid,
+        User.fname,
+        User.lname,
+        User.email,
+        project_assignees.c.role,
+        ProjectAssignment.allocated_hours,
+        ProjectAssignment.billing_rate
+    ).join(
+        project_assignees,
+        and_(
+            project_assignees.c.user_id == User.id,
+            project_assignees.c.project_id == project_id
+        )
+    ).join(
+        ProjectAssignment,
+        and_(
+            ProjectAssignment.user_id == User.id,
+            ProjectAssignment.project_id == project_id
+        ),
+        isouter=True  # Just in case not every assignee has an assignment row
+    ).all()
 
-    result = []
-    for pa, user in assignments:
-        result.append({
-            'eid': user.eid,
-            'fname': user.fname,
-            'lname': user.lname,
-            'email': user.email,
-            'role': user.role,
-            'cost': pa.cost,
+    assignees = []
+    for eid, fname, lname, email, role, hours, rate in result:
+        cost = round((hours or 0) * (rate or 0), 2)
+        assignees.append({
+            'eid': eid,
+            'fname': fname,
+            'lname': lname,
+            'email': email,
+            'role': role,
+            'cost': cost
         })
+    
+    return jsonify(assignees)
 
-    return jsonify(result)
+
+
 
 
 

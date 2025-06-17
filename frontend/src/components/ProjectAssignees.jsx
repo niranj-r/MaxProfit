@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './ProjectAssignees.css';
 
-const AVAILABLE_ROLES = ['Developer', 'Tester', 'Project Manager'];
 const API = process.env.REACT_APP_API_BASE_URL;
-
 const token = localStorage.getItem("token");
 
 const authHeader = {
@@ -18,12 +16,14 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [assignees, setAssignees] = useState([]);
   const [pending, setPending] = useState(null);
-  const [selectedRole, setSelectedRole] = useState(AVAILABLE_ROLES[0]);
+  const [selectedRole, setSelectedRole] = useState('');
   const [percentage, setPercentage] = useState('');
   const [billingRate, setBillingRate] = useState('');
+  const [availableRoles, setAvailableRoles] = useState([]);
 
   useEffect(() => {
     if (projectId) fetchAssignees();
+    fetchRoles();
   }, [projectId]);
 
   const fetchAssignees = async () => {
@@ -32,6 +32,16 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
       setAssignees(res.data);
     } catch (err) {
       console.error('Failed to fetch assignees', err);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const res = await axios.get(`${API}/api/roles`, authHeader);
+      setAvailableRoles(res.data);
+      setSelectedRole(res.data[0]); // default role
+    } catch (err) {
+      console.error("Failed to fetch roles", err);
     }
   };
 
@@ -58,7 +68,8 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     setPercentage('');
     setBillingRate('');
     const hasPM = assignees.some(a => a.role === 'Project Manager');
-    setSelectedRole(hasPM ? AVAILABLE_ROLES[0] : 'Project Manager');
+    const fallback = availableRoles.length > 0 ? availableRoles[0] : '';
+    setSelectedRole(hasPM && fallback === 'Project Manager' ? '' : fallback);
   };
 
   const cancelAdd = () => {
@@ -100,6 +111,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
       );
 
       alert('✅ User assigned with role and task!');
+      fetchAssignees();
       setAssignees(a => [...a, { ...pending, role: selectedRole }]);
       cancelAdd();
       setSearch('');
@@ -114,7 +126,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     try {
       await axios.delete(
         `${API}/api/projects/${projectId}/assignees/${emp.eid}`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        authHeader
       );
       setAssignees(a => a.filter(x => x.eid !== emp.eid));
     } catch (err) {
@@ -154,7 +166,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
               value={selectedRole}
               onChange={e => setSelectedRole(e.target.value)}
             >
-              {AVAILABLE_ROLES.map(r => (
+              {availableRoles.map(r => (
                 <option
                   key={r}
                   value={r}
@@ -221,7 +233,6 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                   <button className="remove-btn" onClick={() => removeAssignee(emp)}>
                     Remove
                   </button>
-
                 </td>
               </tr>
             ))}
