@@ -179,21 +179,20 @@ def assign_task():
             cost = hours * assignment['billing_rate']
 
             allocation_data = {
-                'user_id': assignment['user_id'],  # ✅ correct key
+                'user_id': assignment['user_id'],
                 'project_id': project_id,
                 'allocated_percentage': assignment['percentage'],
                 'allocated_hours': round(hours, 2),
                 'cost': round(cost, 2),
                 'billing_rate': assignment['billing_rate']
-        }
+            }
 
             allocations.append(allocation_data)
 
             existing = ProjectAssignment.query.filter_by(
-                user_id=assignment['user_id'],  # ✅ correct column
+                user_id=assignment['user_id'],
                 project_id=project_id
             ).first()
-
 
             if existing:
                 print(f"✏️ Updating existing assignment for {assignment['user_id']}")
@@ -205,6 +204,23 @@ def assign_task():
                 print(f"➕ Creating new assignment for {assignment['user_id']}")
                 new_assignment = ProjectAssignment(**allocation_data)
                 db.session.add(new_assignment)
+
+            # ✅ Ensure entry exists in project_assignees join table
+            assignee_exists = db.session.execute(
+                db.select(project_assignees).where(
+                    project_assignees.c.project_id == project_id,
+                    project_assignees.c.user_id == assignment['user_id']
+                )
+            ).first()
+
+            if not assignee_exists:
+                print(f"📌 Linking user {assignment['user_id']} to project {project_id} in project_assignees")
+                db.session.execute(
+                    project_assignees.insert().values(
+                        project_id=project_id,
+                        user_id=assignment['user_id']
+                    )
+                )
 
         db.session.commit()
         print("✅ Assignments committed to DB")
@@ -225,6 +241,50 @@ def assign_task():
         db.session.rollback()
         print(f"❗ Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+@app.route('/api/assign-task/<int:project_id>/<eid>', methods=['DELETE'])
+@jwt_required()
+def remove_task_assignment(project_id, eid):
+    try:
+        print(f"🗑️ Removing assignment: project_id={project_id}, eid={eid}")
+
+        user = User.query.filter_by(eid=eid).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Delete from ProjectAssignment table
+        assignment = ProjectAssignment.query.filter_by(
+            project_id=project_id,
+            user_id=user.id
+        ).first()
+
+        if assignment:
+            db.session.delete(assignment)
+            print(f"🗑️ Deleted from ProjectAssignment for user_id={user.id}")
+
+        # Remove from project_assignees join table
+        db.session.execute(
+            project_assignees.delete().where(
+                project_assignees.c.project_id == project_id,
+                project_assignees.c.user_id == user.id
+            )
+        )
+        print(f"🧹 Removed from project_assignees for user_id={user.id}")
+
+        db.session.commit()
+        print("✅ Assignment and assignee link deleted")
+        return jsonify({"message": "Assignment removed successfully"}), 200
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(f"❌ DB error: {str(e)}")
+        return jsonify({"error": "Failed to remove assignment"}), 500
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"❗ Unexpected error: {str(e)}")
+        return jsonify({"error": "Unexpected error"}), 500
 
 
 # ------------------ HELPERS ------------------
@@ -749,16 +809,22 @@ def remove_assignee(project_id, eid):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    db.session.execute(
+    result = db.session.execute(
         project_assignees.delete().where(
             and_(
                 project_assignees.c.project_id == project_id,
-                project_assignees.c.user_id == user.id
+                project_assignees.c.user_eid == user.eid
             )
         )
     )
+
+    if result.rowcount == 0:
+        return jsonify({"error": "Assignee not found in project"}), 404
+
     db.session.commit()
     return jsonify({"message": "Assignee removed"}), 200
+
+
 
 # ------------------ RECENT ACTIVITY ------------------
 @app.route("/api/recent-activities", methods=["GET"])
