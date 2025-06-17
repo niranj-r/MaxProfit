@@ -126,6 +126,7 @@
 .manager-selector {
   position: relative;
   margin-bottom: 20px;
+  min-height: 250px;
 }
 
 .manager-selector label {
@@ -209,29 +210,20 @@
 }
 
 .manager-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ddd;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  max-height: 200px;
+  max-height: 180px;
   overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
 }
 
+
 .manager-option {
-  padding: 10px 12px;
-  cursor: pointer;
-  display: flex;
+  display: grid;
+  grid-template-columns: 24px 1fr;
   align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
+  padding: 8px 12px;
 }
+
 
 .manager-option:hover {
   background-color: #f8f9fa;
