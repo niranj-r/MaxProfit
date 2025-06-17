@@ -439,7 +439,7 @@ def create_user():
 @app.route('/api/users', methods=['GET'])
 @jwt_required()
 def get_users():
-    allowed_roles = ["employee", "admin"]  # customize as needed
+    allowed_roles = ["employee", "admin","department_manager"]  # customize as needed
     users = User.query.filter(User.role.in_(allowed_roles)).all()
     return jsonify([user_to_json(u) for u in users])
 def get_users_dept():
