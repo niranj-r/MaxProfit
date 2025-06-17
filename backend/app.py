@@ -749,16 +749,22 @@ def remove_assignee(project_id, eid):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    db.session.execute(
+    result = db.session.execute(
         project_assignees.delete().where(
             and_(
                 project_assignees.c.project_id == project_id,
-                project_assignees.c.user_id == user.id
+                project_assignees.c.user_eid == user.eid
             )
         )
     )
+
+    if result.rowcount == 0:
+        return jsonify({"error": "Assignee not found in project"}), 404
+
     db.session.commit()
     return jsonify({"message": "Assignee removed"}), 200
+
+
 
 # ------------------ RECENT ACTIVITY ------------------
 @app.route("/api/recent-activities", methods=["GET"])

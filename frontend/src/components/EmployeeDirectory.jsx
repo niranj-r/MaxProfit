@@ -19,11 +19,12 @@ const EmployeeDirectory = () => {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [formMode, setFormMode] = useState('add'); // "add" or "edit"
+  const [formMode, setFormMode] = useState('add');
   const [form, setForm] = useState(initialForm);
   const [selectedId, setSelectedId] = useState(null);
-  const [formErrors, setFormErrors] = useState({}); // Object to store field-specific errors
-  const [generalError, setGeneralError] = useState(''); // General form error
+  const [formErrors, setFormErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
+  const [existingDepartments, setExistingDepartments] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -32,9 +33,22 @@ const EmployeeDirectory = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await axios.get(`${API}/api/departments`, authHeader);
+        const deptNames = res.data.map(dept => dept.name.toLowerCase().trim());
+        setExistingDepartments(deptNames);
+      } catch (err) {
+        console.error("Failed to fetch departments", err);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
   const fetchEmployees = async () => {
     try {
-      console.log("Token:", token);
       const res = await axios.get(`${API}/api/employees`, authHeader);
       setEmployees(res.data);
     } catch (e) {
@@ -47,8 +61,8 @@ const EmployeeDirectory = () => {
     setForm(initialForm);
     setFormMode('add');
     setSelectedId(null);
-    setFormErrors({}); // Clear any previous errors
-    setGeneralError(''); // Clear general error
+    setFormErrors({});
+    setGeneralError('');
     setShowModal(true);
   };
 
@@ -56,15 +70,15 @@ const EmployeeDirectory = () => {
     setForm({ eid: emp.eid, fname: emp.fname, lname: emp.lname, email: emp.email, did: emp.did, password: '' });
     setFormMode('edit');
     setSelectedId(emp.eid);
-    setFormErrors({}); // Clear any previous errors
-    setGeneralError(''); // Clear general error
+    setFormErrors({});
+    setGeneralError('');
     setShowModal(true);
   };
 
   const close = () => {
     setShowModal(false);
-    setFormErrors({}); // Clear errors when closing
-    setGeneralError(''); // Clear general error
+    setFormErrors({});
+    setGeneralError('');
   };
 
   const validateField = (name, value) => {
@@ -88,10 +102,9 @@ const EmployeeDirectory = () => {
         if (value.trim() === '') {
           errorMsg = 'First name cannot be empty.';
         } else {
-          // Check for special characters - only allow alphabetic characters
           const alphabeticOnlyPattern = /^[A-Za-z]+$/;
           if (!alphabeticOnlyPattern.test(value)) {
-            errorMsg = 'First name must contain only alphabetic characters (no numbers or special symbols).';
+            errorMsg = 'First name must contain only alphabetic characters.';
           } else if (value.length < 3) {
             errorMsg = 'First name must be more than 3 characters long.';
           } else if (value.length > 30) {
@@ -113,28 +126,25 @@ const EmployeeDirectory = () => {
         }
         break;
 
-
       case 'email':
         if (value.trim() === '') {
           errorMsg = 'Email cannot be empty.';
         } else if (!value.includes('@') || !value.includes('.')) {
-          errorMsg = 'Email must be a valid format (contain "@" and ".").';
+          errorMsg = 'Email must be a valid format.';
         }
         break;
 
       case 'did':
-        const alphabeticOnlyPattern = /^[A-Za-z]+$/;
-        if (value.trim() === '') {
-          errorMsg = 'Department cannot be empty.';
-        } else {
-          // Check if department is purely numeric
-          const isNumeric = /^\d+$/.test(value.trim());
-          if (isNumeric) {
-            errorMsg = 'Department cannot be a number. Please enter a department name.';
-          }
-          else if (!alphabeticOnlyPattern.test(value)) {
-            errorMsg = 'Department must contain only alphabetic characters (no numbers or special symbols).';
-          }
+        const alphaPattern = /^[A-Za-z\s]+$/;
+        const trimmedValue = value.trim();
+        if (trimmedValue === '') {
+          errorMsg = 'Department name cannot be empty.';
+        } else if (/^\d+$/.test(trimmedValue)) {
+          errorMsg = 'Department name cannot be numeric.';
+        } else if (!alphaPattern.test(trimmedValue)) {
+          errorMsg = 'Department name must only contain letters and spaces.';
+        } else if (!existingDepartments.includes(trimmedValue.toLowerCase())) {
+          errorMsg = 'Department name does not exist.';
         }
         break;
 
@@ -158,28 +168,17 @@ const EmployeeDirectory = () => {
   const handleChange = e => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-
-    // Real-time validation
     const errorMsg = validateField(name, value);
-    setFormErrors(prev => ({
-      ...prev,
-      [name]: errorMsg
-    }));
-
-    // Clear general error when user starts typing
-    if (generalError) {
-      setGeneralError('');
-    }
+    setFormErrors(prev => ({ ...prev, [name]: errorMsg }));
+    if (generalError) setGeneralError('');
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setGeneralError(''); // Clear previous errors
-    setFormErrors({}); // Clear field errors
-
+    setGeneralError('');
+    setFormErrors({});
     const { eid, fname, lname, email, did, password } = form;
 
-    // Final validation check before submission
     const fields = [
       { name: 'eid', value: eid },
       { name: 'fname', value: fname },
@@ -200,9 +199,8 @@ const EmployeeDirectory = () => {
       }
     }
 
-    // Check for empty fields
     if (!eid || !fname || !lname || !email || !did || (formMode === 'add' && !password)) {
-      setGeneralError('All fields are required. Password is required for new employees.');
+      setGeneralError('All fields are required.');
       hasErrors = true;
     }
 
@@ -219,9 +217,8 @@ const EmployeeDirectory = () => {
         await axios.put(`${API}/api/employees/${selectedId}`, form, authHeader);
         alert('Employee updated successfully');
       }
-
-      close(); // Close modal
-      fetchEmployees(); // Refresh list
+      close();
+      fetchEmployees();
     } catch (err) {
       console.error('Submit error', err.response?.data || err);
       const errorMsg = err.response?.data?.error || 'Error submitting employee';
@@ -229,7 +226,7 @@ const EmployeeDirectory = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async id => {
     if (!window.confirm('Delete employee?')) return;
     try {
       await axios.delete(`${API}/api/users/${id}`, authHeader);
@@ -244,10 +241,8 @@ const EmployeeDirectory = () => {
   const convertToIST = (isoString) => {
     if (!isoString) return '-';
     const utcDate = new Date(isoString);
-
     const istOffset = 5.5 * 60;
     const istTime = new Date(utcDate.getTime() + istOffset * 60 * 1000);
-
     return istTime.toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       hour12: true,
