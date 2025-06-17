@@ -76,7 +76,8 @@ const OrganisationDirectory = () => {
         setOrganisations(prev => [...prev, res.data]);
         alert("Organisation added successfully!");
       } else if (formMode === 'edit' && editOid) {
-        const res = await axios.put(`${API}/api/organisations/${editOid}`, { name }, {
+        // Do not allow name change
+        const res = await axios.put(`${API}/api/organisations/${editOid}`, {}, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
 
@@ -126,15 +127,14 @@ const OrganisationDirectory = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
           <button
-  className="add-btn"
-  onClick={openAddModal}
-  disabled={organisations.length >= 1}
-  title={organisations.length >= 1 ? "Only one organisation allowed" : ""}
-  style={{ opacity: organisations.length >= 1 ? 0.5 : 1, cursor: organisations.length >= 1 ? 'not-allowed' : 'pointer' }}
->
-  <FaPlus /> Add Organisation
-</button>
-
+            className="add-btn"
+            onClick={openAddModal}
+            disabled={organisations.length >= 1}
+            title={organisations.length >= 1 ? "Only one organisation allowed" : ""}
+            style={{ opacity: organisations.length >= 1 ? 0.5 : 1, cursor: organisations.length >= 1 ? 'not-allowed' : 'pointer' }}
+          >
+            <FaPlus /> Add Organisation
+          </button>
         </div>
       </div>
 
@@ -143,6 +143,8 @@ const OrganisationDirectory = () => {
           <tr>
             <th>Organisation ID</th>
             <th>Name</th>
+            <th>Created At</th>
+            <th>Updated At</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -161,7 +163,7 @@ const OrganisationDirectory = () => {
           ))}
           {filteredOrganisations.length === 0 && (
             <tr>
-              <td colSpan="4" className="no-data">No matching organisations found.</td>
+              <td colSpan="5" className="no-data">No matching organisations found.</td>
             </tr>
           )}
         </tbody>
@@ -182,6 +184,7 @@ const OrganisationDirectory = () => {
               placeholder="Organisation Name"
               value={currentOrganisation.name}
               onChange={(e) => setCurrentOrganisation({ ...currentOrganisation, name: e.target.value })}
+              disabled={formMode === 'edit'}  {/* Prevent name change */}
             />
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
