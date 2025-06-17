@@ -81,6 +81,7 @@ class Department(db.Model):
     name = db.Column(db.String(100))
     oid = db.Column(db.String(20))
     managerId = db.Column(db.String(100))
+    managerIds = db.Column(db.Text, nullable=True) 
     createdAt = db.Column(db.DateTime, default=datetime.utcnow)
     updatedAt = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
@@ -565,7 +566,7 @@ def get_organisation_name():
 
 
 # ------------------ DEPARTMENTS ------------------
-#For Department table manager id
+# For Department table manager id
 @app.route('/api/employees/dept', methods=['GET', 'POST'])
 @jwt_required()
 def employees_dept():
@@ -589,25 +590,47 @@ def create_department():
         print("⚠ Department already exists:", existing.did)
         return jsonify({"error": "Department already exists"}), 409
 
+    # Handle both single managerId (backward compatibility) and multiple managerIds
+    manager_ids = data.get("managerIds", [])
+    if not manager_ids and data.get("managerId"):
+        # Backward compatibility: convert single managerId to array
+        manager_ids = [data.get("managerId")]
+
+    if not manager_ids:
+        print("❌ No managers specified")
+        return jsonify({"error": "At least one manager is required"}), 400
+
+    # Validate all manager IDs exist
+    invalid_managers = []
+    valid_managers = []
+    
+    for manager_id in manager_ids:
+        manager = User.query.filter_by(eid=manager_id).first()
+        if manager:
+            valid_managers.append(manager)
+        else:
+            invalid_managers.append(manager_id)
+    
+    if invalid_managers:
+        print(f"❌ Invalid manager IDs: {invalid_managers}")
+        return jsonify({"error": f"Manager users not found: {', '.join(invalid_managers)}"}), 404
+
     # Create the department
     dept = Department(
         did=data.get("did"),
         name=data.get("name"),
         oid=data.get("oid"),
-        managerId=data.get("managerId")
+        managerId=manager_ids[0],  # Store primary manager in managerId for backward compatibility
+        managerIds=','.join(manager_ids)  # Store all managers as comma-separated string
     )
     print("🛠 Creating department:", dept)
 
     db.session.add(dept)
 
-    # ✅ Use eid instead of id here
-    manager = User.query.filter_by(eid=data.get("managerId")).first()
-    if manager:
+    # Update all managers' roles to department_manager
+    for manager in valid_managers:
         manager.role = "department_manager"
-        print(f"👤 Manager found and role updated: {manager.eid}")
-    else:
-        print("❌ Manager user not found")
-        return jsonify({"error": "Manager user not found"}), 404
+        print(f"👤 Manager role updated: {manager.eid}")
 
     try:
         db.session.commit()
@@ -620,21 +643,128 @@ def create_department():
         return jsonify({"error": "Database error", "details": str(e)}), 500
 
 
-
-
 @app.route('/api/departments', methods=['GET'])
 @jwt_required()
 def get_departments():
     depts = Department.query.all()
-    return jsonify([{
-        "id": d.id,
-        "did": d.did,
-        "name": d.name,
-        "oid": d.oid,
-        "managerId": d.managerId,
-        "createdAt": d.createdAt.isoformat() if d.createdAt else None,
-        "updatedAt": d.updatedAt.isoformat() if d.updatedAt else None
-    } for d in depts])
+    dept_list = []
+    
+    for d in depts:
+        # Handle both old single managerId and new multiple managerIds
+        manager_ids = []
+        if hasattr(d, 'managerIds') and d.managerIds:
+            manager_ids = d.managerIds.split(',')
+        elif d.managerId:
+            manager_ids = [d.managerId]
+        
+        dept_data = {
+            "id": d.id,
+            "did": d.did,
+            "name": d.name,
+            "oid": d.oid,
+            "managerId": d.managerId,  # Keep for backward compatibility
+            "managerIds": manager_ids,  # New field for multiple managers
+            "createdAt": d.createdAt.isoformat() if d.createdAt else None,
+            "updatedAt": d.updatedAt.isoformat() if d.updatedAt else None
+        }
+        dept_list.append(dept_data)
+    
+    return jsonify(dept_list)
+
+
+@app.route('/api/departments/<did>', methods=['PUT'])
+@jwt_required()
+def update_department(did):
+    print(f"🔄 /api/departments/{did} PUT route hit")
+    
+    dept = Department.query.filter_by(did=did).first()
+    if not dept:
+        return jsonify({"error": "Department not found"}), 404
+
+    data = request.json
+    print("📥 Update Data:", data)
+
+    # Get old manager IDs for role reversion
+    old_manager_ids = []
+    if hasattr(dept, 'managerIds') and dept.managerIds:
+        old_manager_ids = dept.managerIds.split(',')
+    elif dept.managerId:
+        old_manager_ids = [dept.managerId]
+
+    # Handle both single managerId (backward compatibility) and multiple managerIds
+    new_manager_ids = data.get("managerIds", [])
+    if not new_manager_ids and data.get("managerId"):
+        # Backward compatibility: convert single managerId to array
+        new_manager_ids = [data.get("managerId")]
+
+    if not new_manager_ids:
+        print("❌ No managers specified")
+        return jsonify({"error": "At least one manager is required"}), 400
+
+    # Validate all new manager IDs exist
+    invalid_managers = []
+    valid_new_managers = []
+    
+    for manager_id in new_manager_ids:
+        manager = User.query.filter_by(eid=manager_id).first()
+        if manager:
+            valid_new_managers.append(manager)
+        else:
+            invalid_managers.append(manager_id)
+    
+    if invalid_managers:
+        print(f"❌ Invalid manager IDs: {invalid_managers}")
+        return jsonify({"error": f"Manager users not found: {', '.join(invalid_managers)}"}), 404
+
+    # Update department fields
+    dept.name = data.get("name", dept.name)
+    dept.oid = data.get("oid", dept.oid)
+    dept.managerId = new_manager_ids[0]  # Primary manager for backward compatibility
+    dept.managerIds = ','.join(new_manager_ids)  # All managers
+
+    # Handle role changes
+    # First, revert old managers who are no longer managers of this department
+    managers_to_remove = set(old_manager_ids) - set(new_manager_ids)
+    for manager_id in managers_to_remove:
+        manager = User.query.filter_by(eid=manager_id).first()
+        if manager:
+            # Check if they still manage other departments
+            still_managing = Department.query.filter(
+                Department.did != did,
+                Department.managerIds.like(f'%{manager_id}%')
+            ).first()
+            
+            if not still_managing:
+                manager.role = "employee"
+                print(f"🔄 Reverted {manager.eid}'s role back to employee")
+
+    # Update new managers' roles
+    for manager in valid_new_managers:
+        manager.role = "department_manager"
+        print(f"👤 Manager role updated: {manager.eid}")
+
+    try:
+        db.session.commit()
+        print("✅ Department updated successfully")
+        log_activity("Department", dept.name, "updated")
+        
+        # Return updated department data
+        return jsonify({
+            "id": dept.id,
+            "did": dept.did,
+            "name": dept.name,
+            "oid": dept.oid,
+            "managerId": dept.managerId,
+            "managerIds": new_manager_ids,
+            "createdAt": dept.createdAt.isoformat() if dept.createdAt else None,
+            "updatedAt": dept.updatedAt.isoformat() if dept.updatedAt else None
+        }), 200
+        
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print("💥 Database error:", str(e))
+        return jsonify({"error": "Database error", "details": str(e)}), 500
+
 
 @app.route('/api/departments/<did>', methods=['DELETE'])
 @jwt_required()
@@ -647,81 +777,37 @@ def delete_department(did):
     if employees_exist:
         return jsonify({"error": "Cannot delete department with assigned employees"}), 400
 
-
     # Check for assigned projects
     projects_exist = Project.query.filter_by(departmentId=did).first()
     if projects_exist:
         return jsonify({"error": "Cannot delete department with existing projects"}), 400
 
-    # Save manager ID to potentially revert role
-    manager_id = dept.managerId
+    # Get all manager IDs for role reversion
+    manager_ids_to_check = []
+    if hasattr(dept, 'managerIds') and dept.managerIds:
+        manager_ids_to_check = dept.managerIds.split(',')
+    elif dept.managerId:
+        manager_ids_to_check = [dept.managerId]
 
     db.session.delete(dept)
     db.session.commit()
 
-    # Revert manager role if they no longer manage any departments
-    manager = User.query.filter_by(eid=manager_id).first()
-    if manager:
-        still_managing = Department.query.filter_by(managerId=manager_id).first()
-        if not still_managing:
-            manager.role = "employee"
-            db.session.commit()
-            print(f"🔄 Reverted {manager.eid}'s role back to employee")
+    # Revert manager roles if they no longer manage any departments
+    for manager_id in manager_ids_to_check:
+        manager = User.query.filter_by(eid=manager_id).first()
+        if manager:
+            # Check if they still manage other departments
+            still_managing = Department.query.filter(
+                Department.managerIds.like(f'%{manager_id}%')
+            ).first()
+            
+            if not still_managing:
+                manager.role = "employee"
+                db.session.commit()
+                print(f"🔄 Reverted {manager.eid}'s role back to employee")
 
     log_activity("Department", dept.name, "deleted")
     return jsonify({"message": "Department deleted successfully"}), 200
-
-
-
-
-
-@app.route('/api/departments/<did>', methods=['PUT'])
-@jwt_required()
-def update_department(did):
-    dept = Department.query.filter_by(did=did).first()
-    if not dept:
-        return jsonify({'error': 'Department not found'}), 404
-
-    data = request.json
-    old_manager_id = dept.managerId  # Store current manager before update
-
-    # Update fields
-    dept.name = data.get('name', dept.name)
-    dept.oid = data.get('oid', dept.oid)
-    new_manager_id = data.get('managerId', dept.managerId)
-    dept.managerId = new_manager_id
-
-    # Commit changes to department
-    db.session.commit()
-
-    # Step 1: Assign role to new manager
-    if new_manager_id != old_manager_id:
-        new_manager = User.query.filter_by(eid=new_manager_id).first()
-        if new_manager:
-            new_manager.role = "department_manager"
-
-        # Step 2: Revert old manager if no other departments managed
-        other_depts = Department.query.filter(
-            Department.managerId == old_manager_id,
-            Department.did != did
-        ).all()
-        if not other_depts:
-            old_manager = User.query.filter_by(eid=old_manager_id).first()
-            if old_manager:
-                old_manager.role = "employee"
-
-    # Final commit
-    db.session.commit()
-    log_activity("Department", dept.name, "updated")
-
-    return jsonify({
-        'did': dept.did,
-        'name': dept.name,
-        'oid': dept.oid,
-        'managerId': dept.managerId
-    }), 200
-
-
 # ------------------ PROJECTS ------------------
 
 @app.route('/api/projects', methods=['POST'])
