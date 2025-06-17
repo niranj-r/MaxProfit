@@ -5,6 +5,14 @@ import './ProjectAssignees.css';
 const AVAILABLE_ROLES = ['Developer', 'Tester', 'Project Manager'];
 const API = process.env.REACT_APP_API_BASE_URL;
 
+const token = localStorage.getItem("token");
+
+const authHeader = {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+};
+
 const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -20,9 +28,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
   const fetchAssignees = async () => {
     try {
-      const res = await axios.get(`${API}/api/projects/${projectId}/assignees`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await axios.get(`${API}/api/projects/${projectId}/assignees`, authHeader);
       setAssignees(res.data);
     } catch (err) {
       console.error('Failed to fetch assignees', err);
@@ -39,7 +45,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     try {
       const res = await axios.get(`${API}/api/search/users`, {
         params: { q },
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        ...authHeader
       });
       setSearchResults(res.data.filter(emp => emp && emp.eid && emp.fname && emp.lname));
     } catch (err) {
@@ -72,29 +78,26 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     }
 
     try {
-      // Step 1: Assign role
       await axios.post(
         `${API}/api/projects/${projectId}/assignees`,
         { eid: pending.eid, role: selectedRole },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        authHeader
       );
 
-      // Step 2: Assign task allocation
       await axios.post(
         `${API}/api/assign-task`,
         {
           project_id: parseInt(projectId),
           assignments: [
             {
-              user_id: pending.id,  // ✅ FIXED: was eid, now user_id
+              user_id: pending.id,
               percentage: pct,
               billing_rate: rate
             }
           ]
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        authHeader
       );
-
 
       alert('✅ User assigned with role and task!');
       setAssignees(a => [...a, { ...pending, role: selectedRole }]);
@@ -106,24 +109,18 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
       alert(`❌ Failed: ${err.response?.data?.error || 'Unknown error'}`);
     }
   };
-const removeAssignee = async (eid) => {
-  try {
-    await axios.delete(
-      `${API}/api/assign-task/${projectId}/${eid}`,
-      {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      }
-    );
 
-    // Remove by eid instead of id
-    setAssignees((a) => a.filter((x) => x.eid !== eid));
-  } catch (err) {
-    console.error('❌ Remove assignment error:', err.response?.data || err);
-    alert(err.response?.data?.error || 'Failed to remove task assignment.');
-  }
-};
-
-
+  const removeAssignee = async emp => {
+    try {
+      await axios.delete(
+        `${API}/api/projects/${projectId}/assignees/${emp.eid}`,
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      setAssignees(a => a.filter(x => x.eid !== emp.eid));
+    } catch (err) {
+      console.error('Remove error', err);
+    }
+  };
 
   const hasPM = assignees.some(a => a.role === 'Project Manager');
 
@@ -221,7 +218,7 @@ const removeAssignee = async (eid) => {
                 <td>{emp.role}</td>
                 <td>{emp.cost ?? '—'}</td>
                 <td>
-                  <button className="remove-btn" onClick={() => removeAssignee(emp.eid)}>
+                  <button className="remove-btn" onClick={() => removeAssignee(emp)}>
                     Remove
                   </button>
 
