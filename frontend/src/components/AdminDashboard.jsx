@@ -28,11 +28,6 @@ const AdminDashboard = () => {
               <BudgetChart />
             </div>
           </div>
-          <div className="dashboard-directory">
-            <RecentActivities />
-            <UpcomingDeadlines />
-            <FXRateChart />
-          </div>
         </div>
       </div>
     </div>

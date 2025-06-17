@@ -548,23 +548,21 @@ def delete_organisation(oid):
     log_activity("Organisation", org.name, "deleted")
     return jsonify({"message": "Organisation and related departments deleted"}), 200
 
-@app.route('/api/organisations/<oid>', methods=['PUT'])
+@app.route('/api/organisation-name', methods=['GET'])
 @jwt_required()
-def update_organisation(oid):
-    org = Organisation.query.filter_by(oid=oid).first()
-    if not org:
-        return jsonify({"error": "Organisation not found"}), 404
+def get_organisation_name():
+    print("🔍 Incoming request to /api/organisation-name")
+    try:
+        org = Organisation.query.first()
+        if not org:
+            print("⚠️ No organisation found in database.")
+            return jsonify({"error": "No organisation found"}), 404
+        print(f"✅ Organisation found: {org.name}")
+        return jsonify({"name": org.name}), 200
+    except Exception as e:
+        print(f"❌ Exception occurred: {e}")
+        return jsonify({"error": str(e)}), 500
 
-    data = request.json
-    org.name = data.get("name", org.name)
-    db.session.commit()
-    log_activity("Organisation", org.name, "updated")
-
-    return jsonify({
-        "oid": org.oid,
-        "name": org.name,
-        "createdAt": org.createdAt.isoformat() if org.createdAt else None
-    }), 200
 
 # ------------------ DEPARTMENTS ------------------
 #For Department table manager id
