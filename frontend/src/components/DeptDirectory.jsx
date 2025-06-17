@@ -18,6 +18,7 @@ const DepartmentDirectory = () => {
   const [organisations, setOrganisations] = useState([]);
   const [employees, setEmployees] = useState([]);
 
+
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [formMode, setFormMode] = useState('add');
@@ -27,14 +28,12 @@ const DepartmentDirectory = () => {
     oid: '',
     managerId: ''
   });
-  const [existingDepartments, setExistingDepartments] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [editId, setEditId] = useState(null);
-  const [formErrors, setFormErrors] = useState({}); // Object to store field-specific errors
+  const [formErrors, setFormErrors] = useState({});
   const [generalError, setGeneralError] = useState('');
-  // General form error
+  const [editId, setEditId] = useState(null);
 
-  // Fetch all required data
+  
+
   useEffect(() => {
     fetchDepartments();
     fetchOrganisations();
@@ -45,13 +44,10 @@ const DepartmentDirectory = () => {
     try {
       const res = await axios.get(`${API}/api/departments`, authHeader);
       setDepartments(res.data);
-      // Populate existing department names (in lowercase)
-      setExistingDepartments(res.data.map(dept => dept.name.toLowerCase()));
     } catch (err) {
       console.error('Failed to fetch departments', err);
     }
   };
-
 
   const fetchOrganisations = async () => {
     try {
@@ -62,184 +58,113 @@ const DepartmentDirectory = () => {
     }
   };
 
-  const fetchEmployees = async () => {
+    const fetchEmployees = async () => {
     try {
-      const res = await axios.get(`${API}/api/employees`, authHeader);
+      const res = await axios.get(`${API}/api/employees/dept`, authHeader);
       setEmployees(res.data);
     } catch (err) {
       console.error('Failed to fetch employees', err);
     }
   };
 
-  const handleDelete = async (did) => {
-    if (!window.confirm("Are you sure you want to delete this department?")) return;
-    try {
-      await axios.delete(`${API}/api/departments/${did}`, authHeader);
-      setDepartments(prev => prev.filter(dept => dept.did !== did));
-      alert("Department deleted successfully");
-    } catch (err) {
-      console.error("Failed to delete department", err);
-      alert("Error deleting department.");
-    }
-  };
+const handleDelete = async (did) => {
+  if (!window.confirm("Are you sure you want to delete this department?")) return;
+  try {
+    await axios.delete(`${API}/api/departments/${did}`, authHeader);
+    setDepartments(prev => prev.filter(dept => dept.did !== did));
+    alert("Department deleted successfully");
+
+    // ✅ Refresh employees to reflect department updates
+    await fetchEmployees();
+
+  } catch (err) {
+    console.error("Failed to delete department", err);
+    alert("Error deleting department.");
+  }
+};
 
   const openAddModal = () => {
     setFormMode('add');
     setCurrentDept({ did: '', name: '', oid: '', managerId: '' });
-    setFormErrors({}); // Clear any previous errors
-    setGeneralError(''); // Clear general error
+    setFormErrors({});
+    setGeneralError('');
     setShowModal(true);
   };
 
   const openEditModal = (dept) => {
     setFormMode('edit');
-    setCurrentDept({
-      did: dept.did,
-      name: dept.name,
-      oid: dept.oid,
-      managerId: dept.managerId || ''
-    });
+    setCurrentDept({ ...dept });
     setEditId(dept.did);
-    setFormErrors({}); // Clear any previous errors
-    setGeneralError(''); // Clear general error
+    setFormErrors({});
+    setGeneralError('');
     setShowModal(true);
   };
 
   const validateField = (name, value) => {
     let errorMsg = '';
-
     switch (name) {
       case 'did':
         if (!value.trim()) {
-          errorMsg = 'Department ID cannot be empty or just spaces.';
-        } else {
-          const didRegex = /^D\d{3}$/;
-          const trimmedValue = value.trim();
-
-          if (!didRegex.test(trimmedValue)) {
-            errorMsg = 'Department ID must be in the format D000.';
-          } else if (trimmedValue.length > 5) {
-            errorMsg = 'Department ID must be at most 5 characters long.';
-          } else if (formMode === 'add' && departments.some(dep => dep.did === trimmedValue)) {
-            errorMsg = `Department ID '${trimmedValue}' already exists. Please use a different one.`;
-          }
+          errorMsg = 'Department ID cannot be empty.';
+        } else if (!/^D\d{3}$/.test(value)) {
+          errorMsg = 'Format must be D000.';
+        } else if (formMode === 'add' && departments.some(dep => dep.did === value)) {
+          errorMsg = 'Department ID already exists.';
         }
         break;
-
       case 'name':
         if (!value.trim()) {
-          errorMsg = 'Department name cannot be empty.';
-        } else {
-          const nameRegex = /^[A-Za-z ]{2,50}$/;
-          const trimmedValue = value.trim();
-
-          if (!nameRegex.test(trimmedValue)) {
-            errorMsg = 'Department name must be 2-50 letters and cannot contain numbers or special characters.';
-          } else {
-            const duplicate = departments.find(
-              dept =>
-                dept.name.toLowerCase() === trimmedValue.toLowerCase() &&
-                (formMode !== 'edit' || dept.did !== currentDept.did)
-            );
-            if (duplicate) {
-              errorMsg = 'This department name already exists. Please choose a different name.';
-            }
-          }
+          errorMsg = 'Department name is required.';
+        } else if (!/^[A-Za-z ]{2,50}$/.test(value)) {
+          errorMsg = 'Name must be 2-50 letters.';
+        } else if (departments.find(dep => dep.name.toLowerCase() === value.toLowerCase() && dep.did !== currentDept.did)) {
+          errorMsg = 'Duplicate department name.';
         }
         break;
-
-
       case 'oid':
         if (!value.trim()) {
-          errorMsg = 'Organization ID cannot be empty or just spaces.';
-        } else {
-          const isValidOid = organisations.some(org => org.oid === value.trim());
-          if (!isValidOid) {
-            errorMsg = 'Organization ID does not exist.';
-          }
+          errorMsg = 'Organization ID required.';
+        } else if (!organisations.some(org => org.oid === value)) {
+          errorMsg = 'Invalid Organization ID.';
         }
         break;
-
       case 'managerId':
         if (!value.trim()) {
-          errorMsg = 'Manager ID cannot be empty or just spaces.';
-        } else {
-          const isValidManager = employees.some(emp => emp.eid === value.trim());
-          if (!isValidManager) {
-            errorMsg = 'Manager ID must be a valid Employee ID.';
-          }
+          errorMsg = 'Manager is required.';
+        } else if (!employees.some(emp => emp.eid === value)) {
+          errorMsg = 'Invalid Manager ID.';
         }
         break;
-
       default:
         break;
     }
-
     return errorMsg;
   };
 
-
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setCurrentDept((prev) => ({ ...prev, [name]: value }));
-
-    // Real-time validation
-    const errorMsg = validateField(name, value);
+    setCurrentDept(prev => ({ ...prev, [name]: value }));
     setFormErrors(prev => ({
       ...prev,
-      [name]: errorMsg
+      [name]: validateField(name, value)
     }));
-
-    // Clear general error when user starts typing
-    if (generalError) {
-      setGeneralError('');
-    }
+    setGeneralError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setGeneralError(''); // Clear previous errors
-    setFormErrors({}); // Clear field errors
-
     const { did, name, oid, managerId } = currentDept;
-
-    // Final validation check before submission
-    const fields = [
-      { name: 'did', value: did },
-      { name: 'name', value: name },
-      { name: 'oid', value: oid },
-      { name: 'managerId', value: managerId }
-    ];
-
+    const fields = ['did', 'name', 'oid', 'managerId'];
     const newErrors = {};
+
     let hasErrors = false;
-
-    for (const field of fields) {
-      const errorMsg = validateField(field.name, field.value);
-      if (errorMsg) {
-        newErrors[field.name] = errorMsg;
+    fields.forEach(field => {
+      const error = validateField(field, currentDept[field]);
+      if (error) {
+        newErrors[field] = error;
         hasErrors = true;
       }
-    }
-
-    // Check for empty fields
-    if (!did || !name || !oid || !managerId) {
-      setGeneralError('All fields are required.');
-      hasErrors = true;
-    }
-
-    // Check for duplicate department ID when adding
-    if (formMode === 'add') {
-      const isDuplicate = departments.some(dept => dept.did === did);
-      if (isDuplicate) {
-        setFormErrors(prev => ({
-          ...prev,
-          did: `A department with ID '${did}' already exists. Please use a different Department ID.`
-        }));
-        hasErrors = true;
-      }
-    }
+    });
 
     if (hasErrors) {
       setFormErrors(newErrors);
@@ -249,44 +174,25 @@ const DepartmentDirectory = () => {
     try {
       if (formMode === 'add') {
         const res = await axios.post(`${API}/api/departments`, currentDept, authHeader);
-        setDepartments(prev => [...prev, { ...currentDept, _id: res.data._id || Math.random().toString() }]);
-        alert("Department added successfully");
-        fetchDepartments();
+        setDepartments(prev => [...prev, res.data]);
+        alert("Department added.");
       } else {
         const res = await axios.put(`${API}/api/departments/${editId}`, currentDept, authHeader);
-        setDepartments(prev => prev.map(dept => dept.did === editId ? { ...dept, ...currentDept } : dept));
-        alert("Department updated successfully");
-        fetchDepartments();
+        setDepartments(prev => prev.map(dep => dep.did === editId ? res.data : dep));
+        alert("Department updated.");
       }
       setShowModal(false);
+      fetchDepartments();
     } catch (err) {
-      console.error("Failed to submit department", err);
-      const errorMsg = err.response?.data?.error || 'Error submitting department';
-      setGeneralError(errorMsg);
+      console.error(err);
+      setGeneralError('Submission failed.');
     }
   };
 
   const closeModal = () => {
     setShowModal(false);
-    setFormErrors({}); // Clear errors when closing
-    setGeneralError(''); // Clear general error
-  };
-
-  const convertToIST = (isoString) => {
-    if (!isoString) return '-';
-    const utcDate = new Date(isoString);
-    const istOffset = 5.5 * 60;
-    const istTime = new Date(utcDate.getTime() + istOffset * 60 * 1000);
-    return istTime.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour12: true,
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+    setFormErrors({});
+    setGeneralError('');
   };
 
   const filteredDepartments = departments.filter(d =>
@@ -327,7 +233,7 @@ const DepartmentDirectory = () => {
               <td>{dept.did}</td>
               <td>{dept.name}</td>
               <td>{dept.oid}</td>
-              <td>{dept.managerId || '—'}</td>
+              <td>{dept.managerId}</td>
               <td>
                 <FaEdit className="icon edit-icon" onClick={() => openEditModal(dept)} />
                 <FaTrash className="icon delete-icon" onClick={() => handleDelete(dept.did)} />
@@ -336,7 +242,7 @@ const DepartmentDirectory = () => {
           ))}
           {filteredDepartments.length === 0 && (
             <tr>
-              <td colSpan="7" className="no-data">No matching departments found.</td>
+              <td colSpan="5" className="no-data">No matching departments found.</td>
             </tr>
           )}
         </tbody>
@@ -349,16 +255,7 @@ const DepartmentDirectory = () => {
         >
           <form className="modal-form" onSubmit={handleSubmit}>
             {generalError && (
-              <div className="form-error" style={{
-                backgroundColor: '#fee',
-                color: '#c33',
-                padding: '10px',
-                borderRadius: '4px',
-                marginBottom: '15px',
-                border: '1px solid #fcc'
-              }}>
-                {generalError}
-              </div>
+              <div className="form-error">{generalError}</div>
             )}
 
             <div className="floating-label">
@@ -398,21 +295,29 @@ const DepartmentDirectory = () => {
               {formErrors.oid && <div className="field-error">{formErrors.oid}</div>}
             </div>
 
-            <div className="floating-label">
-              <input
+            <div className="assign-panel">
+              <label htmlFor="managerId">Manager</label>
+              <select
                 name="managerId"
-                placeholder=" "
+                id="managerId"
                 value={currentDept.managerId}
                 onChange={handleInputChange}
+                className="assign-panel-select"
                 style={formErrors.managerId ? { borderColor: '#c33' } : {}}
-              />
-              <label>Manager ID</label>
+              >
+                <option value="">Select Manager</option>
+                {employees.map(emp => (
+                  <option key={emp.eid} value={emp.eid}>
+                    {emp.eid} - {emp.fname} {emp.lname}
+                  </option>
+                ))}
+              </select>
               {formErrors.managerId && <div className="field-error">{formErrors.managerId}</div>}
             </div>
 
+
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
-
         </ModalWrapper>
       )}
     </div>

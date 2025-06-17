@@ -561,19 +561,49 @@ def update_organisation(oid):
 @app.route('/api/departments', methods=['POST'])
 @jwt_required()
 def create_department():
+    print("🚀 /api/departments POST route hit")
+
     data = request.json
-    if Department.query.filter_by(did=data["did"]).first():
+    print("📥 Incoming Data:", data)
+
+    # Check if department already exists
+    existing = Department.query.filter_by(did=data.get("did")).first()
+    if existing:
+        print("⚠ Department already exists:", existing.did)
         return jsonify({"error": "Department already exists"}), 409
+
+    # Create the department
     dept = Department(
-        did=data["did"],
-        name=data["name"],
-        oid=data["oid"],
-        managerId=data["managerId"]
+        did=data.get("did"),
+        name=data.get("name"),
+        oid=data.get("oid"),
+        managerId=data.get("managerId")
     )
+    print("🛠 Creating department:", dept)
+
     db.session.add(dept)
-    db.session.commit()
-    log_activity("Department", dept.name, "created")
-    return jsonify({"message": "Department created"}), 201
+
+    # ✅ Use eid instead of id here
+    manager = User.query.filter_by(eid=data.get("managerId")).first()
+    if manager:
+        manager.role = "department_manager"
+        print(f"👤 Manager found and role updated: {manager.eid}")
+    else:
+        print("❌ Manager user not found")
+        return jsonify({"error": "Manager user not found"}), 404
+
+    try:
+        db.session.commit()
+        print("✅ Department created and committed to DB")
+        log_activity("Department", dept.name, "created")
+        return jsonify({"message": "Department created"}), 201
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print("💥 Database error:", str(e))
+        return jsonify({"error": "Database error", "details": str(e)}), 500
+
+
+
 
 @app.route('/api/departments', methods=['GET'])
 @jwt_required()
@@ -592,13 +622,46 @@ def get_departments():
 @app.route('/api/departments/<did>', methods=['DELETE'])
 @jwt_required()
 def delete_department(did):
+    # Check if department exists
     dept = Department.query.filter_by(did=did).first()
     if not dept:
         return jsonify({"error": "Department not found"}), 404
+
+    # Check for any projects under this department
+    projects_exist = Project.query.filter_by(departmentId=did).first()
+    if projects_exist:
+        return jsonify({"error": "Cannot delete department with existing projects"}), 400
+
+    # Set did = NULL for users in this department
+    #users = User.query.filter_by(did=did).all()
+    #for user in users:
+    #    user.did = None  # Set did to NULL
+    #db.session.commit()
+
+    # Store managerId before deletion
+    manager_id = dept.managerId
+
+    # Delete the department
     db.session.delete(dept)
     db.session.commit()
+
+    # Check if the manager manages any other departments
+    manager = User.query.filter_by(eid=manager_id).first()
+    if manager:
+        other_managed_departments = Department.query.filter(
+            Department.managerId == manager_id
+        ).all()
+
+        if not other_managed_departments:
+            manager.role = "employee"
+            db.session.commit()
+            print(f"🔄 Reverted {manager.eid}'s role back to employee")
+
     log_activity("Department", dept.name, "deleted")
-    return jsonify({"message": "Department deleted"}), 200
+    return jsonify({"message": "Department deleted successfully"}), 200
+
+
+
 
 @app.route('/api/departments/<did>', methods=['PUT'])
 @jwt_required()
@@ -608,10 +671,34 @@ def update_department(did):
         return jsonify({'error': 'Department not found'}), 404
 
     data = request.json
+    old_manager_id = dept.managerId  # Store current manager before update
+
+    # Update fields
     dept.name = data.get('name', dept.name)
     dept.oid = data.get('oid', dept.oid)
-    dept.managerId = data.get('managerId', dept.managerId)
+    new_manager_id = data.get('managerId', dept.managerId)
+    dept.managerId = new_manager_id
 
+    # Commit changes to department
+    db.session.commit()
+
+    # Step 1: Assign role to new manager
+    if new_manager_id != old_manager_id:
+        new_manager = User.query.filter_by(eid=new_manager_id).first()
+        if new_manager:
+            new_manager.role = "department_manager"
+
+        # Step 2: Revert old manager if no other departments managed
+        other_depts = Department.query.filter(
+            Department.managerId == old_manager_id,
+            Department.did != did
+        ).all()
+        if not other_depts:
+            old_manager = User.query.filter_by(eid=old_manager_id).first()
+            if old_manager:
+                old_manager.role = "employee"
+
+    # Final commit
     db.session.commit()
     log_activity("Department", dept.name, "updated")
 
