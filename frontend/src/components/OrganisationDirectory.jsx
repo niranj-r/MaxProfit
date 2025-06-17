@@ -20,8 +20,8 @@ const OrganisationDirectory = () => {
 
   const fetchOrganisations = async () => {
     try {
-      const res = await axios.get(`${API}/api/organisations`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const res = await axios.get(${API}/api/organisations, {
+        headers: { Authorization: Bearer ${localStorage.getItem('token')} }
       });
 
       setOrganisations(res.data);
@@ -47,8 +47,8 @@ const OrganisationDirectory = () => {
   const handleDelete = async (oid) => {
     if (!window.confirm('Are you sure you want to delete this organisation?')) return;
     try {
-      await axios.delete(`${API}/api/organisations/${oid}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      await axios.delete(${API}/api/organisations/${oid}, {
+        headers: { Authorization: Bearer ${localStorage.getItem('token')} }
       });
 
       setOrganisations(prev => prev.filter(o => o.oid !== oid));
@@ -69,16 +69,15 @@ const OrganisationDirectory = () => {
 
     try {
       if (formMode === 'add') {
-        const res = await axios.post(`${API}/api/organisations`, currentOrganisation, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        const res = await axios.post(${API}/api/organisations, currentOrganisation, {
+          headers: { Authorization: Bearer ${localStorage.getItem('token')} }
         });
 
         setOrganisations(prev => [...prev, res.data]);
         alert("Organisation added successfully!");
       } else if (formMode === 'edit' && editOid) {
-        // Do not allow name change
-        const res = await axios.put(`${API}/api/organisations/${editOid}`, {}, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        const res = await axios.put(${API}/api/organisations/${editOid}, { name }, {
+          headers: { Authorization: Bearer ${localStorage.getItem('token')} }
         });
 
         setOrganisations(prev => prev.map(o => o.oid === editOid ? res.data : o));
@@ -91,7 +90,7 @@ const OrganisationDirectory = () => {
       fetchOrganisations();
     } catch (err) {
       console.error("Modal submit error", err);
-      alert(`Error ${formMode === 'add' ? 'adding' : 'updating'} organisation`);
+      alert(Error ${formMode === 'add' ? 'adding' : 'updating'} organisation);
     }
   };
 
@@ -111,7 +110,7 @@ const OrganisationDirectory = () => {
     const hours = String(istTime.getHours()).padStart(2, '0');
     const minutes = String(istTime.getMinutes()).padStart(2, '0');
     const seconds = String(istTime.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    return ${year}-${month}-${day} ${hours}:${minutes}:${seconds};
   };
 
   return (
@@ -127,14 +126,15 @@ const OrganisationDirectory = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
           <button
-            className="add-btn"
-            onClick={openAddModal}
-            disabled={organisations.length >= 1}
-            title={organisations.length >= 1 ? "Only one organisation allowed" : ""}
-            style={{ opacity: organisations.length >= 1 ? 0.5 : 1, cursor: organisations.length >= 1 ? 'not-allowed' : 'pointer' }}
-          >
-            <FaPlus /> Add Organisation
-          </button>
+  className="add-btn"
+  onClick={openAddModal}
+  disabled={organisations.length >= 1}
+  title={organisations.length >= 1 ? "Only one organisation allowed" : ""}
+  style={{ opacity: organisations.length >= 1 ? 0.5 : 1, cursor: organisations.length >= 1 ? 'not-allowed' : 'pointer' }}
+>
+  <FaPlus /> Add Organisation
+</button>
+
         </div>
       </div>
 
@@ -143,8 +143,6 @@ const OrganisationDirectory = () => {
           <tr>
             <th>Organisation ID</th>
             <th>Name</th>
-            <th>Created At</th>
-            <th>Updated At</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -163,7 +161,7 @@ const OrganisationDirectory = () => {
           ))}
           {filteredOrganisations.length === 0 && (
             <tr>
-              <td colSpan="5" className="no-data">No matching organisations found.</td>
+              <td colSpan="4" className="no-data">No matching organisations found.</td>
             </tr>
           )}
         </tbody>
@@ -184,7 +182,6 @@ const OrganisationDirectory = () => {
               placeholder="Organisation Name"
               value={currentOrganisation.name}
               onChange={(e) => setCurrentOrganisation({ ...currentOrganisation, name: e.target.value })}
-              disabled={formMode === 'edit'}  {/* Prevent name change */}
             />
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
