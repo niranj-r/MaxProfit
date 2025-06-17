@@ -243,7 +243,7 @@ def assign_task():
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 
-@app.route('/api/assign-task/<int:project_id>/<eid>', methods=['DELETE'])
+@app.route('/api/projects/<int:project_id>/assignees/<eid>', methods=['DELETE'])
 @jwt_required()
 def remove_task_assignment(project_id, eid):
     try:
@@ -285,6 +285,7 @@ def remove_task_assignment(project_id, eid):
         db.session.rollback()
         print(f"❗ Unexpected error: {str(e)}")
         return jsonify({"error": "Unexpected error"}), 500
+
 
 
 # ------------------ HELPERS ------------------
