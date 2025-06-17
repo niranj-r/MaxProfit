@@ -238,16 +238,6 @@ const DepartmentDirectory = () => {
           errorMsg = 'Invalid Organization ID.';
         }
         break;
-      case 'managerIds':
-        if (!value || value.length === 0) {
-          errorMsg = 'At least one manager is required.';
-        } else {
-          const invalidManagers = value.filter(id => !employees.some(emp => emp.eid === id));
-          if (invalidManagers.length > 0) {
-            errorMsg = `Invalid Manager IDs: ${invalidManagers.join(', ')}`;
-          }
-        }
-        break;
       default:
         break;
     }

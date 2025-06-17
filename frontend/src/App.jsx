@@ -19,6 +19,7 @@ import BudgetChart from './components/BudgetChart';
 import ModalWrapper from './components/ModalWrapper';
 import ProjectAssignees from './components/ProjectAssignees'; 
 import UpcomingDeadlines from './components/UpcomingDeadlines'; 
+import FinancialYearManager from './components/FinancialYearManager';
 
 function App() {
   return (
@@ -43,7 +44,7 @@ function App() {
       <Route path="/project-assignees" element={<ProjectAssignees />} />
       <Route path="/projects/:id/assignees" element={<ProjectAssignees />} />
       <Route path="/upcoming-deadlines" element={<UpcomingDeadlines />} />
-
+      <Route path="/financial-year-manager" element={<FinancialYearManager />} />
       {/* Add more routes as needed */}
     </Routes>
   );

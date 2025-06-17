@@ -37,6 +37,17 @@ project_assignees = db.Table(
     db.Column('role', db.String(100))
 )
 
+class FinancialYear(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    label = db.Column(db.String(20), nullable=False, unique=True)  # e.g., "2024-2025"
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "label": self.label
+        }
+
+
 class ProjectAssignment(db.Model):
     __tablename__ = 'project_assignment'
 
@@ -102,6 +113,42 @@ class ActivityLog(db.Model):
     action = db.Column(db.String(50))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+# ------------------ FINANCIAL YEARS ------------------
+
+@app.route("/financial-years", methods=["GET"])
+def get_financial_years():
+    years = FinancialYear.query.all()
+    return jsonify([year.to_dict() for year in years]), 200
+
+@app.route("/financial-years", methods=["POST"])
+def add_financial_year():
+    data = request.get_json()
+    start_year = data.get("start_year")
+
+    if not isinstance(start_year, int):
+        return jsonify({"error": "Invalid or missing start_year"}), 400
+
+    label = f"{start_year}-{start_year + 1}"
+
+    if FinancialYear.query.filter_by(label=label).first():
+        return jsonify({"error": "Financial year already exists"}), 400
+
+    year = FinancialYear(label=label)
+    db.session.add(year)
+    db.session.commit()
+    return jsonify(year.to_dict()), 201
+
+@app.route("/financial-years/<int:id>", methods=["DELETE"])
+def delete_financial_year(id):
+    year = FinancialYear.query.get(id)
+    if not year:
+        return jsonify({"error": "Not found"}), 404
+
+    db.session.delete(year)
+    db.session.commit()
+    return jsonify({"message": "Deleted"}), 200
+
+# ------------------ PROJECT ASSIGNMENTS ------------------
 
 @app.route('/api/assign-task', methods=['POST'])
 @jwt_required()
@@ -579,67 +626,41 @@ def employees_dept():
 @app.route('/api/departments', methods=['POST'])
 @jwt_required()
 def create_department():
-    print("🚀 /api/departments POST route hit")
-
     data = request.json
-    print("📥 Incoming Data:", data)
 
-    # Check if department already exists
-    existing = Department.query.filter_by(did=data.get("did")).first()
-    if existing:
-        print("⚠ Department already exists:", existing.did)
-        return jsonify({"error": "Department already exists"}), 409
-
-    # Handle both single managerId (backward compatibility) and multiple managerIds
-    manager_ids = data.get("managerIds", [])
+    # Backward compatibility: support both managerId and managerIds
+    manager_ids = data.get("managerIds") or []
     if not manager_ids and data.get("managerId"):
-        # Backward compatibility: convert single managerId to array
         manager_ids = [data.get("managerId")]
 
-    if not manager_ids:
-        print("❌ No managers specified")
-        return jsonify({"error": "At least one manager is required"}), 400
+    # Only convert non-empty lists into comma-separated strings, else None
+    manager_ids_csv = ','.join(manager_ids) if manager_ids else None
+    primary_manager = manager_ids[0] if manager_ids else None
 
-    # Validate all manager IDs exist
-    invalid_managers = []
-    valid_managers = []
-    
-    for manager_id in manager_ids:
-        manager = User.query.filter_by(eid=manager_id).first()
-        if manager:
-            valid_managers.append(manager)
-        else:
-            invalid_managers.append(manager_id)
-    
-    if invalid_managers:
-        print(f"❌ Invalid manager IDs: {invalid_managers}")
-        return jsonify({"error": f"Manager users not found: {', '.join(invalid_managers)}"}), 404
-
-    # Create the department
+    # Create the department (no manager required)
     dept = Department(
         did=data.get("did"),
         name=data.get("name"),
         oid=data.get("oid"),
-        managerId=manager_ids[0],  # Store primary manager in managerId for backward compatibility
-        managerIds=','.join(manager_ids)  # Store all managers as comma-separated string
+        managerId=primary_manager,
+        managerIds=manager_ids_csv
     )
-    print("🛠 Creating department:", dept)
-
     db.session.add(dept)
 
-    # Update all managers' roles to department_manager
-    for manager in valid_managers:
-        manager.role = "department_manager"
-        print(f"👤 Manager role updated: {manager.eid}")
+    # Update roles for valid managers, if any
+    for eid in manager_ids:
+        manager = User.query.filter_by(eid=eid).first()
+        if manager:
+            manager.role = "department_manager"
+        else:
+            return jsonify({"error": f"Manager '{eid}' not found"}), 404
 
     try:
         db.session.commit()
-        print("✅ Department created and committed to DB")
         log_activity("Department", dept.name, "created")
         return jsonify({"message": "Department created"}), 201
     except SQLAlchemyError as e:
         db.session.rollback()
-        print("💥 Database error:", str(e))
         return jsonify({"error": "Database error", "details": str(e)}), 500
 
 
