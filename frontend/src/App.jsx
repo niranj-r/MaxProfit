@@ -19,8 +19,12 @@ import BudgetChart from './components/BudgetChart';
 import ModalWrapper from './components/ModalWrapper';
 import ProjectAssignees from './components/ProjectAssignees'; 
 import UpcomingDeadlines from './components/UpcomingDeadlines'; 
+import FinancialYearPage from './components/FinancialYearPage';
 
 function App() {
+  // Here you can get this dynamically from state/props/context later
+  const financialYear = "2024-2025";
+
   return (
     <Routes>
       <Route path="/" element={<Login />} />
@@ -43,8 +47,7 @@ function App() {
       <Route path="/project-assignees" element={<ProjectAssignees />} />
       <Route path="/projects/:id/assignees" element={<ProjectAssignees />} />
       <Route path="/upcoming-deadlines" element={<UpcomingDeadlines />} />
-
-      {/* Add more routes as needed */}
+      <Route path="/admin-dashboard/employee-financials" element={<FinancialYearPage financialYear="2024-2025" />} />
     </Routes>
   );
 }
