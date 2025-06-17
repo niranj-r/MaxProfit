@@ -456,6 +456,11 @@ def delete_user(user_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
+    # Check if user is a department manager
+    is_manager = Department.query.filter_by(managerId=user.eid).first()
+    if is_manager:
+        return jsonify({"error": f"Cannot delete employee '{user.fname} {user.lname}' as they are managing department '{is_manager.name}'."}), 400
+
     try:
         # Step 1: Remove from project_assignees table
         db.session.execute(
@@ -475,6 +480,7 @@ def delete_user(user_id):
         db.session.rollback()
         print("Error deleting user:", str(e))
         return jsonify({"error": "Internal server error"}), 500
+
 
 
 
@@ -635,40 +641,39 @@ def get_departments():
 @app.route('/api/departments/<did>', methods=['DELETE'])
 @jwt_required()
 def delete_department(did):
-    # Check if department exists
     dept = Department.query.filter_by(did=did).first()
     if not dept:
         return jsonify({"error": "Department not found"}), 404
 
-    # ❌ Prevent deletion if any employees are assigned to this department
-    employees_exist = User.query.filter_by(did=did).first()
+    employees_exist = User.query.filter_by(did=dept.name).first()
     if employees_exist:
         return jsonify({"error": "Cannot delete department with assigned employees"}), 400
 
-    # ❌ Prevent deletion if any projects are linked to this department
+
+    # Check for assigned projects
     projects_exist = Project.query.filter_by(departmentId=did).first()
     if projects_exist:
         return jsonify({"error": "Cannot delete department with existing projects"}), 400
 
-    # Store managerId before deletion
+    # Save manager ID to potentially revert role
     manager_id = dept.managerId
 
     db.session.delete(dept)
     db.session.commit()
 
-    # Update manager role if necessary
+    # Revert manager role if they no longer manage any departments
     manager = User.query.filter_by(eid=manager_id).first()
     if manager:
-        other_managed_departments = Department.query.filter(
-            Department.managerId == manager_id
-        ).all()
-        if not other_managed_departments:
+        still_managing = Department.query.filter_by(managerId=manager_id).first()
+        if not still_managing:
             manager.role = "employee"
             db.session.commit()
             print(f"🔄 Reverted {manager.eid}'s role back to employee")
 
     log_activity("Department", dept.name, "deleted")
     return jsonify({"message": "Department deleted successfully"}), 200
+
+
 
 
 

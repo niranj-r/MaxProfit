@@ -78,9 +78,13 @@ const handleDelete = async (did) => {
     await fetchEmployees();
 
   } catch (err) {
-    console.error("Failed to delete department", err);
+  console.error("Failed to delete department", err);
+  if (err.response && err.response.data && err.response.data.error) {
+    alert(err.response.data.error);
+  } else {
     alert("Error deleting department.");
   }
+}
 };
 
   const openAddModal = () => {

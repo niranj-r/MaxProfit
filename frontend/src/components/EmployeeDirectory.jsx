@@ -234,25 +234,9 @@ const EmployeeDirectory = () => {
       fetchEmployees();
     } catch (e) {
       console.error('Delete error', e.response?.data || e);
-      alert('Error deleting employee');
+      const errorMessage = e.response?.data?.error || 'Error deleting employee';
+      alert(errorMessage);
     }
-  };
-  
-  const convertToIST = (isoString) => {
-    if (!isoString) return '-';
-    const utcDate = new Date(isoString);
-    const istOffset = 5.5 * 60;
-    const istTime = new Date(utcDate.getTime() + istOffset * 60 * 1000);
-    return istTime.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour12: true,
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
   };
 
   const filtered = employees.filter(emp =>
