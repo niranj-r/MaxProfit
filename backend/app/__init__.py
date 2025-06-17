@@ -31,6 +31,8 @@ def create_app():
     from app.models.financials import EmployeeFinancials
     from app.models.assignments import ProjectAssignment
     from app.models.association import project_assignees
+    from app.models.financial_year import FinancialYear
+
 
     # Register routes
     from app.routes import register_routes

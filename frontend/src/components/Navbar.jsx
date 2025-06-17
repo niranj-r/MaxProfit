@@ -29,6 +29,11 @@ const Navbar = () => {
                             Users
                         </NavLink>
                     </li>
+                    <li>
+                        <NavLink to="/settings" className={({ isActive }) => isActive ? "active" : ""}>
+                            Settings
+                        </NavLink>
+                    </li>
                 </ul>
             </div>
             <div className="profile-icon">

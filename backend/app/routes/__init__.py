@@ -5,6 +5,8 @@ from .organisation_routes import org_bp
 from .project_routes import proj_bp
 from .assignee_routes import assignee_bp
 from .financial_routes import fin_bp
+from .financial_year_routes import financial_year_bp
+
 
 def register_routes(app):
     app.register_blueprint(auth_bp)
@@ -14,3 +16,5 @@ def register_routes(app):
     app.register_blueprint(proj_bp)
     app.register_blueprint(assignee_bp)
     app.register_blueprint(fin_bp)
+    app.register_blueprint(financial_year_bp)
+    
