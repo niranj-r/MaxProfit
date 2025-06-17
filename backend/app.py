@@ -640,31 +640,28 @@ def delete_department(did):
     if not dept:
         return jsonify({"error": "Department not found"}), 404
 
-    # Check for any projects under this department
+    # ❌ Prevent deletion if any employees are assigned to this department
+    employees_exist = User.query.filter_by(did=did).first()
+    if employees_exist:
+        return jsonify({"error": "Cannot delete department with assigned employees"}), 400
+
+    # ❌ Prevent deletion if any projects are linked to this department
     projects_exist = Project.query.filter_by(departmentId=did).first()
     if projects_exist:
         return jsonify({"error": "Cannot delete department with existing projects"}), 400
 
-    # Set did = NULL for users in this department
-    #users = User.query.filter_by(did=did).all()
-    #for user in users:
-    #    user.did = None  # Set did to NULL
-    #db.session.commit()
-
     # Store managerId before deletion
     manager_id = dept.managerId
 
-    # Delete the department
     db.session.delete(dept)
     db.session.commit()
 
-    # Check if the manager manages any other departments
+    # Update manager role if necessary
     manager = User.query.filter_by(eid=manager_id).first()
     if manager:
         other_managed_departments = Department.query.filter(
             Department.managerId == manager_id
         ).all()
-
         if not other_managed_departments:
             manager.role = "employee"
             db.session.commit()
@@ -672,7 +669,6 @@ def delete_department(did):
 
     log_activity("Department", dept.name, "deleted")
     return jsonify({"message": "Department deleted successfully"}), 200
-
 
 
 
