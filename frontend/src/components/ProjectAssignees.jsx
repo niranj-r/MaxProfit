@@ -21,6 +21,8 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const [selectedRole, setSelectedRole] = useState(AVAILABLE_ROLES[0]);
   const [percentage, setPercentage] = useState('');
   const [billingRate, setBillingRate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     if (projectId) fetchAssignees();
@@ -57,6 +59,8 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     setPending(emp);
     setPercentage('');
     setBillingRate('');
+    setStartDate('');
+    setEndDate('');
     const hasPM = assignees.some(a => a.role === 'Project Manager');
     setSelectedRole(hasPM ? AVAILABLE_ROLES[0] : 'Project Manager');
   };
@@ -65,6 +69,8 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     setPending(null);
     setPercentage('');
     setBillingRate('');
+    setStartDate('');
+    setEndDate('');
   };
 
   const confirmAdd = async () => {
@@ -72,18 +78,21 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
     const pct = parseFloat(percentage);
     const rate = parseFloat(billingRate);
-    if (isNaN(pct) || isNaN(rate)) {
-      alert('Please enter valid allocation percentage and billing rate.');
+
+    if (isNaN(pct) || isNaN(rate) || !startDate || !endDate) {
+      alert('Please enter all fields: percentage, billing rate, start and end date.');
       return;
     }
 
     try {
+      // Add to project-assignees
       await axios.post(
         `${API}/api/projects/${projectId}/assignees`,
         { eid: pending.eid, role: selectedRole },
         authHeader
       );
 
+      // Assign task with dates and cost
       await axios.post(
         `${API}/api/assign-task`,
         {
@@ -92,7 +101,9 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
             {
               user_id: pending.id,
               percentage: pct,
-              billing_rate: rate
+              billing_rate: rate,
+              start_date: startDate,
+              end_date: endDate
             }
           ]
         },
@@ -187,7 +198,28 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 />
                 <label>Billing Rate</label>
               </div>
+
+              <div className="floating-field">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  required
+                />
+                <label>Start Date</label>
+              </div>
+
+              <div className="floating-field">
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  required
+                />
+                <label>End Date</label>
+              </div>
             </div>
+
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
               <button className="confirm-btn" onClick={confirmAdd}>Confirm</button>
               <button className="cancel-btn" onClick={cancelAdd}>Cancel</button>
@@ -218,10 +250,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <td>{emp.role}</td>
                 <td>{emp.cost ?? '—'}</td>
                 <td>
-                  <button className="remove-btn" onClick={() => removeAssignee(emp)}>
-                    Remove
-                  </button>
-
+                  <button className="remove-btn" onClick={() => removeAssignee(emp)}>Remove</button>
                 </td>
               </tr>
             ))}

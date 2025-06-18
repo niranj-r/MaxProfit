@@ -1,11 +1,18 @@
 from app import create_app, db
-from app.models.financial_year import FinancialYear
+from sqlalchemy import text
 
+# Initialize app
 app = create_app()
 
-with app.app_context():
-    print("Dropping financial_year table...")
-    FinancialYear.__table__.drop(db.engine)
-    print("Creating all tables...")
-    db.create_all()
-    print("Done.")
+def clear_all_data():
+    with app.app_context():
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+        meta = db.metadata
+        for table in reversed(meta.sorted_tables):
+            db.session.execute(table.delete())
+        db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+        db.session.commit()
+        print("✅ All data cleared from all tables.")
+
+# Run the function
+clear_all_data()

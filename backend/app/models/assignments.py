@@ -1,4 +1,3 @@
-### app/models/assignments.py
 from app import db
 from datetime import datetime
 
@@ -12,5 +11,7 @@ class ProjectAssignment(db.Model):
     allocated_hours = db.Column(db.Float)
     billing_rate = db.Column(db.Float)
     cost = db.Column(db.Float)
+    start_date = db.Column(db.Date)  # ✅ Add this
+    end_date = db.Column(db.Date)    # ✅ Add this
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
