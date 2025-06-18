@@ -1,24 +1,20 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  LineElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  Filler,
+  BarElement,
   Tooltip,
   Legend,
   Title
 } from 'chart.js';
 
 ChartJS.register(
-  LineElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  Filler,
+  BarElement,
   Tooltip,
   Legend,
   Title
@@ -49,14 +45,10 @@ const BudgetChart = () => {
             {
               label: "", // intentionally removed for clean look
               data: budgets,
-              borderColor: "#2563EB", // professional blue
-              backgroundColor: "rgba(159, 182, 233, 0.15)", // light fill
-              fill: true,
-              tension: 0.3,
-              pointBackgroundColor: "#2563EB",
-              pointBorderWidth: 1,
-              pointRadius: 3,
-              pointHoverRadius: 5
+              backgroundColor: "rgba(37, 99, 235, 0.7)", // semi-transparent blue
+              borderRadius: 6,
+              barThickness: 30,
+              maxBarThickness: 40
             }
           ]
         });
@@ -115,7 +107,7 @@ const BudgetChart = () => {
       y: {
         title: {
           display: true,
-          text: "Budget (in ₹)",
+          text: "Budget (in $)",
           color: "#6B7280",
           font: { size: 14, weight: "500" }
         },
@@ -142,7 +134,7 @@ const BudgetChart = () => {
         padding: "24px"
       }}
     >
-      <Line data={chartData} options={options} />
+      <Bar data={chartData} options={options} />
     </div>
   );
 };

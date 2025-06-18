@@ -93,8 +93,8 @@ const DashboardSummary = () => {
       color: "#f6c23e",
     },
     {
-      title: "Total Budget (₹)",
-      value: `₹${stats.totalBudget.toLocaleString()}`,
+      title: "Total Budget ($)",
+      value: `$${stats.totalBudget.toLocaleString()}`,
       icon: <FaMoneyBillWave className="icon" />,
       color: "#e74a3b",
     },

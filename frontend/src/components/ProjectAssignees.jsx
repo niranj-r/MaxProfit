@@ -13,6 +13,7 @@ const authHeader = {
 
 const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const [search, setSearch] = useState('');
+  const [projects, setProjects] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [assignees, setAssignees] = useState([]);
   const [pending, setPending] = useState(null);
@@ -26,6 +27,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   useEffect(() => {
     if (projectId) fetchAssignees();
     fetchRoles();
+    fetchProjects();
   }, [projectId]);
 
   const fetchAssignees = async () => {
@@ -34,6 +36,17 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
       setAssignees(res.data);
     } catch (err) {
       console.error('Failed to fetch assignees', err);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const res = await axios.get(`${API}/api/projects`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setProjects(res.data);
+    } catch (err) {
+      console.error('Failed to fetch projects', err);
     }
   };
 
@@ -118,6 +131,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
       alert('✅ User assigned with role and task!');
       fetchAssignees();
+      fetchProjects();
       setAssignees(a => [...a, { ...pending, role: selectedRole }]);
       cancelAdd();
       setSearch('');
@@ -242,7 +256,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Cost</th>
+              <th>Cost ($)</th>
               <th>Remove</th>
             </tr>
           </thead>

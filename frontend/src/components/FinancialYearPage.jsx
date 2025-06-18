@@ -117,9 +117,9 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
               <tr>
                 <th>Emp ID</th>
                 <th>Employee Name</th>
-                <th>Salary</th>
-                <th>Infrastructure</th>
-                <th>Total Cost</th>
+                <th>Salary ($)</th>
+                <th>Infrastructure ($)</th>
+                <th>Total Cost ($)</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -154,7 +154,7 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
                           />
                         ) : (
                           <span className={salaryNum === 0 ? "muted" : ""}>
-                            {salaryNum === 0 ? "-" : `₹${salaryNum.toFixed(2)}`}
+                            {salaryNum === 0 ? "-" : `${salaryNum.toFixed(2)}`}
                           </span>
                         )}
                       </td>
@@ -171,13 +171,13 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
                           />
                         ) : (
                           <span className={infraNum === 0 ? "muted" : ""}>
-                            {infraNum === 0 ? "-" : `₹${infraNum.toFixed(2)}`}
+                            {infraNum === 0 ? "-" : `${infraNum.toFixed(2)}`}
                           </span>
                         )}
                       </td>
 
                       <td className={`text-right ${totalCost === 0 ? "muted" : "highlight"}`}>
-                        {totalCost === 0 ? "-" : `₹${totalCost.toFixed(2)}`}
+                        {totalCost === 0 ? "-" : `${totalCost.toFixed(2)}`}
                       </td>
 
                       <td className="text-center">
