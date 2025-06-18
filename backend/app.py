@@ -1177,6 +1177,18 @@ def get_recent_activities():
     ]
     return jsonify(result), 200
 
+@app.route('/api/user-info', methods=['GET'])
+@jwt_required()
+def user_info():
+    user_id = get_jwt_identity()
+    user = get_user_by_id(user_id)
+    if user:
+        return jsonify({
+            "userName": user['name']  # or user.username depending on schema
+        }), 200
+    else:
+        return jsonify({"error": "User not found"}), 404
+
 
 # ------------------ MAIN ------------------
 
