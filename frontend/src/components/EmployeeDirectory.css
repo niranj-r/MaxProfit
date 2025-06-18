@@ -270,3 +270,21 @@
     max-height: 150px;
   }
 }
+
+.status-active {
+  background-color: #d4f4dd;
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.status-inactive {
+  background-color: #fdecea;
+  color: #c62828;
+  border: 1px solid #c62828;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}

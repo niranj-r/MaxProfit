@@ -1,13 +1,13 @@
-/*.financial-year-manager {
+.financial-year-manager {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center; /* instead of flex-end */
   align-items: flex-start;
   padding: 2rem;
   background-color: #f3f6fb;
   min-height: 100vh;
   box-sizing: border-box;
   font-family: 'Segoe UI', sans-serif;
-}*/
+}
 
 .fy-container {
   width: 400px;
@@ -85,13 +85,14 @@
   align-items: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: 0.2s ease-in-out;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .fy-item:hover {
   background-color: #ebeff8;
 }
 
-.fy-item span {
+.fy-label {
   font-weight: 500;
   color: #333;
   font-size: 0.95rem;
@@ -104,14 +105,19 @@
   gap: 0.5rem;
 }
 
-.manage-btn {
-  background-color: #007bff;
-  color: #fff;
+.manage-btn,
+.delete-btn {
   border: none;
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
   font-size: 0.9rem;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.manage-btn {
+  background-color: #007bff;
+  color: #fff;
 }
 
 .manage-btn:hover {
@@ -121,15 +127,22 @@
 .delete-btn {
   background-color: #dc3545;
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
-  cursor: pointer;
 }
 
 .delete-btn:hover {
   background-color: #c82333;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Mobile Responsive */
@@ -158,5 +171,9 @@
   .fy-item {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .fy-label {
+    margin-bottom: 0.5rem;
   }
 }

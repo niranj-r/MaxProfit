@@ -63,21 +63,23 @@ class FinancialYear(db.Model):
         }
 
 
+from sqlalchemy import Date
+
 class ProjectAssignment(db.Model):
     __tablename__ = 'project_assignment'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # <- This must exist
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    allocated_percentage = db.Column(db.Float)
-    allocated_hours = db.Column(db.Float)
+    allocated_percentage = db.Column(db.Integer, nullable=False)
+    allocated_hours = db.Column(db.Integer)
     billing_rate = db.Column(db.Float)
     cost = db.Column(db.Float)
+    start_date = db.Column(Date)  # Add this line
+    end_date = db.Column(Date)    # And this line
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    user = db.relationship('User', backref='assignments')
-    project = db.relationship('Project', backref='assignments')
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -165,6 +167,14 @@ def delete_financial_year(id):
 
 # ------------------ PROJECT ASSIGNMENTS ------------------
 
+def working_days(start_date, end_date): 
+    total = 0
+    curr = start_date
+    while curr <= end_date:
+        if curr.weekday() < 5:  # 0–4 are Mon–Fri
+            total += 1
+        curr += timedelta(days=1)
+    return total
 @app.route('/api/assign-task', methods=['POST'])
 @jwt_required()
 def assign_task():
@@ -179,6 +189,7 @@ def assign_task():
 
         project_id = data.get('project_id')
         assignments = data.get('assignments', [])
+
         print(f"📌 project_id: {project_id}, Assignments count: {len(assignments)}")
 
         if project_id is None:
@@ -197,22 +208,24 @@ def assign_task():
             print(f"🚫 Project {project_id} not found.")
             return jsonify({"error": "Project not found"}), 404
 
-        TOTAL_HOURS = 8
         validated_assignments = []
         total_percentage = 0
+        allocations = []
 
         for assignment in assignments:
             print(f"🧪 Validating assignment: {assignment}")
 
-            if not all(key in assignment for key in ['user_id', 'percentage', 'billing_rate']):
-                return jsonify({"error": "Each assignment requires user_id, percentage, and billing_rate"}), 400
+            if not all(key in assignment for key in ['user_id', 'percentage', 'billing_rate', 'start_date', 'end_date']):
+                return jsonify({"error": "Each assignment requires user_id, percentage, billing_rate, start_date, and end_date"}), 400
 
             try:
                 user_id = int(assignment['user_id'])
                 percentage = float(assignment['percentage'])
                 billing_rate = float(assignment['billing_rate'])
+                start_date = datetime.strptime(assignment['start_date'], "%Y-%m-%d").date()
+                end_date = datetime.strptime(assignment['end_date'], "%Y-%m-%d").date()
             except (ValueError, TypeError):
-                return jsonify({"error": "Invalid numeric values in assignment"}), 400
+                return jsonify({"error": "Invalid numeric or date values in assignment. Date format: YYYY-MM-DD"}), 400
 
             user = User.query.get(user_id)
             if not user:
@@ -222,53 +235,51 @@ def assign_task():
             if percentage <= 0 or percentage > 100:
                 return jsonify({"error": "Percentage must be between 0 and 100"}), 400
 
-            validated_assignments.append({
+            working_days_count = working_days(start_date, end_date)
+            cost = billing_rate * (percentage / 100.0) * working_days_count
+
+            allocation_data = {
                 'user_id': user_id,
-                'percentage': percentage,
-                'billing_rate': billing_rate
-            })
+                'project_id': project_id,
+                'allocated_percentage': percentage,
+                'billing_rate': billing_rate,
+                'allocated_hours': working_days_count,
+                'cost': round(cost, 2),
+                'start_date': start_date,
+                'end_date': end_date
+            }
+
             total_percentage += percentage
+            allocations.append(allocation_data)
+            validated_assignments.append(allocation_data)
 
         if total_percentage > 100:
-            print(f"⚠️ Total percentage exceeds 100%: {total_percentage}")
+            print(f"⚠ Total percentage exceeds 100%: {total_percentage}")
             return jsonify({
                 "error": f"Total percentage exceeds 100% (current: {total_percentage}%)",
                 "total_percentage": total_percentage
             }), 400
 
-        allocations = []
         for assignment in validated_assignments:
-            hours = (assignment['percentage'] / 100) * TOTAL_HOURS
-            cost = hours * assignment['billing_rate']
-
-            allocation_data = {
-                'user_id': assignment['user_id'],
-                'project_id': project_id,
-                'allocated_percentage': assignment['percentage'],
-                'allocated_hours': round(hours, 2),
-                'cost': round(cost, 2),
-                'billing_rate': assignment['billing_rate']
-            }
-
-            allocations.append(allocation_data)
-
             existing = ProjectAssignment.query.filter_by(
                 user_id=assignment['user_id'],
                 project_id=project_id
             ).first()
 
             if existing:
-                print(f"✏️ Updating existing assignment for {assignment['user_id']}")
-                existing.allocated_percentage = assignment['percentage']
-                existing.allocated_hours = hours
-                existing.cost = cost
+                print(f"✏ Updating existing assignment for {assignment['user_id']}")
+                existing.allocated_percentage = assignment['allocated_percentage']
+                existing.allocated_hours = assignment['allocated_hours']
                 existing.billing_rate = assignment['billing_rate']
+                existing.cost = assignment['cost']
+                existing.start_date = assignment['start_date']
+                existing.end_date = assignment['end_date']
             else:
                 print(f"➕ Creating new assignment for {assignment['user_id']}")
-                new_assignment = ProjectAssignment(**allocation_data)
+                new_assignment = ProjectAssignment(**assignment)
                 db.session.add(new_assignment)
 
-            # ✅ Ensure entry exists in project_assignees join table
+            # Link to project_assignees if not already linked
             assignee_exists = db.session.execute(
                 db.select(project_assignees).where(
                     project_assignees.c.project_id == project_id,
@@ -291,8 +302,7 @@ def assign_task():
         return jsonify({
             "message": "Tasks assigned successfully",
             "allocations": allocations,
-            "total_percentage": total_percentage,
-            "total_hours": TOTAL_HOURS
+            "total_percentage": total_percentage
         }), 200
 
     except SQLAlchemyError as e:
@@ -310,7 +320,7 @@ def assign_task():
 @jwt_required()
 def remove_task_assignment(project_id, eid):
     try:
-        print(f"🗑️ Removing assignment: project_id={project_id}, eid={eid}")
+        print(f"🗑 Removing assignment: project_id={project_id}, eid={eid}")
 
         user = User.query.filter_by(eid=eid).first()
         if not user:
@@ -324,7 +334,7 @@ def remove_task_assignment(project_id, eid):
 
         if assignment:
             db.session.delete(assignment)
-            print(f"🗑️ Deleted from ProjectAssignment for user_id={user.id}")
+            print(f"🗑 Deleted from ProjectAssignment for user_id={user.id}")
 
         # Remove from project_assignees join table
         db.session.execute(
@@ -545,6 +555,23 @@ def delete_user(user_id):
         return jsonify({"error": "Internal server error"}), 500
 
 
+@app.route('/api/users/<int:user_id>/status', methods=['PUT'])
+@jwt_required()
+def update_user_status(user_id):
+    data = request.json
+    new_status = data.get('status')
+
+    if new_status not in ['active', 'inactive']:
+        return jsonify({'error': 'Invalid status'}), 400
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user.status = new_status
+    db.session.commit()
+
+    return jsonify({'message': 'Status updated'})
 
 
 

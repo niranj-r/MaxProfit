@@ -64,44 +64,50 @@ const FinancialYearManager = () => {
 
     return (
         <div className="financial-year-manager">
-            <div className="dashboard-header">
+            <header className="dashboard-header">
                 <Navbar />
-            </div>
-            <div className="fy-container">
-                <h2>Financial Year Manager</h2>
-                <div className="fy-input">
-                    <label>Start Year:</label>
-                    <input
-                        type="number"
-                        min="2000"
-                        max="2100"
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                    />
-                    <button onClick={handleAdd}>Add</button>
-                </div>
+            </header>
 
-                <ul className="fy-list">
-                    {financialYears.map(year => {
-                        const [startYearStr, endYearStr] = year.label.split("-");
-                        const startDate = `Apr 1, ${startYearStr}`;
-                        const endDate = `Mar 31, ${endYearStr}`;
+            <main className="fy-main-container">
+                <section className="fy-box">
+                    <h2 className="fy-title">Financial Year Manager</h2>
 
-                        return (
-                            <li key={year.id} className="fy-item">
-                                <span>
-                                    {startDate} – {endDate}
-                                </span>
-                                <div className="fy-actions">
-                                    <button className="manage-btn">Manage</button>
-                                    <button className="delete-btn" onClick={() => handleDelete(year.id)}>Delete</button>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            </div>
+                    <div className="fy-form">
+                        <label htmlFor="start-year">Start Year:</label>
+                        <input
+                            id="start-year"
+                            type="number"
+                            min="2000"
+                            max="2100"
+                            value={year}
+                            onChange={(e) => setYear(e.target.value)}
+                        />
+                        <button className="fy-add-btn" onClick={handleAdd}>Add</button>
+                    </div>
+
+                    <ul className="fy-list">
+                        {financialYears.map(year => {
+                            const [startYearStr, endYearStr] = year.label.split("-");
+                            const startDate = `Apr 1, ${startYearStr}`;
+                            const endDate = `Mar 31, ${endYearStr}`;
+
+                            return (
+                                <li key={year.id} className="fy-list-item">
+                                    <span className="fy-label">
+                                        {startDate} – {endDate}
+                                    </span>
+                                    <div className="fy-buttons">
+                                        <button className="fy-manage-btn">Manage</button>
+                                        <button className="fy-delete-btn" onClick={() => handleDelete(year.id)}>Delete</button>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
+            </main>
         </div>
+
     );
 };
 

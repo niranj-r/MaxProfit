@@ -19,6 +19,8 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const [selectedRole, setSelectedRole] = useState('');
   const [percentage, setPercentage] = useState('');
   const [billingRate, setBillingRate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [availableRoles, setAvailableRoles] = useState([]);
 
   useEffect(() => {
@@ -76,6 +78,8 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     setPending(null);
     setPercentage('');
     setBillingRate('');
+    setStartDate('');
+    setEndDate('');
   };
 
   const confirmAdd = async () => {
@@ -83,7 +87,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
     const pct = parseFloat(percentage);
     const rate = parseFloat(billingRate);
-    if (isNaN(pct) || isNaN(rate)) {
+    if (isNaN(pct) || isNaN(rate) || !startDate || !endDate) {
       alert('Please enter valid allocation percentage and billing rate.');
       return;
     }
@@ -103,7 +107,9 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
             {
               user_id: pending.id,
               percentage: pct,
-              billing_rate: rate
+              billing_rate: rate,
+              start_date: startDate,
+              end_date: endDate
             }
           ]
         },
@@ -198,6 +204,25 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                   required
                 />
                 <label>Billing Rate</label>
+              </div>
+              <div className="floating-field">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  required
+                />
+                <label>Start Date</label>
+              </div>
+
+              <div className="floating-field">
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  required
+                />
+                <label>End Date</label>
               </div>
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
