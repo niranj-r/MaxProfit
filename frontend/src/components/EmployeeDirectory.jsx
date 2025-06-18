@@ -239,6 +239,19 @@ const EmployeeDirectory = () => {
     }
   };
 
+  const toggleStatus = async (emp) => {
+  const newStatus = emp.status === 'active' ? 'inactive' : 'active';
+
+  try {
+    await axios.put(`${API}/api/users/${emp.id}/status`, { status: newStatus }, authHeader);
+    //alert(`Employee status updated to ${newStatus}`);
+    fetchEmployees();
+  } catch (err) {
+    console.error('Status update error', err.response?.data || err);
+    alert('Failed to update status');
+  }
+};
+
   const filtered = employees.filter(emp =>
     `${emp.fname} ${emp.lname}`.toLowerCase().includes(search.toLowerCase())
   );
@@ -261,7 +274,12 @@ const EmployeeDirectory = () => {
       <table className="employee-table">
         <thead>
           <tr>
-            <th>Employee ID</th><th>Name</th><th>Email</th><th>Department</th><th>Actions</th>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Status</th> {/* New column */}
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -272,15 +290,21 @@ const EmployeeDirectory = () => {
               <td>{emp.email}</td>
               <td>{emp.did}</td>
               <td>
+                <button
+                  onClick={() => toggleStatus(emp)}
+                  className={emp.status === 'active' ? 'status-active' : 'status-inactive'}
+                >
+                  {emp.status === 'active' ? 'Active' : 'Inactive'}
+                </button>
+              </td>
+              <td>
                 <FaEdit onClick={() => openEdit(emp)} className="icon edit-icon" />
                 <FaTrash onClick={() => handleDelete(emp.id || emp._id)} className="icon delete-icon" />
               </td>
             </tr>
           ))}
-          {filtered.length === 0 && (
-            <tr><td colSpan="7">No employees found.</td></tr>
-          )}
         </tbody>
+
       </table>
 
       {showModal && (
