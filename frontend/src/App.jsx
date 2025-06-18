@@ -20,6 +20,15 @@ import ModalWrapper from './components/ModalWrapper';
 import ProjectAssignees from './components/ProjectAssignees'; 
 import UpcomingDeadlines from './components/UpcomingDeadlines'; 
 import FinancialYearManager from './components/FinancialYearManager';
+import FinancialYearPage from './components/FinancialYearPage'; // ✅ Use directly
+import { useParams } from 'react-router-dom';
+
+// Wrapper to pass year param as prop
+const FinancialYearPageWrapper = () => {
+  const { year } = useParams();
+  return <FinancialYearPage financialYear={year} goBack={() => window.history.back()} />;
+};
+
 
 function App() {
   return (
@@ -45,6 +54,8 @@ function App() {
       <Route path="/projects/:id/assignees" element={<ProjectAssignees />} />
       <Route path="/upcoming-deadlines" element={<UpcomingDeadlines />} />
       <Route path="/financial-year-manager" element={<FinancialYearManager />} />
+      <Route path="/employee-financials/:year" element={<FinancialYearPageWrapper />} /> {/* ✅ Use wrapper to pass year */}
+
       {/* Add more routes as needed */}
     </Routes>
   );

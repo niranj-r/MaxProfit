@@ -51,6 +51,17 @@ def get_roles():
     roles = Role.query.all()
     return jsonify([r.role for r in roles])
 
+class EmployeeFinancials(db.Model):
+    tablename = 'employee_financials'
+
+    id = db.Column(db.Integer, primary_key=True)
+    eid = db.Column(db.String(20), db.ForeignKey('user.eid'), unique=True, nullable=False)
+    salary = db.Column(db.Float, nullable=True)
+    infrastructure = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref='financials')
 
 class FinancialYear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -164,6 +175,59 @@ def delete_financial_year(id):
     db.session.delete(year)
     db.session.commit()
     return jsonify({"message": "Deleted"}), 200
+#------------------FINANCIAL YEAR PAGE-----------------
+@app.route('/api/employee-financials', methods=['GET'])
+@jwt_required()
+def get_employee_financials():
+    # Filter users based on role and status
+    users = User.query.filter(
+        User.role.in_(['employee', 'department_manager']),
+        User.status == 'active'
+    ).all()
+
+    result = []
+    for user in users:
+        financial = EmployeeFinancials.query.filter_by(eid=user.eid).first()
+        salary = financial.salary if financial else None
+        infrastructure = financial.infrastructure if financial else None
+        cost = None
+        if salary is not None and infrastructure is not None:
+            cost = salary + infrastructure
+        result.append({
+            "eid": user.eid,
+            "fname": user.fname,
+            "lname": user.lname,
+            "salary": salary,
+            "infrastructure": infrastructure,
+            "cost": cost
+        })
+
+    return jsonify(result), 200
+
+
+
+# POST to update a user's financials
+@app.route('/api/employee-financials/<eid>', methods=['POST'])
+@jwt_required()
+def update_employee_financials(eid):
+    data = request.get_json()
+    salary = data.get("salary")
+    infrastructure = data.get("infrastructure")
+
+    user = User.query.filter_by(eid=eid).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    financial = EmployeeFinancials.query.filter_by(eid=eid).first()
+    if not financial:
+        financial = EmployeeFinancials(eid=eid)
+        db.session.add(financial)
+
+    financial.salary = salary
+    financial.infrastructure = infrastructure
+    db.session.commit()
+
+    return jsonify({"message": "Financial data updated"}), 200
 
 # ------------------ PROJECT ASSIGNMENTS ------------------
 
@@ -235,8 +299,10 @@ def assign_task():
             if percentage <= 0 or percentage > 100:
                 return jsonify({"error": "Percentage must be between 0 and 100"}), 400
 
-            working_days_count = working_days(start_date, end_date)
-            cost = billing_rate * (percentage / 100.0) * working_days_count
+            working_days_count = working_days(start_date, end_date) + 1
+            HOURS_PER_DAY = 8
+            allocated_hours = working_days_count * HOURS_PER_DAY * (percentage / 100.0)
+            cost = billing_rate * allocated_hours
 
             allocation_data = {
                 'user_id': user_id,

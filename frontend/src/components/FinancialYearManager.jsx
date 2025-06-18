@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./FinancialYearManager.css";
 import Navbar from './Navbar';
 
@@ -7,6 +8,7 @@ const API = process.env.REACT_APP_API_BASE_URL;
 const FinancialYearManager = () => {
     const [year, setYear] = useState("");
     const [financialYears, setFinancialYears] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetch(`${API}/financial-years`)
@@ -30,14 +32,11 @@ const FinancialYearManager = () => {
         try {
             const res = await fetch(`${API}/financial-years`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ start_year: startYear })
             });
 
             const data = await res.json();
-
             if (!res.ok) {
                 alert(data.error || "Error adding financial year.");
                 return;
@@ -50,12 +49,9 @@ const FinancialYearManager = () => {
         }
     };
 
-
     const handleDelete = async (id) => {
         try {
-            await fetch(`${API}/financial-years/${id}`, {
-                method: "DELETE"
-            });
+            await fetch(`${API}/financial-years/${id}`, { method: "DELETE" });
             setFinancialYears(prev => prev.filter(year => year.id !== id));
         } catch (error) {
             console.error("Delete error:", error);
@@ -63,16 +59,15 @@ const FinancialYearManager = () => {
     };
 
     return (
-        <div className="financial-year-manager">
+        <div className="page-wrapper">
             <header className="dashboard-header">
                 <Navbar />
             </header>
 
-            <main className="fy-main-container">
-                <section className="fy-box">
-                    <h2 className="fy-title">Financial Year Manager</h2>
-
-                    <div className="fy-form">
+            <main className="page-container">
+                <div className="fy-container">
+                    <h2>Financial Year Manager</h2>
+                    <div className="fy-input">
                         <label htmlFor="start-year">Start Year:</label>
                         <input
                             id="start-year"
@@ -82,7 +77,7 @@ const FinancialYearManager = () => {
                             value={year}
                             onChange={(e) => setYear(e.target.value)}
                         />
-                        <button className="fy-add-btn" onClick={handleAdd}>Add</button>
+                        <button onClick={handleAdd}>Add</button>
                     </div>
 
                     <ul className="fy-list">
@@ -92,22 +87,29 @@ const FinancialYearManager = () => {
                             const endDate = `Mar 31, ${endYearStr}`;
 
                             return (
-                                <li key={year.id} className="fy-list-item">
-                                    <span className="fy-label">
-                                        {startDate} – {endDate}
-                                    </span>
-                                    <div className="fy-buttons">
-                                        <button className="fy-manage-btn">Manage</button>
-                                        <button className="fy-delete-btn" onClick={() => handleDelete(year.id)}>Delete</button>
+                                <li key={year.id} className="fy-item">
+                                    <span className="fy-label">{startDate} – {endDate}</span>
+                                    <div className="fy-actions">
+                                        <button
+                                            className="manage-btn"
+                                            onClick={() => navigate(`/employee-financials/${year.label}`)}
+                                        >
+                                            Manage
+                                        </button>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={() => handleDelete(year.id)}
+                                        >
+                                            Delete
+                                        </button>
                                     </div>
                                 </li>
                             );
                         })}
                     </ul>
-                </section>
+                </div>
             </main>
         </div>
-
     );
 };
 

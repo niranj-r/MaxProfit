@@ -119,7 +119,9 @@
   position: relative;
   width: 100%;
 }
-.floating-field input[type="number"] {
+
+.floating-field input[type="number"],
+.floating-field input[type="date"] {
   width: 87%;
   padding: 14px 16px;
   border-radius: 9999px;
@@ -128,11 +130,14 @@
   background-color: #fff;
   transition: all 0.2s ease;
 }
-.floating-field input[type="number"]:focus {
+
+.floating-field input[type="number"]:focus,
+.floating-field input[type="date"]:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   outline: none;
 }
+
 .floating-field label {
   position: absolute;
   left: 18px;
@@ -145,6 +150,7 @@
   pointer-events: none;
   transition: all 0.2s ease;
 }
+
 .floating-field input:focus + label,
 .floating-field input:not(:placeholder-shown) + label {
   top: -8px;
@@ -152,6 +158,7 @@
   font-size: 0.75rem;
   color: #3b82f6;
 }
+
 
 /* Button Styles */
 .confirm-btn, .cancel-btn {
