@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import Navbar from "./Navbar";
+import "./FinancialyearPage.css";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -20,24 +22,20 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
 
   useEffect(() => {
     if (!financialYear || financialYear === "null" || financialYear === "undefined") {
-      console.warn("Invalid financial year received:", financialYear);
       setError("Financial year not provided or invalid.");
       setLoading(false);
       return;
     }
 
-    console.log("Fetching data for financial year:", financialYear);
     setLoading(true);
     setError(null);
 
     axios.get(`${API}/api/employee-financials?year=${financialYear}`, authHeader)
       .then((res) => {
-        console.log("Employee financial data:", res.data);
         setEmployees(res.data);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching employee data:", err);
         setError(`Failed to fetch employee data: ${err.response?.data?.error || err.message}`);
         setLoading(false);
       });
@@ -71,18 +69,16 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
         financial_year: financialYear,
       };
 
-      console.log("Saving data for employee:", eid, payload);
-
       await axios.post(`${API}/api/employee-financials/${eid}`, payload, authHeader);
 
       setEmployees((prev) =>
         prev.map((emp) =>
           emp.eid === eid
-            ? { 
-                ...emp, 
-                salary: payload.salary, 
+            ? {
+                ...emp,
+                salary: payload.salary,
                 infrastructure: payload.infrastructure,
-                cost: (payload.salary || 0) + (payload.infrastructure || 0)
+                cost: (payload.salary || 0) + (payload.infrastructure || 0),
               }
             : emp
         )
@@ -90,164 +86,133 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
 
       setEditRowId(null);
       setEditValues({ salary: "", infrastructure: "" });
-
-      console.log("Data saved successfully");
     } catch (err) {
-      console.error("Error saving data:", err);
       alert(`Failed to update employee data: ${err.response?.data?.error || err.message}`);
     }
   };
 
-  if (loading) return (
-    <div style={{ padding: "20px", textAlign: "center" }}>
-      <p>Loading employee data...</p>
-    </div>
-  );
-  
+  if (loading) return <div className="loading">Loading employee data...</div>;
+
   if (error) return (
-    <div style={{ padding: "20px" }}>
-      <button onClick={goBack} style={{ marginBottom: "10px", padding: "8px 16px" }}>← Back</button>
-      <p style={{ color: "red", textAlign: "center" }}>{error}</p>
+    <div className="error-container">
+      <Navbar />
+      <button onClick={goBack} className="back-button">← Back</button>
+      <p className="error-text">{error}</p>
     </div>
   );
 
   return (
-    <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-      <button 
-        onClick={goBack} 
-        style={{ 
-          marginBottom: "20px", 
-          padding: "8px 16px", 
-          backgroundColor: "#007bff", 
-          color: "white", 
-          border: "none", 
-          borderRadius: "4px",
-          cursor: "pointer"
-        }}
-      >
-        ← Back to Financial Years
-      </button>
-      
-      <h2 style={{ marginBottom: "20px", color: "#333" }}>
-        Financial Year: {financialYear}
-      </h2>
+    <div className="financial-page-wrapper">
+      <header className="dashboard-header">
+        <Navbar />
+      </header>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ 
-          width: "100%", 
-          borderCollapse: "collapse", 
-          marginTop: "20px", 
-          border: "1px solid #ddd",
-          backgroundColor: "white",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-        }}>
-          <thead>
-            <tr style={{ backgroundColor: "#f8f9fa" }}>
-              <th style={{ border: "1px solid #ddd", padding: "12px", textAlign: "left" }}>Emp ID</th>
-              <th style={{ border: "1px solid #ddd", padding: "12px", textAlign: "left" }}>Employee Name</th>
-              <th style={{ border: "1px solid #ddd", padding: "12px", textAlign: "right" }}>Salary</th>
-              <th style={{ border: "1px solid #ddd", padding: "12px", textAlign: "right" }}>Infrastructure</th>
-              <th style={{ border: "1px solid #ddd", padding: "12px", textAlign: "right" }}>Total Cost</th>
-              <th style={{ border: "1px solid #ddd", padding: "12px", textAlign: "center" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.length === 0 ? (
+      <main className="financial-content">
+        <button onClick={goBack} className="back-button">← Back to Financial Years</button>
+        <h2 className="fy-heading">Financial Year: {financialYear}</h2>
+
+        <div className="table-container">
+          <table className="employee-table">
+            <thead>
               <tr>
-                <td colSpan="6" style={{ 
-                  textAlign: "center", 
-                  padding: "20px", 
-                  color: "#666",
-                  fontStyle: "italic"
-                }}>
-                  No employees found for this financial year.
-                </td>
+                <th>Emp ID</th>
+                <th>Employee Name</th>
+                <th>Salary</th>
+                <th>Infrastructure</th>
+                <th>Total Cost</th>
+                <th>Actions</th>
               </tr>
-            ) : (
-              employees.map((emp) => {
-                const isEditing = editRowId === emp.eid;
-                const salaryNum = emp.salary ?? 0;
-                const infraNum = emp.infrastructure ?? 0;
-                const totalCost = salaryNum + infraNum;
+            </thead>
+            <tbody>
+              {employees.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="no-data">
+                    No employees found for this financial year.
+                  </td>
+                </tr>
+              ) : (
+                employees.map((emp) => {
+                  const isEditing = editRowId === emp.eid;
+                  const salaryNum = emp.salary ?? 0;
+                  const infraNum = emp.infrastructure ?? 0;
+                  const totalCost = salaryNum + infraNum;
 
-                return (
-                  <tr key={emp.eid} style={{ 
-                    borderBottom: "1px solid #ddd",
-                    backgroundColor: isEditing ? "#f0f8ff" : "white"
-                  }}>
-                    <td style={{ padding: "12px", border: "1px solid #ddd", fontWeight: "500" }}>{emp.eid}</td>
-                    <td style={{ padding: "12px", border: "1px solid #ddd" }}>{`${emp.fname} ${emp.lname}`}</td>
+                  return (
+                    <tr key={emp.eid} className={isEditing ? "editing-row" : ""}>
+                      <td>{emp.eid}</td>
+                      <td>{`${emp.fname} ${emp.lname}`}</td>
 
-                    <td style={{ padding: "12px", border: "1px solid #ddd", textAlign: "right" }}>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="salary"
-                          value={editValues.salary}
-                          onChange={handleChange}
-                          placeholder="0.00"
-                          style={{ width: "100px", textAlign: "right", padding: "4px", border: "1px solid #ccc", borderRadius: "3px" }}
-                        />
-                      ) : (
-                        <span style={{ color: salaryNum === 0 ? "#999" : "#333" }}>
-                          {salaryNum === 0 ? "-" : `₹${salaryNum.toFixed(2)}`}
-                        </span>
-                      )}
-                    </td>
+                      <td className="text-right">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="salary"
+                            value={editValues.salary}
+                            onChange={handleChange}
+                            placeholder="0.00"
+                            className="edit-input"
+                          />
+                        ) : (
+                          <span className={salaryNum === 0 ? "muted" : ""}>
+                            {salaryNum === 0 ? "-" : `₹${salaryNum.toFixed(2)}`}
+                          </span>
+                        )}
+                      </td>
 
-                    <td style={{ padding: "12px", border: "1px solid #ddd", textAlign: "right" }}>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          name="infrastructure"
-                          value={editValues.infrastructure}
-                          onChange={handleChange}
-                          placeholder="0.00"
-                          style={{ width: "100px", textAlign: "right", padding: "4px", border: "1px solid #ccc", borderRadius: "3px" }}
-                        />
-                      ) : (
-                        <span style={{ color: infraNum === 0 ? "#999" : "#333" }}>
-                          {infraNum === 0 ? "-" : `₹${infraNum.toFixed(2)}`}
-                        </span>
-                      )}
-                    </td>
+                      <td className="text-right">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            name="infrastructure"
+                            value={editValues.infrastructure}
+                            onChange={handleChange}
+                            placeholder="0.00"
+                            className="edit-input"
+                          />
+                        ) : (
+                          <span className={infraNum === 0 ? "muted" : ""}>
+                            {infraNum === 0 ? "-" : `₹${infraNum.toFixed(2)}`}
+                          </span>
+                        )}
+                      </td>
 
-                    <td style={{ padding: "12px", border: "1px solid #ddd", textAlign: "right", fontWeight: "600", color: totalCost === 0 ? "#999" : "#28a745" }}>
-                      {totalCost === 0 ? "-" : `₹${totalCost.toFixed(2)}`}
-                    </td>
+                      <td className={`text-right ${totalCost === 0 ? "muted" : "highlight"}`}>
+                        {totalCost === 0 ? "-" : `₹${totalCost.toFixed(2)}`}
+                      </td>
 
-                    <td style={{ padding: "12px", border: "1px solid #ddd", textAlign: "center" }}>
-                      {isEditing ? (
-                        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-                          <button onClick={() => saveEdit(emp.eid)} title="Save" style={{ padding: "6px 10px", backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "3px", cursor: "pointer" }}>
-                            <FaCheck />
+                      <td className="text-center">
+                        {isEditing ? (
+                          <div className="action-buttons">
+                            <button onClick={() => saveEdit(emp.eid)} className="save-btn">
+                              <FaCheck />
+                            </button>
+                            <button onClick={cancelEdit} className="cancel-btn">
+                              <FaTimes />
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => startEdit(emp)} className="edit-btn">
+                            <FaEdit />
                           </button>
-                          <button onClick={cancelEdit} title="Cancel" style={{ padding: "6px 10px", backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "3px", cursor: "pointer" }}>
-                            <FaTimes />
-                          </button>
-                        </div>
-                      ) : (
-                        <button onClick={() => startEdit(emp)} title="Edit" style={{ padding: "6px 10px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "3px", cursor: "pointer" }}>
-                          <FaEdit />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {employees.length > 0 && (
-        <div style={{ marginTop: "20px", padding: "10px", backgroundColor: "#f8f9fa", borderRadius: "4px", textAlign: "right" }}>
-          <strong>
-            Total Employees: {employees.length} | 
-            Total Cost: ₹{employees.reduce((sum, emp) => sum + (emp.cost || 0), 0).toFixed(2)}
-          </strong>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {employees.length > 0 && (
+          <div className="summary">
+            <strong>
+              Total Employees: {employees.length} | Total Cost: ₹
+              {employees.reduce((sum, emp) => sum + (emp.cost || 0), 0).toFixed(2)}
+            </strong>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
