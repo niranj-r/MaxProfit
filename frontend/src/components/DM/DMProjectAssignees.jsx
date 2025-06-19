@@ -11,7 +11,7 @@ const authHeader = {
   },
 };
 
-const PMProjectAssignees = ({ projectId, name, budget, onClose }) => {
+const DMProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const [search, setSearch] = useState('');
   const [projects, setProjects] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -41,7 +41,9 @@ const PMProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(`${API}/api/projects`, authHeader);
+      const res = await axios.get(`${API}/api/projects`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setProjects(res.data);
     } catch (err) {
       console.error('Failed to fetch projects', err);
@@ -52,7 +54,7 @@ const PMProjectAssignees = ({ projectId, name, budget, onClose }) => {
     try {
       const res = await axios.get(`${API}/api/roles`, authHeader);
       setAvailableRoles(res.data);
-      setSelectedRole(res.data[0]);
+      setSelectedRole(res.data[0]); // default role
     } catch (err) {
       console.error("Failed to fetch roles", err);
     }
@@ -143,19 +145,12 @@ const PMProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const removeAssignee = async emp => {
     try {
       await axios.delete(
-        `${API}/api/projects/${projectId}/pm-assignees/${emp.eid}`,
+        `${API}/api/projects/${projectId}/assignees/${emp.eid}`,
         authHeader
       );
       setAssignees(a => a.filter(x => x.eid !== emp.eid));
-      alert("Assignee removed successfully");
     } catch (err) {
       console.error('Remove error', err);
-      if (err.response && err.response.status === 403) {
-        const msg = err.response.data?.error || "Cannot remove this assignee";
-        alert(msg);
-      } else {
-        alert("Error removing assignee. Please try again.");
-      }
     }
   };
 
@@ -274,16 +269,7 @@ const PMProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <td>{emp.role}</td>
                 <td>{emp.cost ?? '—'}</td>
                 <td>
-                  <button
-                    className="remove-btn"
-                    onClick={() => removeAssignee(emp)}
-                    disabled={emp.role === "Project Manager"}
-                    title={emp.role === "Project Manager" ? "Cannot remove Project Manager" : ""}
-                    style={{
-                      opacity: emp.role === "Project Manager" ? 0.5 : 1,
-                      cursor: emp.role === "Project Manager" ? 'not-allowed' : 'pointer',
-                    }}
-                  >
+                  <button className="remove-btn" onClick={() => removeAssignee(emp)}>
                     Remove
                   </button>
                 </td>
@@ -298,4 +284,4 @@ const PMProjectAssignees = ({ projectId, name, budget, onClose }) => {
   );
 };
 
-export default PMProjectAssignees;
+export default DMProjectAssignees;

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaChartLine, FaCoins, FaHandHoldingUsd } from "react-icons/fa";
-import "../DashboardSummary.css"; // Reuse styles
-
+import "../DashboardSummary.css";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -14,49 +13,66 @@ const ProjectDashboardSummary = () => {
 
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState("2025-05");
   const [summary, setSummary] = useState({
     revenue: 0,
     cost: 0,
     profit: 0,
   });
+  const [userName, setUserName] = useState('');
+  
+    useEffect(() => {
+            const name = localStorage.getItem("userName");
+            if (name) {
+                setUserName(name);
+            }
+        }, []);
 
   useEffect(() => {
-    // Load projects owned by PM
     axios
       .get(`${API}/api/my-projects`, authHeader)
       .then((res) => {
         setProjects(res.data);
-        if (res.data.length > 0) setSelectedProject(res.data[0].id);
+        if (res.data.length > 0) {
+          const firstProject = res.data[0];
+          setSelectedProject(firstProject.id);
+          setSummary({
+            cost: firstProject.cost || 0,
+            revenue: 0,
+            profit: 0,
+          });
+        }
       })
       .catch((err) => console.error("Error fetching projects:", err));
   }, []);
 
   useEffect(() => {
-    if (selectedProject && selectedMonth) {
-      axios
-        .get(`${API}/api/projects/${selectedProject}/summary?month=${selectedMonth}`, authHeader)
-        .then((res) => setSummary(res.data))
-        .catch((err) => console.error("Error fetching project summary:", err));
+    if (!selectedProject) return;
+    const project = projects.find((p) => p.id === parseInt(selectedProject));
+    if (project) {
+      setSummary({
+        cost: project.cost || 0,
+        revenue: 0,
+        profit: 0,
+      });
     }
-  }, [selectedProject, selectedMonth]);
+  }, [selectedProject, projects]);
 
   const cards = [
     {
       title: "Revenue ($)",
-      value: `$${summary.revenue.toLocaleString()}`,
+      value: `$${(summary.revenue ?? 0).toLocaleString()}`,
       icon: <FaChartLine className="icon" />,
       color: "#4e73df",
     },
     {
-      title: "Cost ($)",
-      value: `$${summary.cost.toLocaleString()}`,
+      title: "Budget ($)",
+      value: `$${(summary.cost ?? 0).toLocaleString()}`,
       icon: <FaCoins className="icon" />,
       color: "#e74a3b",
     },
     {
       title: "Profit ($)",
-      value: `$${summary.profit.toLocaleString()}`,
+      value: `$${(summary.profit ?? 0).toLocaleString()}`,
       icon: <FaHandHoldingUsd className="icon" />,
       color: "#1cc88a",
     },
@@ -64,10 +80,16 @@ const ProjectDashboardSummary = () => {
 
   return (
     <div className="dashboard-summary">
+      <h2 className="org-heading">
+                            {userName ? `Welcome, ${userName}` : "Welcome"}
+                        </h2>
       <div className="filters">
         <label>
           Project:
-          <select value={selectedProject || ""} onChange={(e) => setSelectedProject(e.target.value)}>
+          <select
+            value={selectedProject || ""}
+            onChange={(e) => setSelectedProject(e.target.value)}
+          >
             {projects.map((proj) => (
               <option key={proj.id} value={proj.id}>
                 {proj.name}
@@ -75,22 +97,20 @@ const ProjectDashboardSummary = () => {
             ))}
           </select>
         </label>
-
-        <label>
-          Month:
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          />
-        </label>
       </div>
 
       <div className="summary-cards">
         {cards.map((card, idx) => (
-          <div className="card" key={idx} style={{ borderLeftColor: card.color }}>
+          <div
+            className="card"
+            key={idx}
+            style={{ borderLeftColor: card.color }}
+          >
             <div className="card-body">
-              <div className="card-icon1" style={{ backgroundColor: card.color }}>
+              <div
+                className="card-icon1"
+                style={{ backgroundColor: card.color }}
+              >
                 {card.icon}
               </div>
               <div className="card-text">
@@ -101,8 +121,6 @@ const ProjectDashboardSummary = () => {
           </div>
         ))}
       </div>
-
-      {/* Add chart or What-If toggle here if needed */}
     </div>
   );
 };
