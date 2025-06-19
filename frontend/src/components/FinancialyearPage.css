@@ -10,12 +10,17 @@
   --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.financial-year-page {
+  padding: 20px 50px;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--gray-light);
+  min-height: 100vh;
+}
+
 /* Page container */
 .financial-page-wrapper {
   font-family: var(--font-family);
   padding: 2rem;
-  max-width: 1200px;
-  margin: 2rem auto;
   background: var(--white);
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
@@ -23,7 +28,7 @@
 
 /* Header */
 .dashboard-header {
-  margin-bottom: 1rem;
+  margin-bottom: 40px;
 }
 
 /* Back button */

@@ -73,7 +73,7 @@ const EmployeeDirectory = () => {
   const validateField = (name, value) => {
     let errorMsg = '';
     const trimmedValue = value.trim();
-    
+
     switch (name) {
       case 'eid':
         if (!trimmedValue) {
@@ -84,7 +84,7 @@ const EmployeeDirectory = () => {
           errorMsg = 'Employee ID already exists. Please use a different ID.';
         }
         break;
-        
+
       case 'fname':
         if (!/^[A-Za-z]*$/.test(value)) {
           errorMsg = 'First name can only contain alphabetic characters.';
@@ -94,7 +94,7 @@ const EmployeeDirectory = () => {
           errorMsg = 'First name must be at least 3 characters long.';
         }
         break;
-        
+
       case 'lname':
         if (!trimmedValue) {
           errorMsg = 'Last name is required.';
@@ -102,7 +102,7 @@ const EmployeeDirectory = () => {
           errorMsg = 'Last name can only contain letters and spaces.';
         }
         break;
-        
+
       case 'email':
         if (!trimmedValue) {
           errorMsg = 'Email is required.';
@@ -114,7 +114,7 @@ const EmployeeDirectory = () => {
           errorMsg = 'Email already exists. Please use a different email.';
         }
         break;
-        
+
       case 'did':
         if (!trimmedValue) {
           errorMsg = 'Department is required.';
@@ -122,7 +122,7 @@ const EmployeeDirectory = () => {
           errorMsg = `Department "${trimmedValue}" does not exist. Available departments: ${existingDepartments.join(', ')}`;
         }
         break;
-        
+
       case 'password':
         if (formMode === 'add') {
           if (!value) {
@@ -132,8 +132,8 @@ const EmployeeDirectory = () => {
           }
         }
         break;
-        
-      default: 
+
+      default:
         break;
     }
     return errorMsg;
@@ -185,6 +185,18 @@ const EmployeeDirectory = () => {
       alert(e.response?.data?.error || 'Error deleting employee');
     }
   };
+  const toggleStatus = async (emp) => {
+    const newStatus = emp.status === 'active' ? 'inactive' : 'active';
+
+    try {
+      await axios.put(`${API}/api/users/${emp.id}/status`, { status: newStatus }, authHeader);
+      //alert(Employee status updated to ${newStatus});
+      fetchEmployees();
+    } catch (err) {
+      console.error('Status update error', err.response?.data || err);
+      alert('Failed to update status');
+    }
+  };
 
   const filtered = employees.filter(emp =>
     `${emp.fname} ${emp.lname}`.toLowerCase().includes(search.toLowerCase())
@@ -219,6 +231,7 @@ const EmployeeDirectory = () => {
             <th>Name</th>
             <th>Email</th>
             <th>Department</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -229,6 +242,14 @@ const EmployeeDirectory = () => {
               <td>{emp.fname} {emp.lname}</td>
               <td>{emp.email}</td>
               <td>{emp.did}</td>
+              <td>
+                <button
+                  onClick={() => toggleStatus(emp)}
+                  className={emp.status === 'active' ? 'status-active' : 'status-inactive'}
+                >
+                  {emp.status === 'active' ? 'Active' : 'Inactive'}
+                </button>
+              </td>
               <td>
                 <FaEdit onClick={() => openEdit(emp)} className="icon edit-icon" />
                 <FaTrash onClick={() => handleDelete(emp.id || emp._id)} className="icon delete-icon" />
