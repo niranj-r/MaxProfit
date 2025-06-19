@@ -30,7 +30,7 @@ const DMNavbar = () => {
                 <ul className="nav-links">
                     <li><NavLink to="/dm-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Dashboard</NavLink></li>
                     <li><NavLink to="/dm-project-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Projects</NavLink></li>
-                    <li><NavLink to="/dept-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Departments</NavLink></li>
+                    <li><NavLink to="/dm-dept-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Departments</NavLink></li>
                 </ul>
             </div>
 
