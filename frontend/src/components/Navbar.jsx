@@ -18,46 +18,22 @@ const Navbar = () => {
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("userName");
-        navigate("/"); // 👈 Redirect to login page
+        navigate("/");
     };
-
-
 
     return (
         <nav className="navbar">
             <div className="navbar-left">
-                <NavLink to="/admin-dashboard"><div className="logo"></div></NavLink>
+                <NavLink to="/admin-dashboard">
+                    <div className="logo"></div>
+                </NavLink>
                 <ul className="nav-links">
-                    <li>
-                        <NavLink to="/admin-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-                            Dashboard
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="/project-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-                            Projects
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="/org-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-                            Organisation
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="/dept-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-                            Departments
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="/employee-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-                            Users
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="/financial-year-manager" className={({ isActive }) => isActive ? "active" : ""}>
-                            Settings
-                        </NavLink>
-                    </li>
+                    <li><NavLink to="/admin-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Dashboard</NavLink></li>
+                    <li><NavLink to="/project-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Projects</NavLink></li>
+                    <li><NavLink to="/org-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Organisation</NavLink></li>
+                    <li><NavLink to="/dept-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Departments</NavLink></li>
+                    <li><NavLink to="/employee-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Users</NavLink></li>
+                    <li><NavLink to="/financial-year-manager" className={({ isActive }) => isActive ? "active" : ""}>Settings</NavLink></li>
                 </ul>
             </div>
 
@@ -68,10 +44,9 @@ const Navbar = () => {
                 />
                 {showDropdown && (
                     <div className="dropdown">
-                        <p className="dropdown-username">
-                            {userName ? `Welcome, ${userName}` : "Welcome"}
+                        <p className="org-heading">
+                            {userName ? `${userName}` : "Welcome"}
                         </p>
-
                         <button className="dropdown-logout" onClick={handleLogout}>Logout</button>
                     </div>
                 )}

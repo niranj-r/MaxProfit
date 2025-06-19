@@ -16,6 +16,14 @@ const DashboardSummary = () => {
     totalBudget: 0,
     organisationName: "", // add this
   });
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+          const name = localStorage.getItem("userName");
+          if (name) {
+              setUserName(name);
+          }
+      }, []);
 
 
   useEffect(() => {
@@ -102,6 +110,9 @@ const DashboardSummary = () => {
 
   return (
     <div className="dashboard-summary">
+      <h2 className="org-heading">
+                            {userName ? `Welcome, ${userName}` : "Welcome"}
+                        </h2>
       <h2 className="org-heading">Organisation: {stats.organisationName}</h2>
 
       <div className="summary-cards">
