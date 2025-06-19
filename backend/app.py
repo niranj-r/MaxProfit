@@ -57,11 +57,12 @@ class EmployeeFinancials(db.Model):
     __tablename__ = 'employee_financials'
 
     id = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.String(20), unique=True, nullable=False)  # FK removed
+    eid = db.Column(db.String(20), nullable=False)  # FK removed
     salary = db.Column(db.Float, nullable=True)
     infrastructure = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    financial_year = db.Column(db.String(20), nullable=False)  # 👈 Add this line
 
 class FinancialYear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -179,7 +180,8 @@ def delete_financial_year(id):
 @app.route('/api/employee-financials', methods=['GET'])
 @jwt_required()
 def get_employee_financials():
-    # Filter users based on role and status
+    year = request.args.get("year")  # read year from query param
+
     users = User.query.filter(
         User.role.in_(['employee', 'department_manager']),
         User.status == 'active'
@@ -187,7 +189,11 @@ def get_employee_financials():
 
     result = []
     for user in users:
-        financial = EmployeeFinancials.query.filter_by(eid=user.eid).first()
+        query = EmployeeFinancials.query.filter_by(eid=user.eid)
+        if year:
+            query = query.filter_by(financial_year=year)
+
+        financial = query.first()
         salary = financial.salary if financial else None
         infrastructure = financial.infrastructure if financial else None
         cost = None
@@ -213,14 +219,18 @@ def update_employee_financials(eid):
     data = request.get_json()
     salary = data.get("salary")
     infrastructure = data.get("infrastructure")
+    financial_year = data.get("financial_year")  # 👈 NEW
+
+    if not financial_year:
+        return jsonify({"error": "Financial year is required."}), 400
 
     user = User.query.filter_by(eid=eid).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    financial = EmployeeFinancials.query.filter_by(eid=eid).first()
+    financial = EmployeeFinancials.query.filter_by(eid=eid, financial_year=financial_year).first()
     if not financial:
-        financial = EmployeeFinancials(eid=eid)
+        financial = EmployeeFinancials(eid=eid, financial_year=financial_year)
         db.session.add(financial)
 
     financial.salary = salary
@@ -309,7 +319,7 @@ def assign_task():
                 'project_id': project_id,
                 'allocated_percentage': percentage,
                 'billing_rate': billing_rate,
-                'allocated_hours': working_days_count,
+                'allocated_hours': allocated_hours,
                 'cost': round(cost, 2),
                 'start_date': start_date,
                 'end_date': end_date
@@ -673,8 +683,6 @@ def remove_pm_assignee(project_id, eid):
     db.session.commit()
     print(f"[SUCCESS] Assignee {user.eid} and their tasks removed from project {project_id}")
     return jsonify({"message": "Assignee removed"}), 200
-
-
 
 # ------------------ USER ROUTES ------------------
 
@@ -1247,6 +1255,10 @@ def get_assignees(project_id):
     return jsonify(assignees)
 
 
+
+
+
+
 @app.route('/api/projects/<int:project_id>/assignees', methods=['POST'])
 @jwt_required()
 def add_assignee(project_id):
@@ -1355,9 +1367,6 @@ def remove_assignee(project_id, eid):
     db.session.commit()
     print(f"[SUCCESS] Removed EID={eid} from Project ID={project_id}")
     return jsonify({"message": "Assignee removed"}), 200
-
-
-
 
 # ------------------ RECENT ACTIVITY ------------------
 @app.route("/api/recent-activities", methods=["GET"])

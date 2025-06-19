@@ -75,11 +75,11 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
         prev.map((emp) =>
           emp.eid === eid
             ? {
-                ...emp,
-                salary: payload.salary,
-                infrastructure: payload.infrastructure,
-                cost: (payload.salary || 0) + (payload.infrastructure || 0),
-              }
+              ...emp,
+              salary: payload.salary,
+              infrastructure: payload.infrastructure,
+              cost: (payload.salary || 0) + (payload.infrastructure || 0),
+            }
             : emp
         )
       );
@@ -102,117 +102,118 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
   );
 
   return (
-    <div className="financial-page-wrapper">
+    <div className="financial-year-page">
       <header className="dashboard-header">
         <Navbar />
       </header>
+      <div className="financial-page-wrapper">
+        <main className="financial-content">
+          <button onClick={goBack} className="back-button">← Back to Financial Years</button>
+          <h2 className="fy-heading">Financial Year: {financialYear}</h2>
 
-      <main className="financial-content">
-        <button onClick={goBack} className="back-button">← Back to Financial Years</button>
-        <h2 className="fy-heading">Financial Year: {financialYear}</h2>
-
-        <div className="table-container">
-          <table className="employee-table">
-            <thead>
-              <tr>
-                <th>Emp ID</th>
-                <th>Employee Name</th>
-                <th>Salary ($)</th>
-                <th>Infrastructure ($)</th>
-                <th>Total Cost ($)</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employees.length === 0 ? (
+          <div className="table-container">
+            <table className="employee-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" className="no-data">
-                    No employees found for this financial year.
-                  </td>
+                  <th>Emp ID</th>
+                  <th>Employee Name</th>
+                  <th>Salary ($)</th>
+                  <th>Infrastructure ($)</th>
+                  <th>Total Cost ($)</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                employees.map((emp) => {
-                  const isEditing = editRowId === emp.eid;
-                  const salaryNum = emp.salary ?? 0;
-                  const infraNum = emp.infrastructure ?? 0;
-                  const totalCost = salaryNum + infraNum;
+              </thead>
+              <tbody>
+                {employees.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="no-data">
+                      No employees found for this financial year.
+                    </td>
+                  </tr>
+                ) : (
+                  employees.map((emp) => {
+                    const isEditing = editRowId === emp.eid;
+                    const salaryNum = emp.salary ?? 0;
+                    const infraNum = emp.infrastructure ?? 0;
+                    const totalCost = salaryNum + infraNum;
 
-                  return (
-                    <tr key={emp.eid} className={isEditing ? "editing-row" : ""}>
-                      <td>{emp.eid}</td>
-                      <td>{`${emp.fname} ${emp.lname}`}</td>
+                    return (
+                      <tr key={emp.eid} className={isEditing ? "editing-row" : ""}>
+                        <td>{emp.eid}</td>
+                        <td>{`${emp.fname} ${emp.lname}`}</td>
 
-                      <td className="text-right">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            name="salary"
-                            value={editValues.salary}
-                            onChange={handleChange}
-                            placeholder="0.00"
-                            className="edit-input"
-                          />
-                        ) : (
-                          <span className={salaryNum === 0 ? "muted" : ""}>
-                            {salaryNum === 0 ? "-" : `${salaryNum.toFixed(2)}`}
-                          </span>
-                        )}
-                      </td>
+                        <td className="text-right">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              name="salary"
+                              value={editValues.salary}
+                              onChange={handleChange}
+                              placeholder="0.00"
+                              className="edit-input"
+                            />
+                          ) : (
+                            <span className={salaryNum === 0 ? "muted" : ""}>
+                              {salaryNum === 0 ? "-" : `${salaryNum.toFixed(2)}`}
+                            </span>
+                          )}
+                        </td>
 
-                      <td className="text-right">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            name="infrastructure"
-                            value={editValues.infrastructure}
-                            onChange={handleChange}
-                            placeholder="0.00"
-                            className="edit-input"
-                          />
-                        ) : (
-                          <span className={infraNum === 0 ? "muted" : ""}>
-                            {infraNum === 0 ? "-" : `${infraNum.toFixed(2)}`}
-                          </span>
-                        )}
-                      </td>
+                        <td className="text-right">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              name="infrastructure"
+                              value={editValues.infrastructure}
+                              onChange={handleChange}
+                              placeholder="0.00"
+                              className="edit-input"
+                            />
+                          ) : (
+                            <span className={infraNum === 0 ? "muted" : ""}>
+                              {infraNum === 0 ? "-" : `${infraNum.toFixed(2)}`}
+                            </span>
+                          )}
+                        </td>
 
-                      <td className={`text-right ${totalCost === 0 ? "muted" : "highlight"}`}>
-                        {totalCost === 0 ? "-" : `${totalCost.toFixed(2)}`}
-                      </td>
+                        <td className={`text-right ${totalCost === 0 ? "muted" : "highlight"}`}>
+                          {totalCost === 0 ? "-" : `${totalCost.toFixed(2)}`}
+                        </td>
 
-                      <td className="text-center">
-                        {isEditing ? (
-                          <div className="action-buttons">
-                            <button onClick={() => saveEdit(emp.eid)} className="save-btn">
-                              <FaCheck />
+                        <td className="text-center">
+                          {isEditing ? (
+                            <div className="action-buttons">
+                              <button onClick={() => saveEdit(emp.eid)} className="save-btn">
+                                <FaCheck />
+                              </button>
+                              <button onClick={cancelEdit} className="cancel-btn">
+                                <FaTimes />
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => startEdit(emp)} className="edit-btn">
+                              <FaEdit />
                             </button>
-                            <button onClick={cancelEdit} className="cancel-btn">
-                              <FaTimes />
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={() => startEdit(emp)} className="edit-btn">
-                            <FaEdit />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {employees.length > 0 && (
-          <div className="summary">
-            <strong>
-              Total Employees: {employees.length} | Total Cost: ₹
-              {employees.reduce((sum, emp) => sum + (emp.cost || 0), 0).toFixed(2)}
-            </strong>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </main>
+
+          {employees.length > 0 && (
+            <div className="summary">
+              <strong>
+                Total Employees: {employees.length} | Total Cost: ₹
+                {employees.reduce((sum, emp) => sum + (emp.cost || 0), 0).toFixed(2)}
+              </strong>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
