@@ -56,7 +56,7 @@ class EmployeeFinancials(db.Model):
     __tablename__ = 'employee_financials'
 
     id = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.String(20), unique=True, nullable=False)  # FK removed
+    eid = db.Column(db.String(20), nullable=False)  # FK removed
     salary = db.Column(db.Float, nullable=True)
     infrastructure = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
