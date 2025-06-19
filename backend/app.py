@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from flask_cors import CORS, cross_origin
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
+from flask_jwt_extended import get_jwt_identity
 
 
 # ------------------ CONFIGURATION ------------------
@@ -554,20 +555,134 @@ def admin_signup():
 @app.route('/api/my-projects', methods=['GET'])
 @jwt_required()
 def get_my_projects():
-    user = get_jwt_identity()
-    if user['role'] != 'project_manager':
-        return jsonify({'msg': 'Forbidden'}), 403
+    user_id = get_jwt_identity()
+    
+    stmt = select(project_assignees.c.project_id).where(
+        and_(
+            project_assignees.c.user_id == user_id,
+            project_assignees.c.role == 'Project Manager'
+        )
+    )
+    results = db.session.execute(stmt).fetchall()
+    project_ids = [row[0] for row in results]
 
-    pm_email = user['email']
-    projects = Project.query.filter_by(manager_email=pm_email).all()
+    projects = Project.query.filter(Project.id.in_(project_ids)).all()
 
     return jsonify([
-        {'id': p.id, 'name': p.name}
-        for p in projects
+        {
+            "id": p.id,
+            "name": p.name,
+            "cost": p.budget,
+            "departmentId": p.departmentId,
+            "startDate": p.startDate.strftime('%Y-%m-%d'),
+            "endDate": p.endDate.strftime('%Y-%m-%d'),
+            "createdAt": p.createdAt.isoformat() if p.createdAt else None,
+            "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
+        } for p in projects
     ])
 
 
+@app.route('/api/pm-project-budgets', methods=['GET'])
+@jwt_required()
+def get_pm_project_budgets():
+    current_user_id = get_jwt_identity()
 
+    # Step 1: Get project_ids where user is PM
+    stmt = select(project_assignees.c.project_id).where(
+        and_(
+            project_assignees.c.user_id == current_user_id,
+            project_assignees.c.role == 'Project Manager'
+        )
+    )
+    project_ids = [row[0] for row in db.session.execute(stmt).all()]
+
+    # Step 2: Query only those projects
+    projects = Project.query.filter(Project.id.in_(project_ids)).with_entities(Project.name, Project.budget).all()
+
+    # Step 3: Return formatted data
+    result = [{"name": name, "budget": budget} for name, budget in projects]
+    return jsonify(result), 200
+
+@app.route('/api/pm-my-projects', methods=['GET'])
+@jwt_required()
+def g_projects():
+    current_user_id = get_jwt_identity()
+
+    # Get project IDs from assignments where user is a PM
+    assignments = db.session.query(project_assignees).filter_by(user_id=current_user_id, role="Project Manager").all()
+    project_ids = [a.project_id for a in assignments]
+
+    projects = Project.query.filter(Project.id.in_(project_ids)).all()
+
+    return jsonify([
+        {
+            "id": p.id,
+            "name": p.name,
+            "departmentId": p.departmentId,
+            "startDate": p.startDate.strftime('%Y-%m-%d') if p.startDate else None,
+            "endDate": p.endDate.strftime('%Y-%m-%d') if p.endDate else None,
+            "budget": p.budget,
+            "createdAt": p.createdAt.isoformat() if p.createdAt else None,
+            "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
+        }
+        for p in projects
+    ])
+@app.route('/api/projects/<int:project_id>/pm-assignees/<eid>', methods=['DELETE'])
+@jwt_required()
+def remove_pm_assignee(project_id, eid):
+    print(f"[DELETE] Request to remove assignee EID={eid} from Project ID={project_id}")
+
+    user = User.query.filter_by(eid=eid).first()
+    if not user:
+        print(f"[ERROR] User with EID={eid} not found")
+        return jsonify({"error": "User not found"}), 404
+
+    print(f"[INFO] Found User ID={user.id} with EID={user.eid}")
+
+    # 1️⃣ Check project_assignees table
+    assignment = db.session.execute(
+        project_assignees.select().where(
+            and_(
+                project_assignees.c.project_id == project_id,
+                project_assignees.c.user_id == user.id
+            )
+        )
+    ).first()
+
+    if not assignment:
+        print(f"[ERROR] No assignment found for user {user.eid} in project {project_id}")
+        return jsonify({"error": "Assignee not found in project"}), 404
+
+    role = assignment._mapping.get("role")
+    print(f"[INFO] Assignee role is '{role}'")
+
+    if role == "Project Manager":
+        print("[BLOCKED] Cannot remove the Project Manager")
+        return jsonify({"error": "Cannot remove the Project Manager from the project"}), 403
+
+    # 2️⃣ Delete from project_assignees
+    result1 = db.session.execute(
+        project_assignees.delete().where(
+            and_(
+                project_assignees.c.project_id == project_id,
+                project_assignees.c.user_id == user.id
+            )
+        )
+    )
+
+    # 3️⃣ Delete from project_assignment (task assignments)
+    result2 = db.session.execute(
+        db.delete(project_assignment).where(
+            and_(
+                project_assignment.c.project_id == project_id,
+                project_assignment.c.user_id == user.id
+            )
+        )
+    )
+
+    db.session.commit()
+    print(f"[SUCCESS] Assignee {user.eid} and their tasks removed from project {project_id}")
+    return jsonify({"message": "Assignee removed"}), 200
 
 # ------------------ USER ROUTES ------------------
 
