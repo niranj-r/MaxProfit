@@ -22,6 +22,13 @@ import UpcomingDeadlines from './components/UpcomingDeadlines';
 import FinancialYearManager from './components/FinancialYearManager';
 import FinancialYearPage from './components/FinancialYearPage'; // ✅ Use directly
 import { useParams } from 'react-router-dom';
+import PMDashboard from './components/PM/PMDashboard';  
+import PMNavbar from './components/PM/PMNavbar';
+import PMBudgetChart from './components/PM/PMBudgetChart';
+import PMModalWrapper from './components/PM/PMModalWrapper';
+import PMProjectAssignees from './components/PM/PMProjectAssignees';
+import PMProjectDirectory from './components/PM/PMProjectDirectory';
+import PMProjectDashboard from './components/PM/PMProjectDashboard';
 
 // Wrapper to pass year param as prop
 const FinancialYearPageWrapper = () => {
@@ -54,7 +61,15 @@ function App() {
       <Route path="/projects/:id/assignees" element={<ProjectAssignees />} />
       <Route path="/upcoming-deadlines" element={<UpcomingDeadlines />} />
       <Route path="/financial-year-manager" element={<FinancialYearManager />} />
-      <Route path="/employee-financials/:year" element={<FinancialYearPageWrapper />} /> {/* ✅ Use wrapper to pass year */}
+      <Route path="/employee-financials/:year" element={<FinancialYearPageWrapper />} /> 
+      <Route path="/pm-dashboard" element={<PMDashboard />} />
+      <Route path="/pm-navbar" element={<PMNavbar />} />  
+      <Route path="/pm-budget-chart" element={<PMBudgetChart />} />
+      <Route path="/pm-modal-wrapper" element={<PMModalWrapper />} />
+      <Route path="/pm-project-assignees" element={<PMProjectAssignees />} />
+      <Route path="/pm-project-directory" element={<PMProjectDirectory />} /> 
+      <Route path="/pm-project-dashboard" element={<PMProjectDashboard />} />
+      
 
       {/* Add more routes as needed */}
     </Routes>

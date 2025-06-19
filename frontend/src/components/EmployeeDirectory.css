@@ -109,11 +109,19 @@
   align-items: center;
   gap: 6px;
 }
+
 .modal-form label {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 12px;
   font-weight: 500;
+}
+
+.required-star {
+  color: #e63946;
+  font-weight: bold;
+  margin-left: 4px;
 }
 
 .field-error {
