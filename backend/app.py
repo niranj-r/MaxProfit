@@ -318,7 +318,7 @@ def assign_task():
                 'project_id': project_id,
                 'allocated_percentage': percentage,
                 'billing_rate': billing_rate,
-                'allocated_hours': working_days_count,
+                'allocated_hours': allocated_hours,
                 'cost': round(cost, 2),
                 'start_date': start_date,
                 'end_date': end_date
