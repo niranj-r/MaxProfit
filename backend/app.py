@@ -52,16 +52,14 @@ def get_roles():
     return jsonify([r.role for r in roles])
 
 class EmployeeFinancials(db.Model):
-    tablename = 'employee_financials'
+    __tablename__ = 'employee_financials'
 
     id = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.String(20), db.ForeignKey('user.eid'), unique=True, nullable=False)
+    eid = db.Column(db.String(20), unique=True, nullable=False)  # FK removed
     salary = db.Column(db.Float, nullable=True)
     infrastructure = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user = db.relationship('User', backref='financials')
 
 class FinancialYear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -474,7 +472,6 @@ def login():
         "token": token,  
         "userName": user.fname
     })
-
 @app.route('/api/admin/signup', methods=['POST'])
 def admin_signup():
     try:
@@ -487,7 +484,6 @@ def admin_signup():
         role = data.get("role", "admin")
 
         if not fname or not email or not password:
-            print("Missing fields")
             return jsonify({"error": "All fields are required"}), 400
 
         # Check if user already exists
@@ -495,25 +491,40 @@ def admin_signup():
         if existing_user:
             return jsonify({"error": "User already exists"}), 400
 
-        # Hash the password
-        hashed_pw = generate_password_hash(data["password"])
+        # Generate next eid like AD01, AD02, ...
+        admin_count = User.query.filter(User.eid.like('AD%')).count() + 1
+        eid = f"AD{admin_count:02d}"  # zero-padded 2 digits
 
-        # Create user
+        if " " in data.get("name"):
+            fname, lname = data.get("name").split(" ", 1)
+        else:
+            fname = data.get("name")
+            lname = " "
+
+        # Hash the password
+        hashed_pw = generate_password_hash(password)
+
+        # Create new user
         new_user = User(
+            eid=eid,
+            did="ADMIN",
             fname=fname,
+            lname=lname,
             email=email,
             password=hashed_pw,
-            role=role
+            role=role,
+            status="active"
         )
 
         db.session.add(new_user)
         db.session.commit()
 
-        return jsonify({"message": "Admin created successfully"}), 201
+        return jsonify({"message": "Admin created successfully", "eid": eid}), 201
 
     except Exception as e:
         print("Error in admin signup route:", str(e))
         return jsonify({"error": "Internal server error"}), 500
+
 
 # ------------------ USER ROUTES ------------------
 
