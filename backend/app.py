@@ -1314,26 +1314,59 @@ def add_assignee(project_id):
 @app.route('/api/projects/<int:project_id>/assignees/<eid>', methods=['DELETE'])
 @jwt_required()
 def remove_assignee(project_id, eid):
+    print(f"[DELETE] Request to remove EID={eid} from Project ID={project_id}")
+
     user = User.query.filter_by(eid=eid).first()
     if not user:
+        print(f"[ERROR] User with EID={eid} not found")
         return jsonify({"error": "User not found"}), 404
 
-    result = db.session.execute(
+    print(f"[INFO] Found User ID={user.id} with EID={user.eid}")
+
+    # Check assignment to verify role
+    assignment = db.session.execute(
+        project_assignees.select().where(
+            and_(
+                project_assignees.c.project_id == project_id,
+                project_assignees.c.user_id == user.id
+            )
+        )
+    ).first()
+
+    if not assignment:
+        print(f"[ERROR] No assignment found for EID={eid} in project {project_id}")
+        return jsonify({"error": "Assignee not found in project"}), 404
+
+    role = assignment._mapping.get("role")
+    print(f"[INFO] Assignee role is '{role}'")
+
+    if role == "Project Manager":
+        print("[BLOCKED] Cannot remove the Project Manager")
+        return jsonify({"error": "Cannot remove the Project Manager from the project"}), 403
+
+    # Delete from project_assignees
+    db.session.execute(
         project_assignees.delete().where(
             and_(
                 project_assignees.c.project_id == project_id,
-                project_assignees.c.user_eid == user.eid
+                project_assignees.c.user_id == user.id
             )
         )
     )
 
-    if result.rowcount == 0:
-        return jsonify({"error": "Assignee not found in project"}), 404
+    # Delete from project_assignment
+    db.session.execute(
+        project_assignment.delete().where(
+            and_(
+                project_assignment.c.project_id == project_id,
+                project_assignment.c.user_id == user.id
+            )
+        )
+    )
 
     db.session.commit()
+    print(f"[SUCCESS] Removed EID={eid} from Project ID={project_id}")
     return jsonify({"message": "Assignee removed"}), 200
-
-
 
 # ------------------ RECENT ACTIVITY ------------------
 @app.route("/api/recent-activities", methods=["GET"])
