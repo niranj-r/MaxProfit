@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { NavLink, useNavigate } from "react-router-dom";
 import "./Navbar.css";
@@ -8,20 +8,20 @@ const Navbar = () => {
     const navigate = useNavigate();
     const [userName, setUserName] = useState('');
 
-     useEffect(() => {
-    const name = localStorage.getItem("userName");
-    if (name) {
-      setUserName(name);
-    }
-  }, []);
+    useEffect(() => {
+        const name = localStorage.getItem("userName");
+        if (name) {
+            setUserName(name);
+        }
+    }, []);
 
     const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userName");
-    navigate("/"); // 👈 Redirect to login page
+        localStorage.removeItem("token");
+        localStorage.removeItem("userName");
+        navigate("/"); // 👈 Redirect to login page
     };
 
-   
+
 
     return (
         <nav className="navbar">
@@ -60,15 +60,18 @@ const Navbar = () => {
                     </li>
                 </ul>
             </div>
-            
+
             <div className="profile-dropdown-container">
-                <FaUserCircle 
-                    className="profile-icon" 
-                    onClick={() => setShowDropdown(!showDropdown)} 
+                <FaUserCircle
+                    className="profile-icon"
+                    onClick={() => setShowDropdown(!showDropdown)}
                 />
                 {showDropdown && (
                     <div className="dropdown">
-                        <p className="dropdown-username">Welcome, {userName}</p>
+                        <p className="dropdown-username">
+                            {userName ? `Welcome, ${userName}` : "Welcome"}
+                        </p>
+
                         <button className="dropdown-logout" onClick={handleLogout}>Logout</button>
                     </div>
                 )}

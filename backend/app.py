@@ -471,7 +471,8 @@ def login():
     return jsonify({
         "message": "Login successful",
         "user": user_to_json(user),
-        "token": token  
+        "token": token,  
+        "userName": user.fname
     })
 
 @app.route('/api/admin/signup', methods=['POST'])
