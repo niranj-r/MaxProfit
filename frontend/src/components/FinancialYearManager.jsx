@@ -59,7 +59,7 @@ const FinancialYearManager = () => {
     };
 
     return (
-        <div className="page-wrapper">
+        <div className="admin-dashboard">
             <header className="dashboard-header">
                 <Navbar />
             </header>
