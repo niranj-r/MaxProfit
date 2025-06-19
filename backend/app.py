@@ -11,6 +11,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from flask_cors import CORS, cross_origin
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import select
 
 
 # ------------------ CONFIGURATION ------------------
@@ -465,13 +466,26 @@ def login():
     user = User.query.filter_by(email=data.get("email")).first()
     if not user or not check_password_hash(user.password, data.get("password")):
         return jsonify({"error": "Invalid email or password"}), 401
+
     token = generate_token(user)
+
+    # Check if the user is a project manager in the assignments table
+    stmt = select(project_assignees).where(project_assignees.c.user_id == user.id)
+    pa_result = db.session.execute(stmt).first()
+    pa_role = pa_result.role if pa_result else None
+
     return jsonify({
-        "message": "Login successful",
-        "user": user_to_json(user),
-        "token": token,  
-        "userName": user.fname
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "pa_role": pa_role  # <-- add this
+        },
+        "userName": user.fname,
+        "token": token
     })
+
+
 @app.route('/api/admin/signup', methods=['POST'])
 def admin_signup():
     try:
@@ -609,13 +623,17 @@ def create_user():
 @app.route('/api/users', methods=['GET'])
 @jwt_required()
 def get_users():
-    allowed_roles = ["employee", "admin","department_manager"]  # customize as needed
+    allowed_roles = ["employee", "admin", "department_manager"]
     users = User.query.filter(User.role.in_(allowed_roles)).all()
     return jsonify([user_to_json(u) for u in users])
+
+@app.route('/api/users/dept', methods=['GET'])
+@jwt_required()
 def get_users_dept():
-    allowed_roles = ["employee","department_manager"]  # customize as needed
+    allowed_roles = ["employee", "department_manager"]
     users = User.query.filter(User.role.in_(allowed_roles)).all()
     return jsonify([user_to_json(u) for u in users])
+
 
 
 

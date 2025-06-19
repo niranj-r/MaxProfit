@@ -21,16 +21,20 @@ const Login = () => {
     try {
       const res = await axios.post(`${API}/api/login`, credentials);
       const { user, token } = res.data;
+      const paRole = user.pa_role;
 
        localStorage.setItem('token', token);
        localStorage.setItem("userName", res.data.userName);
       if (user.role === 'admin' || user.role === 'Admin') {
         navigate('/admin-dashboard');
+      } else if (user.role === 'department_manager') {
+        alert('Department Manager logged in');
+      } else if ((user.role === 'project_manager' || user.role === 'Project Manager') || paRole === 'Project Manager') {
+        navigate('/pm-dashboard');
+        alert('Project Manager logged in');
       } else if (user.role === 'employee') {
         alert('Employee logged in');
-      } else if (user.role === 'project_manager') {
-        alert('Project Manager logged in');
-      } else if (user.role === 'department_manager') {
+      }  else if (user.role === 'department_manager') {
         alert('Department Manager logged in');
       } else if (user.role === 'financial_analyst') {
         alert('Financial Analyst logged in');

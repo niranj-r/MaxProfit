@@ -133,18 +133,6 @@ const EmployeeDirectory = () => {
         }
         break;
         
-      case 'manager':
-        if (!trimmedValue) {
-          errorMsg = 'Manager ID is required.';
-        } else if (!/^E\d{3}$/.test(trimmedValue)) {
-          errorMsg = 'Manager ID must be in valid format (e.g., E001)';
-        } else if (!employees.some(emp => emp.eid === trimmedValue)) {
-          errorMsg = 'Manager ID does not exist in the system.';
-        } else if (trimmedValue === form.eid) {
-          errorMsg = 'Employee cannot be their own manager.';
-        }
-        break;
-        
       default: 
         break;
     }
@@ -255,7 +243,7 @@ const EmployeeDirectory = () => {
           <form className="modal-form" onSubmit={handleSubmit}>
             {generalError && <div className="form-error">{generalError}</div>}
 
-            {['eid', 'fname', 'lname', 'email', 'did', 'manager'].map(field => (
+            {['eid', 'fname', 'lname', 'email', 'did'].map(field => (
               <div className="floating-label" key={field}>
                 <input name={field} value={form[field]} onChange={handleChange} placeholder=" " required disabled={field === 'eid' && formMode === 'edit'} />
                 <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
