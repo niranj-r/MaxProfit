@@ -36,6 +36,8 @@ import DMDashboardSummary from './components/DM/DmDashboardSum';
 import DMProjectAssignees from './components/DM/DMProjectAssignees';
 import DMProjectDirectory from './components/DM/DMProjectDirectory';
 import DMProjectDashboard from './components/DM/DMProjectDashboard';
+import DMDepartmentDirectory from './components/DM/DMDeptDirectory';
+import DMDeptDashboard from './components/DM/DMDeptDashboard';
  // Assuming you have a DM dashboard component
 
 // Wrapper to pass year param as prop
@@ -84,6 +86,8 @@ function App() {
       <Route path="/dm-project-assignees" element={<DMProjectAssignees />} />
       <Route path="/dm-project-directory" element={<DMProjectDirectory />} /> 
       <Route path="/dm-project-dashboard" element={<DMProjectDashboard />} />
+      <Route path="/dm-dept-directory" element={<DMDepartmentDirectory />} />
+      <Route path="/dm-dept-dashboard" element={<DMDeptDashboard />} />
 
       {/* Add more routes as needed */}
     </Routes>
