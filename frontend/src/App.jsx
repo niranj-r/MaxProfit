@@ -29,6 +29,14 @@ import PMModalWrapper from './components/PM/PMModalWrapper';
 import PMProjectAssignees from './components/PM/PMProjectAssignees';
 import PMProjectDirectory from './components/PM/PMProjectDirectory';
 import PMProjectDashboard from './components/PM/PMProjectDashboard';
+import DMNavbar from './components/DM/DMNavbar';
+import DMDashboard from './components/DM/DMDash';
+import DMBudgetChart from './components/DM/DMBudgetChart';
+import DMDashboardSummary from './components/DM/DmDashboardSum';
+import DMProjectAssignees from './components/DM/DMProjectAssignees';
+import DMProjectDirectory from './components/DM/DMProjectDirectory';
+import DMProjectDashboard from './components/DM/DMProjectDashboard';
+ // Assuming you have a DM dashboard component
 
 // Wrapper to pass year param as prop
 const FinancialYearPageWrapper = () => {
@@ -69,7 +77,13 @@ function App() {
       <Route path="/pm-project-assignees" element={<PMProjectAssignees />} />
       <Route path="/pm-project-directory" element={<PMProjectDirectory />} /> 
       <Route path="/pm-project-dashboard" element={<PMProjectDashboard />} />
-      
+      <Route path="/dm-navbar" element={<DMNavbar />} />
+      <Route path="/dm-dashboard" element={<DMDashboard />} />
+      <Route path="/dm-budget-chart" element={<DMBudgetChart />} />
+      <Route path="/dm-dashboard-summary" element={<DMDashboardSummary />} />
+      <Route path="/dm-project-assignees" element={<DMProjectAssignees />} />
+      <Route path="/dm-project-directory" element={<DMProjectDirectory />} /> 
+      <Route path="/dm-project-dashboard" element={<DMProjectDashboard />} />
 
       {/* Add more routes as needed */}
     </Routes>

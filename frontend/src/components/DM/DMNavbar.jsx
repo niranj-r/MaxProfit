@@ -1,10 +1,9 @@
-import React,{ useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { NavLink, useNavigate } from "react-router-dom";
 import "../Navbar.css";
 
-
-const PMNavbar = () => {
+const DMNavbar = () => {
     const [showDropdown, setShowDropdown] = useState(false);
     const navigate = useNavigate();
     const [userName, setUserName] = useState('');
@@ -21,23 +20,20 @@ const PMNavbar = () => {
         localStorage.removeItem("userName");
         navigate("/");
     };
+
     return (
         <nav className="navbar">
             <div className="navbar-left">
-                <NavLink to="/pm-dashboard"><div className="logo"></div></NavLink>
+                <NavLink to="/dm-dashboard">
+                    <div className="logo"></div>
+                </NavLink>
                 <ul className="nav-links">
-                    <li>
-                        <NavLink to="/pm-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-                            Dashboard
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink to="/pm-project-dashboard" className={({ isActive }) => isActive ? "active" : ""}>
-                            Projects
-                        </NavLink>
-                    </li>
+                    <li><NavLink to="/dm-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Dashboard</NavLink></li>
+                    <li><NavLink to="/dm-project-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Projects</NavLink></li>
+                    <li><NavLink to="/dept-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Departments</NavLink></li>
                 </ul>
             </div>
+
             <div className="profile-dropdown-container">
                 <FaUserCircle
                     className="profile-icon"
@@ -56,4 +52,4 @@ const PMNavbar = () => {
     );
 };
 
-export default PMNavbar;
+export default DMNavbar;
