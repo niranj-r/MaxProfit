@@ -217,9 +217,9 @@ const DepartmentDirectory = () => {
         if (!value.trim()) {
           errorMsg = 'Department ID cannot be empty.';
         } else if (!/^D\d{3}$/.test(value)) {
-          errorMsg = 'Format must be D000.';
+          errorMsg = 'Department ID must be in valid format (e.g., E001)';
         } else if (formMode === 'add' && departments.some(dep => dep.did === value)) {
-          errorMsg = 'Department ID already exists.';
+          errorMsg = 'Department ID already exists. Please use a different ID.';
         }
         break;
       case 'name':
@@ -390,9 +390,10 @@ const DepartmentDirectory = () => {
                 value={currentDept.did}
                 onChange={handleInputChange}
                 disabled={formMode === 'edit'}
+                required
                 style={formErrors.did ? { borderColor: '#c33' } : {}}
               />
-              <label>Department ID</label>
+              <label>Department ID <span style={{color: '#c33'}}>*</span></label>
               {formErrors.did && <div className="field-error">{formErrors.did}</div>}
             </div>
 
@@ -402,9 +403,10 @@ const DepartmentDirectory = () => {
                 placeholder=" "
                 value={currentDept.name}
                 onChange={handleInputChange}
+                required
                 style={formErrors.name ? { borderColor: '#c33' } : {}}
               />
-              <label>Department Name</label>
+              <label>Department Name <span style={{color: '#c33'}}>*</span></label>
               {formErrors.name && <div className="field-error">{formErrors.name}</div>}
             </div>
 

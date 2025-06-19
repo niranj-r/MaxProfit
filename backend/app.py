@@ -52,16 +52,14 @@ def get_roles():
     return jsonify([r.role for r in roles])
 
 class EmployeeFinancials(db.Model):
-    tablename = 'employee_financials'
+    _tablename_ = 'employee_financials'
 
     id = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.String(20), db.ForeignKey('user.eid'), unique=True, nullable=False)
+    eid = db.Column(db.String(20), unique=True, nullable=False)  # FK removed
     salary = db.Column(db.Float, nullable=True)
     infrastructure = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user = db.relationship('User', backref='financials')
 
 class FinancialYear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -513,6 +511,25 @@ def admin_signup():
     except Exception as e:
         print("Error in admin signup route:", str(e))
         return jsonify({"error": "Internal server error"}), 500
+    
+# ------------------ Project Manager ------------------
+
+@app.route('/api/my-projects', methods=['GET'])
+@jwt_required()
+def get_my_projects():
+    user = get_jwt_identity()
+    if user['role'] != 'project_manager':
+        return jsonify({'msg': 'Forbidden'}), 403
+
+    pm_email = user['email']
+    projects = Project.query.filter_by(manager_email=pm_email).all()
+
+    return jsonify([
+        {'id': p.id, 'name': p.name}
+        for p in projects
+    ])
+
+
 
 # ------------------ USER ROUTES ------------------
 

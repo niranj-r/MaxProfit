@@ -65,29 +65,35 @@ const OrganisationDirectory = () => {
 
   const validateField = (name, value) => {
     let errorMsg = '';
+    const trimmedValue = value.trim();
 
-    if (name === 'oid') {
-      if (!value.trim()) {
-        errorMsg = 'Organisation ID is required.';
-      } else if (!/^O\d{3}$/.test(value)) {
-        errorMsg = 'Organisation ID must be in the format O001, O123, etc.';
-      } else if (/\s/.test(value)) {
-        errorMsg = 'Organisation ID cannot contain spaces.';
-      }
-    }
+    switch (name) {
+      case 'oid':
+        if (!trimmedValue) {
+          errorMsg = 'Organisation ID is required.';
+        } else if (!/^O\d{3}$/.test(trimmedValue)) {
+          errorMsg = 'Organisation ID must be in the format O001, O123, etc.';
+        } else if (/\s/.test(value)) {
+          errorMsg = 'Organisation ID cannot contain spaces.';
+        } else if (formMode === 'add' && organisations.some(org => org.oid.toUpperCase() === trimmedValue.toUpperCase())) {
+          errorMsg = 'Organisation ID already exists.';
+        }
+        break;
 
-    if (name === 'name') {
-      const trimmedValue = value.trim();
-      if (!trimmedValue) {
-        errorMsg = 'Organisation Name is required.';
-      } else if (!/^[A-Za-z ]{3,50}$/.test(trimmedValue)) {
-        errorMsg = 'Organisation name must be 3–50 alphabetic characters only, spaces allowed.';
-      }
+      case 'name':
+        if (!trimmedValue) {
+          errorMsg = 'Organisation Name is required.';
+        } else if (!/^[A-Za-z ]{3,50}$/.test(trimmedValue)) {
+          errorMsg = 'Organisation name must be 3–50 alphabetic characters only, spaces allowed.';
+        }
+        break;
+
+      default:
+        break;
     }
 
     return errorMsg;
   };
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -105,19 +111,19 @@ const OrganisationDirectory = () => {
     const trimmedName = name.trim();
     const trimmedOid = oid.trim().toUpperCase();
 
-    const errors = {
-      name: validateField('name', trimmedName),
-      oid: validateField('oid', trimmedOid)
-    };
+    // Validate all required fields
+    const fields = ['oid', 'name'];
+    const newErrors = {};
+    
+    fields.forEach(field => {
+      const fieldValue = field === 'oid' ? trimmedOid : trimmedName;
+      const errorMsg = validateField(field, fieldValue);
+      if (errorMsg) newErrors[field] = errorMsg;
+    });
 
-    if (formMode === 'add') {
-      const exists = organisations.some(org => org.oid.toUpperCase() === trimmedOid);
-      if (exists) errors.oid = 'Organisation ID already exists.';
-    }
-
-    const hasErrors = Object.values(errors).some(msg => msg);
-    if (hasErrors) {
-      setFormErrors(errors);
+    // Check for any validation errors
+    if (Object.keys(newErrors).length > 0) {
+      setFormErrors(newErrors);
       setGeneralError('Please correct the errors in the form.');
       return;
     }
@@ -128,11 +134,13 @@ const OrganisationDirectory = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setOrganisations(prev => [...prev, res.data]);
+        alert('Organisation added successfully');
       } else if (formMode === 'edit' && editOid) {
         const res = await axios.put(`${API}/api/organisations/${editOid}`, { name: trimmedName }, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setOrganisations(prev => prev.map(org => org.oid === editOid ? res.data : org));
+        alert('Organisation updated successfully');
       }
       setIsModalOpen(false);
       setCurrentOrganisation({ name: '', oid: '' });
@@ -141,7 +149,7 @@ const OrganisationDirectory = () => {
       fetchOrganisations();
     } catch (err) {
       console.error("Submit error:", err);
-      setGeneralError(`Error ${formMode === 'add' ? 'adding' : 'updating'} organisation`);
+      setGeneralError(err.response?.data?.error || `Error ${formMode === 'add' ? 'adding' : 'updating'} organisation`);
     }
   };
 
@@ -149,22 +157,12 @@ const OrganisationDirectory = () => {
     (org.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const convertToIST = (utcDateStr) => {
-    if (!utcDateStr) return '—';
-    const date = new Date(utcDateStr + "Z");
-    const istOffset = 5 * 60 + 30;
-    const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-    const istTime = new Date(utc + istOffset * 60000);
-    return istTime.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour12: true,
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+  const getFieldLabel = (field) => {
+    switch (field) {
+      case 'oid': return 'Organisation ID';
+      case 'name': return 'Organisation Name';
+      default: return field.charAt(0).toUpperCase() + field.slice(1);
+    }
   };
 
   return (
@@ -212,7 +210,7 @@ const OrganisationDirectory = () => {
           ))}
           {filteredOrganisations.length === 0 && (
             <tr>
-              <td colSpan="5" className="no-data">No matching organisations found.</td>
+              <td colSpan="3" className="no-data">No matching organisations found.</td>
             </tr>
           )}
         </tbody>
@@ -222,57 +220,39 @@ const OrganisationDirectory = () => {
         <ModalWrapper title={formMode === 'add' ? 'Add Organisation' : 'Edit Organisation'} onClose={() => setIsModalOpen(false)}>
           <form onSubmit={handleModalSubmit} className="modal-form">
             {generalError && (
-              <div
-                className="form-error"
-                style={{
-                  backgroundColor: '#fee',
-                  color: '#c33',
-                  padding: '10px',
-                  borderRadius: '4px',
-                  marginBottom: '15px',
-                  border: '1px solid #fcc',
-                }}
-              >
+              <div className="form-error" style={{
+                backgroundColor: '#fee',
+                color: '#c33',
+                padding: '10px',
+                borderRadius: '4px',
+                marginBottom: '15px',
+                border: '1px solid #fcc',
+              }}>
                 {generalError}
               </div>
             )}
 
-            <div className="floating-label">
-              <input
-                name="oid"
-                type="text"
-                value={currentOrganisation.oid}
-                onChange={handleChange}
-                disabled={formMode === 'edit'}
-                placeholder=" "
-                required
-                style={formErrors.oid ? { borderColor: '#c33' } : {}}
-              />
-              <label>Organisation ID</label>
-              {formErrors.oid && (
-                <div className="field-error">{formErrors.oid}</div>
-              )}
-            </div>
-
-            <div className="floating-label">
-              <input
-                name="name"
-                type="text"
-                value={currentOrganisation.name}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.name ? { borderColor: '#c33' } : {}}
-              />
-              <label>Organisation Name</label>
-              {formErrors.name && (
-                <div className="field-error">{formErrors.name}</div>
-              )}
-            </div>
+            {['oid', 'name'].map(field => (
+              <div className="floating-label" key={field}>
+                <input
+                  name={field}
+                  type="text"
+                  value={currentOrganisation[field]}
+                  onChange={handleChange}
+                  disabled={field === 'oid' && formMode === 'edit'}
+                  placeholder=" "
+                  required
+                  style={formErrors[field] ? { borderColor: '#c33' } : {}}
+                />
+                <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+                {formErrors[field] && (
+                  <div className="field-error">{formErrors[field]}</div>
+                )}
+              </div>
+            ))}
 
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
-
         </ModalWrapper>
       )}
     </div>
