@@ -11,7 +11,7 @@ const PMDashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="pm-dashboard">
+    <div className="admin-dashboard">
       <div className="dashboard-container">
         <div className="dashboard-header">
           <Navbar />

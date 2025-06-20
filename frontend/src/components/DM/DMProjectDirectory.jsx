@@ -315,13 +315,11 @@ const DMProjectDirectory = () => {
 
       {showModal && (
         <DMModalWrapper
-          onClose={() => setShowModal(false)}
+          onClose={closeModal}
           title={formMode === 'add' ? 'Add Project' : 'Edit Project'}
         >
           <form onSubmit={handleSubmit} className="modal-form">
-            {generalError && (
-              <div className="form-error">{generalError}</div>
-            )}
+            {generalError && <div className="form-error">{generalError}</div>}
 
             {['name', 'departmentId', 'startDate', 'endDate', 'budget'].map(field => (
               <div className="floating-label" key={field}>
@@ -329,25 +327,30 @@ const DMProjectDirectory = () => {
                   <>
                     <select
                       name="departmentId"
-                      value={form.departmentId}
+                      value={form.departmentId || ""}
                       onChange={handleChange}
                       required
                       style={formErrors[field] ? { borderColor: '#c33' } : {}}
                     >
-                      <option value=""></option>
+                      <option value="" disabled>Select Department</option>
                       {departments.map(dep => (
                         <option key={dep.did} value={dep.did}>
                           {dep.name} ({dep.did})
                         </option>
                       ))}
                     </select>
-                    <label className="select-label">Department<span className="required-star">*</span></label>
+                    <label className="select-label">
+                      Department<span className="required-star">*</span>
+                    </label>
                   </>
                 ) : (
                   <>
                     <input
                       name={field}
-                      type={field.includes('Date') ? 'date' : field === 'budget' ? 'number' : 'text'}
+                      type={
+                        field.includes('Date') ? 'date' :
+                        field === 'budget' ? 'number' : 'text'
+                      }
                       value={form[field]}
                       onChange={handleChange}
                       placeholder=" "
@@ -356,7 +359,9 @@ const DMProjectDirectory = () => {
                       step={field === 'budget' ? '0.01' : undefined}
                       min={field === 'budget' ? '0.01' : undefined}
                     />
-                    <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+                    <label>
+                      {getFieldLabel(field)}<span className="required-star">*</span>
+                    </label>
                   </>
                 )}
                 {formErrors[field] && (
