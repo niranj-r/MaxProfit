@@ -29,6 +29,7 @@ const Login = () => {
         navigate('/admin-dashboard');
       } else if (user.role === 'department_manager') {
         alert('Department Manager logged in');
+        navigate('/dm-dashboard');
       } else if ((user.role === 'project_manager' || user.role === 'Project Manager') || paRole === 'Project Manager') {
         navigate('/pm-dashboard');
         alert('Project Manager logged in');
