@@ -22,7 +22,7 @@ ChartJS.register(
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
-const PMBudgetChart = () => {
+const DMBudgetChart = () => {
   const [chartData, setChartData] = useState({
     labels: [],
     datasets: []
@@ -30,7 +30,7 @@ const PMBudgetChart = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    axios.get(`${API}/api/pm-project-budgets`, {
+    axios.get(`${API}/api/project-budgets`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -139,4 +139,4 @@ const PMBudgetChart = () => {
   );
 };
 
-export default PMBudgetChart;
+export default DMBudgetChart;
