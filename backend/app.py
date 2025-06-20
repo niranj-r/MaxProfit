@@ -322,7 +322,7 @@ def assign_task():
             if percentage <= 0 or percentage > 100:
                 return jsonify({"error": "Percentage must be between 0 and 100"}), 400
 
-            working_days_count = working_days(start_date, end_date) 
+            working_days_count = working_days(start_date, end_date) + 1
             HOURS_PER_DAY = 8
             allocated_hours = working_days_count * HOURS_PER_DAY * (percentage / 100.0)
             cost = billing_rate * allocated_hours
@@ -700,7 +700,7 @@ def remove_pm_assignee(project_id, eid):
 # ------------------ Department Manager ------------------
 @app.route('/api/dm-departments', methods=['GET'])
 @jwt_required()
-def get_departments():
+def dm_get_departments():
     depts = Department.query.all()
     dept_list = []
     
