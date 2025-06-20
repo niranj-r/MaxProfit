@@ -315,7 +315,7 @@ const ProjectDirectory = () => {
             <th>Start Date</th>
             <th>End Date</th>
             <th>Budget ($)</th>
-            <th>Total Cost ($)</th>
+            <th>Total Revenue ($)</th>
             <th>Actions</th>
             <th>Assign</th>
           </tr>

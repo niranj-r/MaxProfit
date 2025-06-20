@@ -262,7 +262,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Cost ($)</th>
+              <th>Revenue ($)</th>
               <th>Remove</th>
             </tr>
           </thead>

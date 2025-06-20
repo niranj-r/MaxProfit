@@ -9,6 +9,19 @@ const token = localStorage.getItem("token");
 const authHeader = { headers: { Authorization: `Bearer ${token}` } };
 
 const initialForm = { eid: '', fname: '', lname: '', email: '', did: '', password: '', manager: '' };
+const getFieldLabel = (field) => {
+  switch (field) {
+    case 'eid': return 'Employee ID';
+    case 'fname': return 'First Name';
+    case 'lname': return 'Last Name';
+    case 'email': return 'Email';
+    case 'did': return 'Department';
+    case 'manager': return 'Manager';
+    case 'password': return 'Password';
+    default: return field;
+  }
+};
+
 
 const EmployeeDirectory = () => {
   const [employees, setEmployees] = useState([]);
@@ -87,7 +100,7 @@ const EmployeeDirectory = () => {
     switch (name) {
       case 'eid':
         if (!trimmedValue) errorMsg = 'Employee ID is required.';
-        else if (!/^E\\d{3}$/.test(trimmedValue)) errorMsg = 'Employee ID must be in format E001';
+        else if (!/^E\d{3}$/.test(trimmedValue)) errorMsg = 'Employee ID must be in format E001';
         else if (formMode === 'add' && employees.some(emp => emp.eid === trimmedValue)) errorMsg = 'ID already exists';
         break;
       case 'fname':
@@ -97,7 +110,7 @@ const EmployeeDirectory = () => {
         break;
       case 'lname':
         if (!trimmedValue) errorMsg = 'Last name required.';
-        else if (!/^[A-Za-z\\s]+$/.test(trimmedValue)) errorMsg = 'Only letters & spaces allowed.';
+        else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) errorMsg = 'Only letters & spaces allowed.';
         break;
       case 'email':
         if (!trimmedValue) {
