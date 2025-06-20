@@ -252,6 +252,19 @@ def working_days(start_date, end_date):
 @app.route('/api/assign-task', methods=['POST'])
 @jwt_required()
 def assign_task():
+    from datetime import datetime, timedelta
+
+    def working_days(start_date, end_date):
+        """
+        Counts working days (Mon-Fri) between two dates inclusive.
+        """
+        day_count = 0
+        current_date = start_date
+        while current_date <= end_date:
+            if current_date.weekday() < 5:  # 0 = Monday, 6 = Sunday
+                day_count += 1
+            current_date += timedelta(days=1)
+        return day_count
     try:
         print("📥 Received request to /api/assign-task")
 
@@ -309,7 +322,7 @@ def assign_task():
             if percentage <= 0 or percentage > 100:
                 return jsonify({"error": "Percentage must be between 0 and 100"}), 400
 
-            working_days_count = working_days(start_date, end_date) + 1
+            working_days_count = working_days(start_date, end_date) 
             HOURS_PER_DAY = 8
             allocated_hours = working_days_count * HOURS_PER_DAY * (percentage / 100.0)
             cost = billing_rate * allocated_hours
