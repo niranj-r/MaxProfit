@@ -5,6 +5,7 @@ import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
 import { useNavigate } from 'react-router-dom';
 import ProjectAssignee from './ProjectAssignees';
+import Papa from 'papaparse';
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -13,7 +14,7 @@ const ProjectDirectory = () => {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [formMode, setFormMode] = useState('add'); // 'add' or 'edit'
+  const [formMode, setFormMode] = useState('add');
   const [form, setForm] = useState({
     name: '',
     departmentId: '',
@@ -36,9 +37,7 @@ const ProjectDirectory = () => {
   }, []);
 
   useEffect(() => {
-    if (projects.length > 0) {
-      fetchProjectCosts();
-    }
+    if (projects.length > 0) fetchProjectCosts();
   }, [projects]);
 
   const fetchProjectCosts = async () => {
@@ -114,61 +113,47 @@ const ProjectDirectory = () => {
 
     switch (name) {
       case 'name':
-        if (!trimmedValue) {
-          errorMsg = 'Project name is required.';
-        } else if (trimmedValue.length < 3 || trimmedValue.length > 30) {
+        if (!trimmedValue) errorMsg = 'Project name is required.';
+        else if (trimmedValue.length < 3 || trimmedValue.length > 30)
           errorMsg = 'Project name must be 3–30 characters.';
-        } else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        else if (!/^[A-Za-z\s]+$/.test(trimmedValue))
           errorMsg = 'Project name can only contain letters and spaces.';
-        }
         break;
 
       case 'departmentId':
-        if (!trimmedValue) {
-          errorMsg = 'Department ID is required.';
-        } else if (!departments.some(dep => dep.did === trimmedValue)) {
+        if (!trimmedValue) errorMsg = 'Department ID is required.';
+        else if (!departments.some(dep => dep.did === trimmedValue))
           errorMsg = 'Invalid department ID. Please select a valid department.';
-        }
         break;
 
       case 'startDate':
-        if (!trimmedValue) {
-          errorMsg = 'Start date is required.';
-        } else {
+        if (!trimmedValue) errorMsg = 'Start date is required.';
+        else {
           const start = new Date(trimmedValue);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          if (start < today) {
-            errorMsg = 'Start date cannot be in the past.';
-          }
+          if (start < today) errorMsg = 'Start date cannot be in the past.';
         }
         break;
 
       case 'endDate':
-        if (!trimmedValue) {
-          errorMsg = 'End date is required.';
-        } else {
+        if (!trimmedValue) errorMsg = 'End date is required.';
+        else {
           const start = new Date(form.startDate);
           const end = new Date(trimmedValue);
-          if (start >= end) {
-            errorMsg = 'End date must be after start date.';
-          }
+          if (start >= end) errorMsg = 'End date must be after start date.';
         }
         break;
 
       case 'budget':
-        if (!trimmedValue) {
-          errorMsg = 'Budget is required.';
-        } else {
+        if (!trimmedValue) errorMsg = 'Budget is required.';
+        else {
           const num = parseFloat(trimmedValue);
-          if (isNaN(num) || num <= 0) {
-            errorMsg = 'Budget must be a positive number.';
-          } else if (!/^\d+(\.\d{1,2})?$/.test(trimmedValue)) {
+          if (isNaN(num) || num <= 0) errorMsg = 'Budget must be a positive number.';
+          else if (!/^\d+(\.\d{1,2})?$/.test(trimmedValue))
             errorMsg = 'Budget can have up to 2 decimal places only.';
-          }
         }
         break;
-
       default:
         break;
     }
@@ -189,16 +174,14 @@ const ProjectDirectory = () => {
     setGeneralError('');
     setFormErrors({});
 
-    // Validate all required fields
     const fields = ['name', 'departmentId', 'startDate', 'endDate', 'budget'];
     const newErrors = {};
-    
+
     fields.forEach(field => {
       const errorMsg = validateField(field, form[field]);
       if (errorMsg) newErrors[field] = errorMsg;
     });
 
-    // Check for any validation errors
     if (Object.keys(newErrors).length > 0) {
       setFormErrors(newErrors);
       setGeneralError('Please correct the errors in the form.');
@@ -240,7 +223,7 @@ const ProjectDirectory = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 
-      setProjects(prev => prev.filter(p => p._id !== id));
+      setProjects(prev => prev.filter(p => p.id !== id));
       alert('Project deleted successfully');
       fetchProjects();
     } catch (err) {
@@ -252,7 +235,6 @@ const ProjectDirectory = () => {
   const convertToIST = (isoString) => {
     if (!isoString) return '-';
     const utcDate = new Date(isoString);
-
     const istOffset = 5.5 * 60;
     const istTime = new Date(utcDate.getTime() + istOffset * 60 * 1000);
 
@@ -266,6 +248,31 @@ const ProjectDirectory = () => {
       minute: '2-digit',
       second: '2-digit'
     });
+  };
+
+  const handleDownloadCSV = () => {
+    if (!projects || projects.length === 0) {
+      alert('No project data available to export.');
+      return;
+    }
+
+    const csvData = projects.map(proj => ({
+      'Project Name': proj.name,
+      'Department ID': proj.departmentId,
+      'Start Date': proj.startDate?.substring(0, 10) || '',
+      'End Date': proj.endDate?.substring(0, 10) || '',
+      'Budget': proj.budget,
+      'Total Cost': projectCosts[proj.id] || 0
+    }));
+
+    const csv = Papa.unparse(csvData);
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'project_directory.csv');
+    link.click();
   };
 
   const filteredProjects = projects.filter(p =>
@@ -295,9 +302,8 @@ const ProjectDirectory = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={openAddModal}>
-            <FaPlus /> Add Project
-          </button>
+          <button className="add-btn" onClick={openAddModal}><FaPlus /> Add Project</button>
+          <button className="add-btn" onClick={handleDownloadCSV}>📥 Download</button>
         </div>
       </div>
 
@@ -319,8 +325,8 @@ const ProjectDirectory = () => {
             <tr key={proj.id}>
               <td>{proj.name}</td>
               <td>{proj.departmentId}</td>
-              <td>{proj.startDate ? proj.startDate.substring(0, 10) : '—'}</td>
-              <td>{proj.endDate ? proj.endDate.substring(0, 10) : '—'}</td>
+              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
               <td>{proj.budget}</td>
               <td>{projectCosts[proj.id] || 0}</td>
               <td>
@@ -328,20 +334,14 @@ const ProjectDirectory = () => {
                 <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
               </td>
               <td>
-                <button
-                  className="assignees-btn"
-                  onClick={() => handleAssigneesClick(proj)}
-                  title="Manage Assignees"
-                >
+                <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
                   Assign
                 </button>
               </td>
             </tr>
           ))}
           {filteredProjects.length === 0 && (
-            <tr>
-              <td colSpan="8" className="no-data">No matching projects found.</td>
-            </tr>
+            <tr><td colSpan="8" className="no-data">No matching projects found.</td></tr>
           )}
         </tbody>
       </table>
@@ -353,18 +353,8 @@ const ProjectDirectory = () => {
         >
           <form onSubmit={handleSubmit} className="modal-form">
             {generalError && (
-              <div className="form-error" style={{
-                backgroundColor: '#fee',
-                color: '#c33',
-                padding: '10px',
-                borderRadius: '4px',
-                marginBottom: '15px',
-                border: '1px solid #fcc',
-              }}>
-                {generalError}
-              </div>
+              <div className="form-error">{generalError}</div>
             )}
-
             {['name', 'departmentId', 'startDate', 'endDate', 'budget'].map(field => (
               <div className="floating-label" key={field}>
                 <input
@@ -384,7 +374,6 @@ const ProjectDirectory = () => {
                 )}
               </div>
             ))}
-
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
         </ModalWrapper>
