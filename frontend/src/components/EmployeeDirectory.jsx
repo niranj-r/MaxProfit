@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './EmployeeDirectory.css';
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaDownload } from 'react-icons/fa';
 import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
 
@@ -73,67 +73,36 @@ const EmployeeDirectory = () => {
   const validateField = (name, value) => {
     let errorMsg = '';
     const trimmedValue = value.trim();
-
     switch (name) {
       case 'eid':
-        if (!trimmedValue) {
-          errorMsg = 'Employee ID is required.';
-        } else if (!/^E\d{3}$/.test(trimmedValue)) {
-          errorMsg = 'Employee ID must be in valid format (e.g., E001)';
-        } else if (formMode === 'add' && employees.some(emp => emp.eid === trimmedValue)) {
-          errorMsg = 'Employee ID already exists. Please use a different ID.';
-        }
+        if (!trimmedValue) errorMsg = 'Employee ID is required.';
+        else if (!/^E\\d{3}$/.test(trimmedValue)) errorMsg = 'Employee ID must be in format E001';
+        else if (formMode === 'add' && employees.some(emp => emp.eid === trimmedValue)) errorMsg = 'ID already exists';
         break;
-
       case 'fname':
-        if (!/^[A-Za-z]*$/.test(value)) {
-          errorMsg = 'First name can only contain alphabetic characters.';
-        } else if (!trimmedValue) {
-          errorMsg = 'First name is required.';
-        } else if (trimmedValue.length < 3) {
-          errorMsg = 'First name must be at least 3 characters long.';
-        }
+        if (!/^[A-Za-z]*$/.test(value)) errorMsg = 'Only letters allowed.';
+        else if (!trimmedValue) errorMsg = 'First name required.';
+        else if (trimmedValue.length < 3) errorMsg = 'Min 3 characters.';
         break;
-
       case 'lname':
-        if (!trimmedValue) {
-          errorMsg = 'Last name is required.';
-        } else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
-          errorMsg = 'Last name can only contain letters and spaces.';
-        }
+        if (!trimmedValue) errorMsg = 'Last name required.';
+        else if (!/^[A-Za-z\\s]+$/.test(trimmedValue)) errorMsg = 'Only letters & spaces allowed.';
         break;
-
       case 'email':
-        if (!trimmedValue) {
-          errorMsg = 'Email is required.';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
-          errorMsg = 'Please enter a valid email format (e.g., user@company.com).';
-        } else if (formMode === 'add' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase())) {
-          errorMsg = 'Email already exists. Please use a different email.';
-        } else if (formMode === 'edit' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase() && emp.eid !== form.eid)) {
-          errorMsg = 'Email already exists. Please use a different email.';
-        }
+        if (!trimmedValue) errorMsg = 'Email required.';
+        else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(trimmedValue)) errorMsg = 'Invalid email.';
+        else if (formMode === 'add' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase())) errorMsg = 'Email exists.';
+        else if (formMode === 'edit' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase() && emp.eid !== form.eid)) errorMsg = 'Email exists.';
         break;
-
       case 'did':
-        if (!trimmedValue) {
-          errorMsg = 'Department is required.';
-        } else if (!existingDepartments.includes(trimmedValue.toLowerCase())) {
-          errorMsg = `Department "${trimmedValue}" does not exist. Available departments: ${existingDepartments.join(', ')}`;
-        }
+        if (!trimmedValue) errorMsg = 'Department required.';
+        else if (!existingDepartments.includes(trimmedValue.toLowerCase())) errorMsg = `Invalid department. Valid: ${existingDepartments.join(', ')}`;
         break;
-
       case 'password':
         if (formMode === 'add') {
-          if (!value) {
-            errorMsg = 'Password is required.';
-          } else if (value.length < 6) {
-            errorMsg = 'Password must be at least 6 characters long.';
-          }
+          if (!value) errorMsg = 'Password required.';
+          else if (value.length < 6) errorMsg = 'Min 6 characters.';
         }
-        break;
-
-      default:
         break;
     }
     return errorMsg;
@@ -161,16 +130,16 @@ const EmployeeDirectory = () => {
     try {
       if (formMode === 'add') {
         await axios.post(`${API}/api/employees`, form, authHeader);
-        alert('Employee added successfully');
+        alert('Employee added');
       } else {
         await axios.put(`${API}/api/employees/${selectedId}`, form, authHeader);
-        alert('Employee updated successfully');
+        alert('Employee updated');
       }
       close();
       fetchEmployees();
     } catch (err) {
       console.error('Submit error', err);
-      setGeneralError(err.response?.data?.error || 'Error submitting employee');
+      setGeneralError(err.response?.data?.error || 'Submit error');
     }
   };
 
@@ -178,41 +147,42 @@ const EmployeeDirectory = () => {
     if (!window.confirm('Delete employee?')) return;
     try {
       await axios.delete(`${API}/api/users/${id}`, authHeader);
-      alert('Employee deleted successfully');
+      alert('Deleted');
       fetchEmployees();
     } catch (e) {
       console.error('Delete error', e);
-      alert(e.response?.data?.error || 'Error deleting employee');
+      alert(e.response?.data?.error || 'Error deleting');
     }
   };
+
   const toggleStatus = async (emp) => {
     const newStatus = emp.status === 'active' ? 'inactive' : 'active';
-
     try {
       await axios.put(`${API}/api/users/${emp.id}/status`, { status: newStatus }, authHeader);
-      //alert(Employee status updated to ${newStatus});
       fetchEmployees();
     } catch (err) {
-      console.error('Status update error', err.response?.data || err);
+      console.error('Status update error', err);
       alert('Failed to update status');
     }
+  };
+
+  const downloadCSV = () => {
+    const headers = ['Employee ID', 'First Name', 'Last Name', 'Email', 'Department', 'Status'];
+    const rows = filtered.map(emp => [emp.eid, emp.fname, emp.lname, emp.email, emp.did, emp.status]);
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'employee_directory.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const filtered = employees.filter(emp =>
     `${emp.fname} ${emp.lname}`.toLowerCase().includes(search.toLowerCase())
   );
-
-  const getFieldLabel = (field) => {
-    switch (field) {
-      case 'eid': return 'Employee ID';
-      case 'fname': return 'First Name';
-      case 'lname': return 'Last Name';
-      case 'email': return 'Email';
-      case 'did': return 'Department';
-      case 'manager': return 'Manager';
-      default: return field.charAt(0).toUpperCase() + field.slice(1);
-    }
-  };
 
   return (
     <div className="employee-table-container">
@@ -221,6 +191,7 @@ const EmployeeDirectory = () => {
         <div className="controls">
           <input type="text" className="search-bar" placeholder="Search employee..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <button className="add-btn" onClick={openAdd}><FaPlus /> Add Employee</button>
+          <button className="download-btn" onClick={downloadCSV}><FaDownload /> Download CSV</button>
         </div>
       </div>
 
@@ -243,10 +214,7 @@ const EmployeeDirectory = () => {
               <td>{emp.email}</td>
               <td>{emp.did}</td>
               <td>
-                <button
-                  onClick={() => toggleStatus(emp)}
-                  className={emp.status === 'active' ? 'status-active' : 'status-inactive'}
-                >
+                <button onClick={() => toggleStatus(emp)} className={emp.status === 'active' ? 'status-active' : 'status-inactive'}>
                   {emp.status === 'active' ? 'Active' : 'Inactive'}
                 </button>
               </td>
@@ -263,15 +231,13 @@ const EmployeeDirectory = () => {
         <ModalWrapper onClose={close} title={formMode === 'add' ? 'Add Employee' : 'Edit Employee'}>
           <form className="modal-form" onSubmit={handleSubmit}>
             {generalError && <div className="form-error">{generalError}</div>}
-
             {['eid', 'fname', 'lname', 'email', 'did'].map(field => (
               <div className="floating-label" key={field}>
                 <input name={field} value={form[field]} onChange={handleChange} placeholder=" " required disabled={field === 'eid' && formMode === 'edit'} />
-                <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+                <label>{field.charAt(0).toUpperCase() + field.slice(1)}<span className="required-star">*</span></label>
                 {formErrors[field] && <div className="field-error">{formErrors[field]}</div>}
               </div>
             ))}
-
             {formMode === 'add' && (
               <div className="floating-label">
                 <input name="password" type="password" value={form.password} onChange={handleChange} placeholder=" " required />
@@ -279,7 +245,6 @@ const EmployeeDirectory = () => {
                 {formErrors.password && <div className="field-error">{formErrors.password}</div>}
               </div>
             )}
-
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
         </ModalWrapper>
