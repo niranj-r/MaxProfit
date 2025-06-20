@@ -21,13 +21,16 @@ const EmployeeDirectory = () => {
   const [generalError, setGeneralError] = useState('');
   const [existingDepartments, setExistingDepartments] = useState([]);
 
-  useEffect(() => { fetchEmployees(); }, []);
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
         const res = await axios.get(`${API}/api/departments`, authHeader);
-        const deptNames = res.data.map(dept => dept.name.toLowerCase().trim());
+        // Store original department names exactly as received
+        const deptNames = res.data.map(dept => dept.name.trim());
         setExistingDepartments(deptNames);
       } catch (err) {
         console.error("Failed to fetch departments", err);
@@ -56,7 +59,15 @@ const EmployeeDirectory = () => {
   };
 
   const openEdit = emp => {
-    setForm({ eid: emp.eid, fname: emp.fname, lname: emp.lname, email: emp.email, did: emp.did, manager: emp.manager || '', password: '' });
+    setForm({ 
+      eid: emp.eid, 
+      fname: emp.fname, 
+      lname: emp.lname, 
+      email: emp.email, 
+      did: emp.did, 
+      manager: emp.manager || '', 
+      password: '' 
+    });
     setFormMode('edit');
     setSelectedId(emp.eid);
     setFormErrors({});
@@ -108,17 +119,23 @@ const EmployeeDirectory = () => {
           errorMsg = 'Email is required.';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)) {
           errorMsg = 'Please enter a valid email format (e.g., user@company.com).';
-        } else if (formMode === 'add' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase())) {
+        } else if (
+          formMode === 'add' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase())
+        ) {
           errorMsg = 'Email already exists. Please use a different email.';
-        } else if (formMode === 'edit' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase() && emp.eid !== form.eid)) {
+        } else if (
+          formMode === 'edit' && employees.some(emp => emp.email.toLowerCase() === trimmedValue.toLowerCase() && emp.eid !== form.eid)
+        ) {
           errorMsg = 'Email already exists. Please use a different email.';
         }
         break;
 
       case 'did':
         if (!trimmedValue) {
-          errorMsg = 'Department is required.';
-        } else if (!existingDepartments.includes(trimmedValue.toLowerCase())) {
+          errorMsg = 'Department name cannot be empty.';
+        } else if (
+          !existingDepartments.some(dept => dept.toLowerCase() === trimmedValue.toLowerCase())
+        ) {
           errorMsg = `Department "${trimmedValue}" does not exist. Available departments: ${existingDepartments.join(', ')}`;
         }
         break;
@@ -136,6 +153,7 @@ const EmployeeDirectory = () => {
       default:
         break;
     }
+
     return errorMsg;
   };
 
@@ -150,14 +168,17 @@ const EmployeeDirectory = () => {
     e.preventDefault();
     const fields = ['eid', 'fname', 'lname', 'email', 'did', 'manager', ...(formMode === 'add' ? ['password'] : [])];
     const newErrors = {};
+
     fields.forEach(field => {
       const errorMsg = validateField(field, form[field]);
       if (errorMsg) newErrors[field] = errorMsg;
     });
+
     if (Object.keys(newErrors).length) {
       setFormErrors(newErrors);
       return;
     }
+
     try {
       if (formMode === 'add') {
         await axios.post(`${API}/api/employees`, form, authHeader);
@@ -185,12 +206,12 @@ const EmployeeDirectory = () => {
       alert(e.response?.data?.error || 'Error deleting employee');
     }
   };
+
   const toggleStatus = async (emp) => {
     const newStatus = emp.status === 'active' ? 'inactive' : 'active';
 
     try {
       await axios.put(`${API}/api/users/${emp.id}/status`, { status: newStatus }, authHeader);
-      //alert(Employee status updated to ${newStatus});
       fetchEmployees();
     } catch (err) {
       console.error('Status update error', err.response?.data || err);
@@ -219,8 +240,16 @@ const EmployeeDirectory = () => {
       <div className="table-header">
         <h2>User Directory</h2>
         <div className="controls">
-          <input type="text" className="search-bar" placeholder="Search employee..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          <button className="add-btn" onClick={openAdd}><FaPlus /> Add Employee</button>
+          <input
+            type="text"
+            className="search-bar"
+            placeholder="Search employee..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <button className="add-btn" onClick={openAdd}>
+            <FaPlus /> Add Employee
+          </button>
         </div>
       </div>
 
@@ -236,26 +265,32 @@ const EmployeeDirectory = () => {
           </tr>
         </thead>
         <tbody>
-          {filtered.map(emp => (
-            <tr key={emp._id || emp.eid}>
-              <td>{emp.eid}</td>
-              <td>{emp.fname} {emp.lname}</td>
-              <td>{emp.email}</td>
-              <td>{emp.did}</td>
-              <td>
-                <button
-                  onClick={() => toggleStatus(emp)}
-                  className={emp.status === 'active' ? 'status-active' : 'status-inactive'}
-                >
-                  {emp.status === 'active' ? 'Active' : 'Inactive'}
-                </button>
-              </td>
-              <td>
-                <FaEdit onClick={() => openEdit(emp)} className="icon edit-icon" />
-                <FaTrash onClick={() => handleDelete(emp.id || emp._id)} className="icon delete-icon" />
-              </td>
+          {filtered.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="no-data">No employees found.</td>
             </tr>
-          ))}
+          ) : (
+            filtered.map(emp => (
+              <tr key={emp._id || emp.eid}>
+                <td>{emp.eid}</td>
+                <td>{emp.fname} {emp.lname}</td>
+                <td>{emp.email}</td>
+                <td>{emp.did}</td>
+                <td>
+                  <button
+                    onClick={() => toggleStatus(emp)}
+                    className={emp.status === 'active' ? 'status-active' : 'status-inactive'}
+                  >
+                    {emp.status === 'active' ? 'Active' : 'Inactive'}
+                  </button>
+                </td>
+                <td>
+                  <FaEdit onClick={() => openEdit(emp)} className="icon edit-icon" />
+                  <FaTrash onClick={() => handleDelete(emp.id || emp._id)} className="icon delete-icon" />
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
 
@@ -264,17 +299,48 @@ const EmployeeDirectory = () => {
           <form className="modal-form" onSubmit={handleSubmit}>
             {generalError && <div className="form-error">{generalError}</div>}
 
-            {['eid', 'fname', 'lname', 'email', 'did'].map(field => (
+            {['eid', 'fname', 'lname', 'email'].map(field => (
               <div className="floating-label" key={field}>
-                <input name={field} value={form[field]} onChange={handleChange} placeholder=" " required disabled={field === 'eid' && formMode === 'edit'} />
+                <input
+                  name={field}
+                  value={form[field]}
+                  onChange={handleChange}
+                  placeholder=" "
+                  required
+                  disabled={field === 'eid' && formMode === 'edit'}
+                />
                 <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
                 {formErrors[field] && <div className="field-error">{formErrors[field]}</div>}
               </div>
             ))}
 
+            {/* Department dropdown */}
+            <div className="floating-label" key="did">
+              <select
+                name="did"
+                value={form.did}
+                onChange={handleChange}
+                required
+              >
+                <option value="" disabled>Select Department</option>
+                {existingDepartments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+              <label>{getFieldLabel('did')}<span className="required-star">*</span></label>
+              {formErrors.did && <div className="field-error">{formErrors.did}</div>}
+            </div>
+
             {formMode === 'add' && (
               <div className="floating-label">
-                <input name="password" type="password" value={form.password} onChange={handleChange} placeholder=" " required />
+                <input
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder=" "
+                  required
+                />
                 <label>Password<span className="required-star">*</span></label>
                 {formErrors.password && <div className="field-error">{formErrors.password}</div>}
               </div>

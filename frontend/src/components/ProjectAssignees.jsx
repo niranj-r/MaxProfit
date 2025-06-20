@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 import './ProjectAssignees.css';
+
 
 const API = process.env.REACT_APP_API_BASE_URL;
 const token = localStorage.getItem("token");
@@ -10,6 +12,17 @@ const authHeader = {
     Authorization: `Bearer ${token}`,
   },
 };
+
+// Decode token to get current user's eid
+let currentUserEID = null;
+if (token) {
+  try {
+    const decoded = jwtDecode(token);
+    currentUserEID = decoded.eid;  // adjust this if your token structure is different
+  } catch (err) {
+    console.error("Failed to decode token", err);
+  }
+}
 
 const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   const [search, setSearch] = useState('');
@@ -41,9 +54,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(`${API}/api/projects`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await axios.get(`${API}/api/projects`, authHeader);
       setProjects(res.data);
     } catch (err) {
       console.error('Failed to fetch projects', err);
@@ -54,31 +65,36 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     try {
       const res = await axios.get(`${API}/api/roles`, authHeader);
       setAvailableRoles(res.data);
-      setSelectedRole(res.data[0]); // default role
+      setSelectedRole(res.data[0] || '');
     } catch (err) {
       console.error("Failed to fetch roles", err);
     }
   };
 
   const handleSearch = async e => {
-    const q = e.target.value;
-    setSearch(q);
-    if (!q.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    try {
-      const res = await axios.get(`${API}/api/search/users`, {
-        params: { q },
-        ...authHeader
-      });
-      setSearchResults(res.data.filter(emp => emp && emp.eid && emp.fname && emp.lname));
-    } catch (err) {
-      console.error('Search error', err);
-    }
-  };
+  const q = e.target.value;
+  setSearch(q);
+  if (!q.trim()) {
+    setSearchResults([]);
+    return;
+  }
+  try {
+    const res = await axios.get(`${API}/api/search/users`, {
+      params: { q },
+      ...authHeader
+    });
+    setSearchResults(
+      res.data.filter(emp => 
+        emp && emp.eid && emp.fname && emp.lname && !/^AD\d{2}$/.test(emp.eid)
+      )
+    );
+  } catch (err) {
+    console.error('Search error', err);
+  }
+};
 
-  const startAdd = emp => {
+
+  const startAdd = (emp) => {
     setPending(emp);
     setPercentage('');
     setBillingRate('');
@@ -101,7 +117,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     const pct = parseFloat(percentage);
     const rate = parseFloat(billingRate);
     if (isNaN(pct) || isNaN(rate) || !startDate || !endDate) {
-      alert('Please enter valid allocation percentage and billing rate.');
+      alert('Please enter valid allocation percentage, billing rate and dates.');
       return;
     }
 
@@ -129,10 +145,10 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
         authHeader
       );
 
-      alert('✅ User assigned with role and task!');
+      alert('✅ User assigned successfully!');
       fetchAssignees();
       fetchProjects();
-      setAssignees(a => [...a, { ...pending, role: selectedRole }]);
+      setAssignees(prev => [...prev, { ...pending, role: selectedRole }]);
       cancelAdd();
       setSearch('');
       setSearchResults([]);
@@ -142,13 +158,10 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
     }
   };
 
-  const removeAssignee = async emp => {
+  const removeAssignee = async (emp) => {
     try {
-      await axios.delete(
-        `${API}/api/projects/${projectId}/assignees/${emp.eid}`,
-        authHeader
-      );
-      setAssignees(a => a.filter(x => x.eid !== emp.eid));
+      await axios.delete(`${API}/api/projects/${projectId}/assignees/${emp.eid}`, authHeader);
+      setAssignees(prev => prev.filter(x => x.eid !== emp.eid));
     } catch (err) {
       console.error('Remove error', err);
     }
@@ -179,19 +192,10 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
 
         {pending && (
           <div className="assign-panel">
-            <span>
-              Assign <strong>{pending.fname} {pending.lname}</strong> as:
-            </span>
-            <select
-              value={selectedRole}
-              onChange={e => setSelectedRole(e.target.value)}
-            >
+            <span>Assign <strong>{pending.fname} {pending.lname}</strong> as:</span>
+            <select value={selectedRole} onChange={e => setSelectedRole(e.target.value)}>
               {availableRoles.map(r => (
-                <option
-                  key={r}
-                  value={r}
-                  disabled={r === 'Project Manager' && hasPM}
-                >
+                <option key={r} value={r} disabled={r === 'Project Manager' && hasPM}>
                   {r}
                 </option>
               ))}
@@ -219,6 +223,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 />
                 <label>Billing Rate</label>
               </div>
+
               <div className="floating-field">
                 <input
                   type="date"
@@ -239,6 +244,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <label>End Date</label>
               </div>
             </div>
+
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
               <button className="confirm-btn" onClick={confirmAdd}>Confirm</button>
               <button className="cancel-btn" onClick={cancelAdd}>Cancel</button>

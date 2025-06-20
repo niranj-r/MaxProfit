@@ -365,25 +365,47 @@ const ProjectDirectory = () => {
               </div>
             )}
 
-            {['name', 'departmentId', 'startDate', 'endDate', 'budget'].map(field => (
-              <div className="floating-label" key={field}>
-                <input
-                  name={field}
-                  type={field.includes('Date') ? 'date' : field === 'budget' ? 'number' : 'text'}
-                  value={form[field]}
-                  onChange={handleChange}
-                  placeholder=" "
-                  required
-                  style={formErrors[field] ? { borderColor: '#c33' } : {}}
-                  step={field === 'budget' ? '0.01' : undefined}
-                  min={field === 'budget' ? '0.01' : undefined}
-                />
-                <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
-                {formErrors[field] && (
-                  <div className="field-error">{formErrors[field]}</div>
-                )}
-              </div>
-            ))}
+           {['name', 'startDate', 'endDate', 'budget'].map(field => (
+  <div className="floating-label" key={field}>
+    <input
+      name={field}
+      type={field.includes('Date') ? 'date' : field === 'budget' ? 'number' : 'text'}
+      value={form[field]}
+      onChange={handleChange}
+      placeholder=" "
+      required
+      style={formErrors[field] ? { borderColor: '#c33' } : {}}
+      step={field === 'budget' ? '0.01' : undefined}
+      min={field === 'budget' ? '0.01' : undefined}
+    />
+    <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+    {formErrors[field] && (
+      <div className="field-error">{formErrors[field]}</div>
+    )}
+  </div>
+))}
+
+{/* Department ID dropdown */}
+<div className="floating-label" key="departmentId">
+  <select
+    name="departmentId"
+    value={form.departmentId}
+    onChange={handleChange}
+    required
+    style={formErrors.departmentId ? { borderColor: '#c33' } : {}}
+  >
+    <option value="" disabled>Select Department</option>
+    {departments.map(dep => (
+      <option key={dep.did} value={dep.did}>
+        {dep.did} ({dep.name})
+      </option>
+    ))}
+  </select>
+  <label>Department ID <span className="required-star">*</span></label>
+  {formErrors.departmentId && (
+    <div className="field-error">{formErrors.departmentId}</div>
+  )}
+</div>
 
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
