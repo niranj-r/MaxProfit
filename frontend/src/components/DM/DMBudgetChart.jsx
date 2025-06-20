@@ -30,7 +30,7 @@ const DMBudgetChart = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    axios.get(`${API}/api/project-budgets`, {
+    axios.get(`${API}/api/dm-project-budgets`, {
       headers: {
         Authorization: `Bearer ${token}`
       }

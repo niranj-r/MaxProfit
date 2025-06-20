@@ -15,7 +15,7 @@ const DMDashboardSummary = () => {
   const [summary, setSummary] = useState({
     projectCount: 0,
     totalBudget: 0,
-    estimatedProfit: 0, // Placeholder
+    estimatedProfit: 0,
   });
   const [userName, setUserName] = useState("");
 
@@ -30,19 +30,17 @@ const DMDashboardSummary = () => {
     axios
       .get(`${API}/api/department-projects`, authHeader)
       .then((res) => {
-        const projectList = res.data;
-        const totalBudget = projectList.reduce(
-          (sum, p) => sum + (parseFloat(p.budget) || 0),
-          0
-        );
-        setProjects(projectList);
+        const { projectCount, totalBudget, estimatedProfit, projects } = res.data;
+        setProjects(projects);
         setSummary({
-          projectCount: projectList.length,
+          projectCount,
           totalBudget,
-          estimatedProfit: totalBudget * 0.25, // or 0 for now
+          estimatedProfit,
         });
       })
-      .catch((err) => console.error("Error fetching department projects:", err));
+      .catch((err) =>
+        console.error("Error fetching department projects:", err)
+      );
   }, []);
 
   const cards = [

@@ -13,7 +13,7 @@ const DMProjectDirectory = () => {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [formMode, setFormMode] = useState('add'); // 'add' or 'edit'
+  const [formMode, setFormMode] = useState('add');
   const [form, setForm] = useState({
     name: '',
     departmentId: '',
@@ -41,6 +41,28 @@ const DMProjectDirectory = () => {
     }
   }, [projects]);
 
+  const fetchProjects = async () => {
+    try {
+      const res = await axios.get(`${API}/api/dm-projects`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setProjects(res.data);
+    } catch (err) {
+      console.error('Failed to fetch projects', err);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const res = await axios.get(`${API}/api/dm-departments`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setDepartments(res.data);
+    } catch (err) {
+      console.error('Failed to load departments', err);
+    }
+  };
+
   const fetchProjectCosts = async () => {
     const costs = {};
     try {
@@ -53,28 +75,6 @@ const DMProjectDirectory = () => {
       setProjectCosts(costs);
     } catch (err) {
       console.error('Failed to fetch project costs', err);
-    }
-  };
-
-  const fetchProjects = async () => {
-    try {
-      const res = await axios.get(`${API}/api/projects`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      setProjects(res.data);
-    } catch (err) {
-      console.error('Failed to fetch projects', err);
-    }
-  };
-
-  const fetchDepartments = async () => {
-    try {
-      const res = await axios.get(`${API}/api/departments`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      setDepartments(res.data);
-    } catch (err) {
-      console.error('Failed to load departments', err);
     }
   };
 
@@ -122,15 +122,13 @@ const DMProjectDirectory = () => {
           errorMsg = 'Project name can only contain letters and spaces.';
         }
         break;
-
       case 'departmentId':
         if (!trimmedValue) {
           errorMsg = 'Department ID is required.';
         } else if (!departments.some(dep => dep.did === trimmedValue)) {
-          errorMsg = 'Invalid department ID. Please select a valid department.';
+          errorMsg = 'Invalid department ID.';
         }
         break;
-
       case 'startDate':
         if (!trimmedValue) {
           errorMsg = 'Start date is required.';
@@ -143,7 +141,6 @@ const DMProjectDirectory = () => {
           }
         }
         break;
-
       case 'endDate':
         if (!trimmedValue) {
           errorMsg = 'End date is required.';
@@ -155,7 +152,6 @@ const DMProjectDirectory = () => {
           }
         }
         break;
-
       case 'budget':
         if (!trimmedValue) {
           errorMsg = 'Budget is required.';
@@ -168,7 +164,6 @@ const DMProjectDirectory = () => {
           }
         }
         break;
-
       default:
         break;
     }
@@ -189,16 +184,13 @@ const DMProjectDirectory = () => {
     setGeneralError('');
     setFormErrors({});
 
-    // Validate all required fields
     const fields = ['name', 'departmentId', 'startDate', 'endDate', 'budget'];
     const newErrors = {};
-    
     fields.forEach(field => {
       const errorMsg = validateField(field, form[field]);
       if (errorMsg) newErrors[field] = errorMsg;
     });
 
-    // Check for any validation errors
     if (Object.keys(newErrors).length > 0) {
       setFormErrors(newErrors);
       setGeneralError('Please correct the errors in the form.');
@@ -223,14 +215,9 @@ const DMProjectDirectory = () => {
       fetchProjects();
     } catch (err) {
       console.error('Error submitting project', err);
-      const errorMsg = err.response?.data?.error || `Error ${formMode === 'add' ? 'adding' : 'updating'} project`;
+      const errorMsg = err.response?.data?.error || 'Error submitting project';
       setGeneralError(errorMsg);
     }
-  };
-
-  const handleAssigneesClick = (project) => {
-    setSelectedProject(project);
-    setShowAssigneesModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -239,49 +226,33 @@ const DMProjectDirectory = () => {
       await axios.delete(`${API}/api/projects/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-
-      setProjects(prev => prev.filter(p => p._id !== id));
+      setProjects(prev => prev.filter(p => p.id !== id));
       alert('Project deleted successfully');
       fetchProjects();
     } catch (err) {
       console.error('Error deleting project', err);
-      alert('Error deleting project. Check console.');
     }
   };
 
-  const convertToIST = (isoString) => {
-    if (!isoString) return '-';
-    const utcDate = new Date(isoString);
+  const handleAssigneesClick = (project) => {
+    setSelectedProject(project);
+    setShowAssigneesModal(true);
+  };
 
-    const istOffset = 5.5 * 60;
-    const istTime = new Date(utcDate.getTime() + istOffset * 60 * 1000);
-
-    return istTime.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour12: true,
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+  const getFieldLabel = (field) => {
+    switch (field) {
+      case 'name': return 'Project Name';
+      case 'departmentId': return 'Department';
+      case 'startDate': return 'Start Date';
+      case 'endDate': return 'End Date';
+      case 'budget': return 'Budget';
+      default: return field;
+    }
   };
 
   const filteredProjects = projects.filter(p =>
     (p.name || '').toLowerCase().includes(search.toLowerCase())
   );
-
-  const getFieldLabel = (field) => {
-    switch (field) {
-      case 'name': return 'Project Name';
-      case 'departmentId': return 'Department ID';
-      case 'startDate': return 'Start Date';
-      case 'endDate': return 'End Date';
-      case 'budget': return 'Budget';
-      default: return field.charAt(0).toUpperCase() + field.slice(1);
-    }
-  };
 
   return (
     <div className="employee-table-container">
@@ -305,11 +276,11 @@ const DMProjectDirectory = () => {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Department ID</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Budget ($)</th>
-            <th>Total Cost ($)</th>
+            <th>Department</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Budget</th>
+            <th>Total Cost</th>
             <th>Actions</th>
             <th>Assign</th>
           </tr>
@@ -319,8 +290,8 @@ const DMProjectDirectory = () => {
             <tr key={proj.id}>
               <td>{proj.name}</td>
               <td>{proj.departmentId}</td>
-              <td>{proj.startDate ? proj.startDate.substring(0, 10) : '—'}</td>
-              <td>{proj.endDate ? proj.endDate.substring(0, 10) : '—'}</td>
+              <td>{proj.startDate?.substring(0, 10) || '-'}</td>
+              <td>{proj.endDate?.substring(0, 10) || '-'}</td>
               <td>{proj.budget}</td>
               <td>{projectCosts[proj.id] || 0}</td>
               <td>
@@ -328,11 +299,7 @@ const DMProjectDirectory = () => {
                 <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
               </td>
               <td>
-                <button
-                  className="assignees-btn"
-                  onClick={() => handleAssigneesClick(proj)}
-                  title="Manage Assignees"
-                >
+                <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
                   Assign
                 </button>
               </td>
@@ -353,32 +320,45 @@ const DMProjectDirectory = () => {
         >
           <form onSubmit={handleSubmit} className="modal-form">
             {generalError && (
-              <div className="form-error" style={{
-                backgroundColor: '#fee',
-                color: '#c33',
-                padding: '10px',
-                borderRadius: '4px',
-                marginBottom: '15px',
-                border: '1px solid #fcc',
-              }}>
-                {generalError}
-              </div>
+              <div className="form-error">{generalError}</div>
             )}
 
             {['name', 'departmentId', 'startDate', 'endDate', 'budget'].map(field => (
               <div className="floating-label" key={field}>
-                <input
-                  name={field}
-                  type={field.includes('Date') ? 'date' : field === 'budget' ? 'number' : 'text'}
-                  value={form[field]}
-                  onChange={handleChange}
-                  placeholder=" "
-                  required
-                  style={formErrors[field] ? { borderColor: '#c33' } : {}}
-                  step={field === 'budget' ? '0.01' : undefined}
-                  min={field === 'budget' ? '0.01' : undefined}
-                />
-                <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+                {field === 'departmentId' ? (
+                  <>
+                    <select
+                      name="departmentId"
+                      value={form.departmentId}
+                      onChange={handleChange}
+                      required
+                      style={formErrors[field] ? { borderColor: '#c33' } : {}}
+                    >
+                      <option value=""></option>
+                      {departments.map(dep => (
+                        <option key={dep.did} value={dep.did}>
+                          {dep.name} ({dep.did})
+                        </option>
+                      ))}
+                    </select>
+                    <label className="select-label">Department<span className="required-star">*</span></label>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      name={field}
+                      type={field.includes('Date') ? 'date' : field === 'budget' ? 'number' : 'text'}
+                      value={form[field]}
+                      onChange={handleChange}
+                      placeholder=" "
+                      required
+                      style={formErrors[field] ? { borderColor: '#c33' } : {}}
+                      step={field === 'budget' ? '0.01' : undefined}
+                      min={field === 'budget' ? '0.01' : undefined}
+                    />
+                    <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+                  </>
+                )}
                 {formErrors[field] && (
                   <div className="field-error">{formErrors[field]}</div>
                 )}

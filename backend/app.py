@@ -1448,6 +1448,161 @@ def user_info():
     else:
         return jsonify({"error": "User not found"}), 404
 
+# ------------------ Department Manager ------------------
+
+@app.route('/api/dm-departments', methods=['GET'])
+@jwt_required()
+def get_managed_departments():
+    # Get user identity from JWT
+    user_id = get_jwt_identity()
+
+    # Find the user and confirm role
+    user = User.query.filter_by(id=user_id).first()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if user.role != 'department_manager':
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    # Fetch all departments (we'll filter in Python since some use managerIds)
+    departments = Department.query.all()
+
+    result = []
+    for dept in departments:
+        # Handle both old single managerId and new multiple managerIds
+        manager_ids = []
+        if hasattr(dept, 'managerIds') and dept.managerIds:
+            manager_ids = [mid.strip() for mid in dept.managerIds.split(',')]
+        elif dept.managerId:
+            manager_ids = [dept.managerId]
+
+        # Include only if this user is one of the managers
+        if user.eid in manager_ids:
+            dept_data = {
+                'did': dept.did,
+                'name': dept.name,
+                'oid': dept.oid,
+                'managerId': dept.managerId,        # for backward compatibility
+                'managerIds': manager_ids,          # normalized list
+            }
+            result.append(dept_data)
+
+    return jsonify(result), 200
+
+@app.route('/api/dm-projects', methods=['GET'])
+@jwt_required()
+def get_projects_for_department_manager():
+    user_id = get_jwt_identity()
+    user = User.query.filter_by(id=user_id).first()
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # If the user is a department manager, filter projects by their departments
+    if user.role == 'department_manager':
+        managed_departments = Department.query.filter_by(managerId=user.eid).all()
+        department_ids = [d.did for d in managed_departments]
+
+        if not department_ids:
+            return jsonify([])
+
+        projects = Project.query.filter(Project.departmentId.in_(department_ids)).all()
+    else:
+        # For other roles (e.g., admin), return all projects
+        projects = Project.query.all()
+
+    return jsonify([{
+        "id": p.id,
+        "name": p.name,
+        "departmentId": p.departmentId,
+        "startDate": p.startDate.strftime('%Y-%m-%d'),
+        "endDate": p.endDate.strftime('%Y-%m-%d'),
+        "budget": p.budget,
+        "createdAt": p.createdAt.isoformat() if p.createdAt else None,
+        "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
+    } for p in projects])
+
+@app.route('/api/dm-project-budgets', methods=['GET'])
+@jwt_required()
+def get_dm_project_budgets():
+    current_user_id = get_jwt_identity()
+
+    # Get the current user
+    user = User.query.filter_by(id=current_user_id).first()
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    if user.role != 'department_manager':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    # Step 1: Get department IDs managed by the user
+    departments = Department.query.filter_by(managerId=user.eid).all()
+    department_ids = [d.did for d in departments]
+
+    if not department_ids:
+        return jsonify([])
+
+    # Step 2: Get projects under those departments
+    projects = Project.query.filter(Project.departmentId.in_(department_ids)) \
+                            .with_entities(Project.name, Project.budget).all()
+
+    # Step 3: Return formatted data
+    result = [{"name": name, "budget": budget} for name, budget in projects]
+    return jsonify(result), 200
+
+
+@app.route('/api/department-projects', methods=['GET'])
+@jwt_required()
+def department_project_summary():
+    user_id = get_jwt_identity()
+
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if user.role != 'department_manager':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    # Step 1: Get departments managed by the user
+    departments = Department.query.filter_by(managerId=user.eid).all()
+    department_ids = [d.did for d in departments]
+
+    if not department_ids:
+        return jsonify({
+            "projectCount": 0,
+            "totalBudget": 0,
+            "estimatedProfit": 0,
+            "projects": []
+        })
+
+    # Step 2: Get projects under these departments
+    projects = Project.query.filter(Project.departmentId.in_(department_ids)).all()
+
+    # Step 3: Calculate totals
+    total_budget = sum(p.budget or 0 for p in projects)
+    estimated_profit = total_budget * 0.25  # change formula as needed
+
+    # Step 4: Serialize project list if needed
+    project_list = [{
+        "id": p.id,
+        "name": p.name,
+        "departmentId": p.departmentId,
+        "budget": float(p.budget or 0),
+        "startDate": p.startDate.strftime('%Y-%m-%d'),
+        "endDate": p.endDate.strftime('%Y-%m-%d'),
+        "createdAt": p.createdAt.isoformat() if p.createdAt else None,
+        "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
+    } for p in projects]
+
+    return jsonify({
+        "projectCount": len(projects),
+        "totalBudget": total_budget,
+        "estimatedProfit": estimated_profit,
+        "projects": project_list
+    }), 200
+
 
 # ------------------ MAIN ------------------
 

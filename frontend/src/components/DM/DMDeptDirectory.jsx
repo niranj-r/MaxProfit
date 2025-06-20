@@ -324,6 +324,7 @@ const DMDepartmentDirectory = () => {
     return 'No managers assigned';
   };
 
+
   return (
     <div className="employee-table-container">
       <div className="table-header">
@@ -336,9 +337,6 @@ const DMDepartmentDirectory = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={openAddModal}>
-            <FaPlus /> Add Department
-          </button>
         </div>
       </div>
 
@@ -349,7 +347,6 @@ const DMDepartmentDirectory = () => {
             <th>Name</th>
             <th>Organisation ID</th>
             <th>Managers</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -359,10 +356,6 @@ const DMDepartmentDirectory = () => {
               <td>{dept.name}</td>
               <td>{dept.oid}</td>
               <td>{getManagerNames(dept)}</td>
-              <td>
-                <FaEdit className="icon edit-icon" onClick={() => openEditModal(dept)} />
-                <FaTrash className="icon delete-icon" onClick={() => handleDelete(dept.did)} />
-              </td>
             </tr>
           ))}
           {filteredDepartments.length === 0 && (
@@ -372,66 +365,6 @@ const DMDepartmentDirectory = () => {
           )}
         </tbody>
       </table>
-
-      {showModal && (
-        <DMModalWrapper
-          title={formMode === 'add' ? 'Add Department' : 'Edit Department'}
-          onClose={closeModal}
-        >
-          <form className="modal-form" onSubmit={handleSubmit}>
-            {generalError && (
-              <div className="form-error">{generalError}</div>
-            )}
-
-            <div className="floating-label">
-              <input
-                name="did"
-                placeholder=" "
-                value={currentDept.did}
-                onChange={handleInputChange}
-                disabled={formMode === 'edit'}
-                required
-                style={formErrors.did ? { borderColor: '#c33' } : {}}
-              />
-              <label>Department ID <span style={{color: '#c33'}}>*</span></label>
-              {formErrors.did && <div className="field-error">{formErrors.did}</div>}
-            </div>
-
-            <div className="floating-label">
-              <input
-                name="name"
-                placeholder=" "
-                value={currentDept.name}
-                onChange={handleInputChange}
-                required
-                style={formErrors.name ? { borderColor: '#c33' } : {}}
-              />
-              <label>Department Name <span style={{color: '#c33'}}>*</span></label>
-              {formErrors.name && <div className="field-error">{formErrors.name}</div>}
-            </div>
-
-            <div className="floating-label">
-              <input
-                name="organisationName"
-                placeholder=" "
-                value={organisationName}
-                readOnly
-                style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
-              />
-              <label>Organisation</label>
-            </div>
-
-            <ManagerSelector
-              selectedManagers={currentDept.managerIds}
-              onManagerChange={handleManagerChange}
-              employees={employees}
-              error={formErrors.managerIds}
-            />
-
-            <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
-          </form>
-        </DMModalWrapper>
-      )}
     </div>
   );
 };
