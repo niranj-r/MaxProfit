@@ -143,7 +143,7 @@ const DMDepartmentDirectory = () => {
 
   const fetchDepartments = async () => {
     try {
-      const res = await axios.get(`${API}/api/departments`, authHeader);
+      const res = await axios.get(`${API}/api/dm-departments`, authHeader);
       setDepartments(res.data);
     } catch (err) {
       console.error('Failed to fetch departments', err);

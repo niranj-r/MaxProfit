@@ -210,3 +210,16 @@
   font-size: 16px;
   text-align: center;
 }
+.download-btn {
+  margin: 1rem 0;
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.download-btn:hover {
+  background-color: #218838;
+}
