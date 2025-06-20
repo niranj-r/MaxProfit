@@ -253,7 +253,6 @@ def working_days(start_date, end_date):
 @jwt_required()
 def assign_task():
     from datetime import datetime, timedelta
-
     def working_days(start_date, end_date):
         """
         Counts working days (Mon-Fri) between two dates inclusive.
@@ -322,7 +321,7 @@ def assign_task():
             if percentage <= 0 or percentage > 100:
                 return jsonify({"error": "Percentage must be between 0 and 100"}), 400
 
-            working_days_count = working_days(start_date, end_date) + 1
+            working_days_count = working_days(start_date, end_date)
             HOURS_PER_DAY = 8
             allocated_hours = working_days_count * HOURS_PER_DAY * (percentage / 100.0)
             cost = billing_rate * allocated_hours
