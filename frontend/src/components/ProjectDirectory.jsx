@@ -341,85 +341,25 @@ const ProjectDirectory = () => {
               </div>
             )}
 
-            <div className="floating-label">
-              <input
-                name="name"
-                type="text"
-                value={form.name}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.name ? { borderColor: '#c33' } : {}}
-              />
-              <label>Project Name</label>
-              {formErrors.name && (
-                <div className="field-error">{formErrors.name}</div>
-              )}
-            </div>
-
-            <div className="floating-label">
-              <input
-                name="departmentId"
-                type="text"
-                value={form.departmentId}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.departmentId ? { borderColor: '#c33' } : {}}
-              />
-              <label>Department ID</label>
-              {formErrors.departmentId && (
-                <div className="field-error">{formErrors.departmentId}</div>
-              )}
-            </div>
-
-            <div className="floating-label">
-              <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.startDate ? { borderColor: '#c33' } : {}}
-              />
-              <label>Start Date</label>
-              {formErrors.startDate && (
-                <div className="field-error">{formErrors.startDate}</div>
-              )}
-            </div>
-
-            <div className="floating-label">
-              <input
-                type="date"
-                name="endDate"
-                value={form.endDate}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.endDate ? { borderColor: '#c33' } : {}}
-              />
-              <label>End Date</label>
-              {formErrors.endDate && (
-                <div className="field-error">{formErrors.endDate}</div>
-              )}
-            </div>
-
-            <div className="floating-label">
-              <input
-                name="budget"
-                type="number"
-                value={form.budget}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.budget ? { borderColor: '#c33' } : {}}
-              />
-              <label>Budget</label>
-              {formErrors.budget && (
-                <div className="field-error">{formErrors.budget}</div>
-              )}
-            </div>
+            {['name', 'departmentId', 'startDate', 'endDate', 'budget'].map(field => (
+              <div className="floating-label" key={field}>
+                <input
+                  name={field}
+                  type={field.includes('Date') ? 'date' : field === 'budget' ? 'number' : 'text'}
+                  value={form[field]}
+                  onChange={handleChange}
+                  placeholder=" "
+                  required
+                  style={formErrors[field] ? { borderColor: '#c33' } : {}}
+                  step={field === 'budget' ? '0.01' : undefined}
+                  min={field === 'budget' ? '0.01' : undefined}
+                />
+                <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+                {formErrors[field] && (
+                  <div className="field-error">{formErrors[field]}</div>
+                )}
+              </div>
+            ))}
 
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
