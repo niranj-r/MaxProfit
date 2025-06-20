@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 import Navbar from "./Navbar";
+import Papa from "papaparse"; // <-- Added for CSV export
 import "./FinancialyearPage.css";
 
 const API = process.env.REACT_APP_API_BASE_URL;
@@ -91,6 +92,31 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
     }
   };
 
+  const downloadCSV = () => {
+    if (employees.length === 0) {
+      alert("No data to export.");
+      return;
+    }
+
+    const dataForCSV = employees.map(emp => ({
+      "Emp ID": emp.eid,
+      "Employee Name": `${emp.fname} ${emp.lname}`,
+      "Salary": emp.salary ?? 0,
+      "Infrastructure": emp.infrastructure ?? 0,
+      "Total Cost": (emp.salary ?? 0) + (emp.infrastructure ?? 0)
+    }));
+
+    const csv = Papa.unparse(dataForCSV);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `financial_data_${financialYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) return <div className="loading">Loading employee data...</div>;
 
   if (error) return (
@@ -110,6 +136,9 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
         <main className="financial-content">
           <button onClick={goBack} className="back-button">← Back to Financial Years</button>
           <h2 className="fy-heading">Financial Year: {financialYear}</h2>
+
+          {/* CSV Download Button */}
+          <button onClick={downloadCSV} className="download-btn">⬇ Download CSV</button>
 
           <div className="table-container">
             <table className="employee-table">

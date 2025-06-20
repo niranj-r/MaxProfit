@@ -252,6 +252,18 @@ def working_days(start_date, end_date):
 @app.route('/api/assign-task', methods=['POST'])
 @jwt_required()
 def assign_task():
+    from datetime import datetime, timedelta
+    def working_days(start_date, end_date):
+        """
+        Counts working days (Mon-Fri) between two dates inclusive.
+        """
+        day_count = 0
+        current_date = start_date
+        while current_date <= end_date:
+            if current_date.weekday() < 5:  # 0 = Monday, 6 = Sunday
+                day_count += 1
+            current_date += timedelta(days=1)
+        return day_count
     try:
         print("📥 Received request to /api/assign-task")
 
@@ -309,7 +321,7 @@ def assign_task():
             if percentage <= 0 or percentage > 100:
                 return jsonify({"error": "Percentage must be between 0 and 100"}), 400
 
-            working_days_count = working_days(start_date, end_date) + 1
+            working_days_count = working_days(start_date, end_date)
             HOURS_PER_DAY = 8
             allocated_hours = working_days_count * HOURS_PER_DAY * (percentage / 100.0)
             cost = billing_rate * allocated_hours
@@ -683,6 +695,35 @@ def remove_pm_assignee(project_id, eid):
     db.session.commit()
     print(f"[SUCCESS] Assignee {user.eid} and their tasks removed from project {project_id}")
     return jsonify({"message": "Assignee removed"}), 200
+
+# ------------------ Department Manager ------------------
+@app.route('/api/dm-departments', methods=['GET'])
+@jwt_required()
+def dm_get_departments():
+    depts = Department.query.all()
+    dept_list = []
+    
+    for d in depts:
+        # Handle both old single managerId and new multiple managerIds
+        manager_ids = []
+        if hasattr(d, 'managerIds') and d.managerIds:
+            manager_ids = d.managerIds.split(',')
+        elif d.managerId:
+            manager_ids = [d.managerId]
+        
+        dept_data = {
+            "id": d.id,
+            "did": d.did,
+            "name": d.name,
+            "oid": d.oid,
+            "managerId": d.managerId,  # Keep for backward compatibility
+            "managerIds": manager_ids,  # New field for multiple managers
+            "createdAt": d.createdAt.isoformat() if d.createdAt else None,
+            "updatedAt": d.updatedAt.isoformat() if d.updatedAt else None
+        }
+        dept_list.append(dept_data)
+    
+    return jsonify(dept_list)
 
 # ------------------ USER ROUTES ------------------
 
