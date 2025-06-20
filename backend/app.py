@@ -697,34 +697,6 @@ def remove_pm_assignee(project_id, eid):
     print(f"[SUCCESS] Assignee {user.eid} and their tasks removed from project {project_id}")
     return jsonify({"message": "Assignee removed"}), 200
 
-# ------------------ Department Manager ------------------
-@app.route('/api/dm-departments', methods=['GET'])
-@jwt_required()
-def dm_get_departments():
-    depts = Department.query.all()
-    dept_list = []
-    
-    for d in depts:
-        # Handle both old single managerId and new multiple managerIds
-        manager_ids = []
-        if hasattr(d, 'managerIds') and d.managerIds:
-            manager_ids = d.managerIds.split(',')
-        elif d.managerId:
-            manager_ids = [d.managerId]
-        
-        dept_data = {
-            "id": d.id,
-            "did": d.did,
-            "name": d.name,
-            "oid": d.oid,
-            "managerId": d.managerId,  # Keep for backward compatibility
-            "managerIds": manager_ids,  # New field for multiple managers
-            "createdAt": d.createdAt.isoformat() if d.createdAt else None,
-            "updatedAt": d.updatedAt.isoformat() if d.updatedAt else None
-        }
-        dept_list.append(dept_data)
-    
-    return jsonify(dept_list)
 
 # ------------------ USER ROUTES ------------------
 
