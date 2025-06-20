@@ -13,6 +13,7 @@ from flask_cors import CORS, cross_origin
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from flask_jwt_extended import get_jwt_identity
+from sqlalchemy import func
 
 
 # ------------------ CONFIGURATION ------------------
@@ -1222,9 +1223,19 @@ def update_project(project_id):
 @app.route('/api/project-budgets', methods=['GET'])
 @jwt_required()
 def get_project_budgets():
-    projects = Project.query.with_entities(Project.name, Project.budget).all()
-    result = [{"name": name, "budget": budget} for name, budget in projects]
-    return jsonify(result), 200
+    try:
+        results = (
+            db.session.query(Project.name, func.sum(ProjectAssignment.cost))
+            .join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+            .group_by(Project.name)
+            .all()
+        )
+        return jsonify([
+            {"name": name, "cost": float(cost)} for name, cost in results
+        ]), 200
+    except Exception as e:
+        print("🔴 Error in /api/project-budgets:", e)
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/projects/<int:project_id>/total-cost', methods=['GET'])
 @jwt_required()

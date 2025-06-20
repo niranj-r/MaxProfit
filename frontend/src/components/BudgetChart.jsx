@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Bar } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Tooltip,
   Legend,
   Title
@@ -14,7 +15,8 @@ import {
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Tooltip,
   Legend,
   Title
@@ -37,18 +39,19 @@ const BudgetChart = () => {
     })
       .then(res => {
         const projectNames = res.data.map(p => p.name);
-        const budgets = res.data.map(p => p.budget);
+        const cost = res.data.map(p => p.cost);
 
         setChartData({
           labels: projectNames,
           datasets: [
             {
-              label: "", // intentionally removed for clean look
-              data: budgets,
-              backgroundColor: "rgba(37, 99, 235, 0.7)", // semi-transparent blue
-              borderRadius: 6,
-              barThickness: 30,
-              maxBarThickness: 40
+              label: "Revenue",
+              data: cost,
+              borderColor: "rgba(37, 99, 235, 0.7)",
+              backgroundColor: "rgba(37, 99, 235, 0.1)",
+              tension: 0.4,
+              pointBackgroundColor: "#2563EB",
+              fill: true
             }
           ]
         });
@@ -62,7 +65,7 @@ const BudgetChart = () => {
       legend: { display: false },
       title: {
         display: true,
-        text: "Project Budget Overview",
+        text: "Project Revenue Overview",
         font: {
           size: 20,
           weight: "600",
@@ -107,7 +110,7 @@ const BudgetChart = () => {
       y: {
         title: {
           display: true,
-          text: "Budget (in $)",
+          text: "Revenue (in $)",
           color: "#6B7280",
           font: { size: 14, weight: "500" }
         },
@@ -134,7 +137,7 @@ const BudgetChart = () => {
         padding: "24px"
       }}
     >
-      <Bar data={chartData} options={options} />
+      <Line data={chartData} options={options} />
     </div>
   );
 };
