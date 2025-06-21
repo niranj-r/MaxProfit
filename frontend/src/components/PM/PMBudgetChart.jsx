@@ -37,15 +37,15 @@ const PMBudgetChart = () => {
     })
       .then(res => {
         const projectNames = res.data.map(p => p.name);
-        const budgets = res.data.map(p => p.budget);
+        const costs = res.data.map(p => p.cost); // ✅ changed from budget to cost
 
         setChartData({
           labels: projectNames,
           datasets: [
             {
-              label: "", // intentionally removed for clean look
-              data: budgets,
-              backgroundColor: "rgba(37, 99, 235, 0.7)", // semi-transparent blue
+              label: "", // clean look
+              data: costs,
+              backgroundColor: "rgba(37, 99, 235, 0.7)",
               borderRadius: 6,
               barThickness: 30,
               maxBarThickness: 40
@@ -62,7 +62,7 @@ const PMBudgetChart = () => {
       legend: { display: false },
       title: {
         display: true,
-        text: "Project Budget Overview",
+        text: "Project Cost Overview", // ✅ updated title
         font: {
           size: 20,
           weight: "600",
@@ -107,7 +107,7 @@ const PMBudgetChart = () => {
       y: {
         title: {
           display: true,
-          text: "Budget (in $)",
+          text: "Cost (in $)", // ✅ updated Y-axis label
           color: "#6B7280",
           font: { size: 14, weight: "500" }
         },
