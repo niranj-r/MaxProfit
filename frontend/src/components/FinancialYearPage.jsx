@@ -244,7 +244,7 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
           {employees.length > 0 && (
             <div className="summary">
               <strong>
-                Total Employees: {employees.length} | Total Cost: ₹
+                Total Employees: {employees.length} | Total Cost: $
                 {employees.reduce((sum, emp) => sum + (emp.cost || 0), 0).toFixed(2)}
               </strong>
             </div>

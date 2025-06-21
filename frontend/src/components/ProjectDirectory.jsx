@@ -19,8 +19,7 @@ const ProjectDirectory = () => {
     name: '',
     departmentId: '',
     startDate: '',
-    endDate: '',
-    budget: ''
+    endDate: ''
   });
   const [editId, setEditId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
@@ -78,7 +77,7 @@ const ProjectDirectory = () => {
   };
 
   const openAddModal = () => {
-    setForm({ name: '', departmentId: '', startDate: '', endDate: '', budget: '' });
+    setForm({ name: '', departmentId: '', startDate: '', endDate: '' });
     setFormMode('add');
     setEditId(null);
     setFormErrors({});
@@ -91,8 +90,7 @@ const ProjectDirectory = () => {
       name: project.name || '',
       departmentId: project.departmentId || '',
       startDate: project.startDate?.substring(0, 10) || '',
-      endDate: project.endDate?.substring(0, 10) || '',
-      budget: project.budget?.toString() || ''
+      endDate: project.endDate?.substring(0, 10) || ''
     });
     setFormMode('edit');
     setEditId(project.id);
@@ -144,16 +142,6 @@ const ProjectDirectory = () => {
           if (start >= end) errorMsg = 'End date must be after start date.';
         }
         break;
-
-      case 'budget':
-        if (!trimmedValue) errorMsg = 'Budget is required.';
-        else {
-          const num = parseFloat(trimmedValue);
-          if (isNaN(num) || num <= 0) errorMsg = 'Budget must be a positive number.';
-          else if (!/^\d+(\.\d{1,2})?$/.test(trimmedValue))
-            errorMsg = 'Budget can have up to 2 decimal places only.';
-        }
-        break;
       default:
         break;
     }
@@ -174,7 +162,7 @@ const ProjectDirectory = () => {
     setGeneralError('');
     setFormErrors({});
 
-    const fields = ['name', 'departmentId', 'startDate', 'endDate', 'budget'];
+    const fields = ['name', 'departmentId', 'startDate', 'endDate'];
     const newErrors = {};
 
     fields.forEach(field => {
@@ -232,24 +220,6 @@ const ProjectDirectory = () => {
     }
   };
 
-  const convertToIST = (isoString) => {
-    if (!isoString) return '-';
-    const utcDate = new Date(isoString);
-    const istOffset = 5.5 * 60;
-    const istTime = new Date(utcDate.getTime() + istOffset * 60 * 1000);
-
-    return istTime.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour12: true,
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-
   const handleDownloadCSV = () => {
     if (!projects || projects.length === 0) {
       alert('No project data available to export.');
@@ -261,7 +231,6 @@ const ProjectDirectory = () => {
       'Department ID': proj.departmentId,
       'Start Date': proj.startDate?.substring(0, 10) || '',
       'End Date': proj.endDate?.substring(0, 10) || '',
-      'Budget': proj.budget,
       'Total Cost': projectCosts[proj.id] || 0
     }));
 
@@ -278,17 +247,6 @@ const ProjectDirectory = () => {
   const filteredProjects = projects.filter(p =>
     (p.name || '').toLowerCase().includes(search.toLowerCase())
   );
-
-  const getFieldLabel = (field) => {
-    switch (field) {
-      case 'name': return 'Project Name';
-      case 'departmentId': return 'Department ID';
-      case 'startDate': return 'Start Date';
-      case 'endDate': return 'End Date';
-      case 'budget': return 'Budget';
-      default: return field.charAt(0).toUpperCase() + field.slice(1);
-    }
-  };
 
   return (
     <div className="employee-table-container">
@@ -314,7 +272,6 @@ const ProjectDirectory = () => {
             <th>Department ID</th>
             <th>Start Date</th>
             <th>End Date</th>
-            <th>Budget ($)</th>
             <th>Total Revenue ($)</th>
             <th>Actions</th>
             <th>Assign</th>
@@ -327,7 +284,6 @@ const ProjectDirectory = () => {
               <td>{proj.departmentId}</td>
               <td>{proj.startDate?.substring(0, 10) || '—'}</td>
               <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-              <td>{proj.budget}</td>
               <td>{projectCosts[proj.id] || 0}</td>
               <td>
                 <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
@@ -341,7 +297,7 @@ const ProjectDirectory = () => {
             </tr>
           ))}
           {filteredProjects.length === 0 && (
-            <tr><td colSpan="8" className="no-data">No matching projects found.</td></tr>
+            <tr><td colSpan="7" className="no-data">No matching projects found.</td></tr>
           )}
         </tbody>
       </table>
@@ -352,51 +308,50 @@ const ProjectDirectory = () => {
           title={formMode === 'add' ? 'Add Project' : 'Edit Project'}
         >
           <form onSubmit={handleSubmit} className="modal-form">
-            {generalError && (
-              <div className="form-error">{generalError}</div>
-            )}
+            {generalError && <div className="form-error">{generalError}</div>}
 
-           {['name', 'startDate', 'endDate', 'budget'].map(field => (
-  <div className="floating-label" key={field}>
-    <input
-      name={field}
-      type={field.includes('Date') ? 'date' : field === 'budget' ? 'number' : 'text'}
-      value={form[field]}
-      onChange={handleChange}
-      placeholder=" "
-      required
-      style={formErrors[field] ? { borderColor: '#c33' } : {}}
-      step={field === 'budget' ? '0.01' : undefined}
-      min={field === 'budget' ? '0.01' : undefined}
-    />
-    <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
-    {formErrors[field] && (
-      <div className="field-error">{formErrors[field]}</div>
-    )}
-  </div>
-))}
+            {['name', 'startDate', 'endDate'].map(field => (
+              <div className="floating-label" key={field}>
+                <input
+                  name={field}
+                  type={field.includes('Date') ? 'date' : 'text'}
+                  value={form[field]}
+                  onChange={handleChange}
+                  placeholder=" "
+                  required
+                  style={formErrors[field] ? { borderColor: '#c33' } : {}}
+                />
+                <label>
+                  {field === 'name' ? 'Project Name' :
+                   field === 'startDate' ? 'Start Date' : 'End Date'}
+                  <span className="required-star">*</span>
+                </label>
+                {formErrors[field] && (
+                  <div className="field-error">{formErrors[field]}</div>
+                )}
+              </div>
+            ))}
 
-{/* Department ID dropdown */}
-<div className="floating-label" key="departmentId">
-  <select
-    name="departmentId"
-    value={form.departmentId}
-    onChange={handleChange}
-    required
-    style={formErrors.departmentId ? { borderColor: '#c33' } : {}}
-  >
-    <option value="" disabled>Select Department</option>
-    {departments.map(dep => (
-      <option key={dep.did} value={dep.did}>
-        {dep.did} ({dep.name})
-      </option>
-    ))}
-  </select>
-  <label>Department ID <span className="required-star">*</span></label>
-  {formErrors.departmentId && (
-    <div className="field-error">{formErrors.departmentId}</div>
-  )}
-</div>
+            <div className="floating-label" key="departmentId">
+              <select
+                name="departmentId"
+                value={form.departmentId}
+                onChange={handleChange}
+                required
+                style={formErrors.departmentId ? { borderColor: '#c33' } : {}}
+              >
+                <option value="" disabled>Select Department</option>
+                {departments.map(dep => (
+                  <option key={dep.did} value={dep.did}>
+                    {dep.did} ({dep.name})
+                  </option>
+                ))}
+              </select>
+              <label>Department ID <span className="required-star">*</span></label>
+              {formErrors.departmentId && (
+                <div className="field-error">{formErrors.departmentId}</div>
+              )}
+            </div>
 
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>

@@ -1147,7 +1147,7 @@ def create_project():
         departmentId=data["departmentId"],
         startDate=datetime.strptime(data["startDate"], "%Y-%m-%d"),
         endDate=datetime.strptime(data["endDate"], "%Y-%m-%d"),
-        budget=float(data["budget"])
+        #budget=float(data["budget"])
     )
     db.session.add(project)
     db.session.commit()
@@ -1164,7 +1164,7 @@ def get_projects():
         "departmentId": p.departmentId,
         "startDate": p.startDate.strftime('%Y-%m-%d'),
         "endDate": p.endDate.strftime('%Y-%m-%d'),
-        "budget": p.budget,
+        #"budget": p.budget,
         "createdAt": p.createdAt.isoformat() if p.createdAt else None,
         "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
     } for p in projects])
@@ -1190,7 +1190,7 @@ def update_project(project_id):
     project.departmentId = data.get('departmentId', project.departmentId)
     project.startDate = datetime.strptime(data['startDate'], '%Y-%m-%d')
     project.endDate = datetime.strptime(data['endDate'], '%Y-%m-%d')
-    project.budget = float(data['budget'])
+    #project.budget = float(data['budget'])
 
     db.session.commit()
     log_activity("Project", project.name, "updated")
@@ -1200,7 +1200,7 @@ def update_project(project_id):
         'departmentId': project.departmentId,
         'startDate': project.startDate.strftime('%Y-%m-%d'),
         'endDate': project.endDate.strftime('%Y-%m-%d'),
-        'budget': project.budget
+        #'budget': project.budget
     }), 200
 
 @app.route('/api/project-budgets', methods=['GET'])
@@ -1428,45 +1428,47 @@ def user_info():
         return jsonify({"error": "User not found"}), 404
 
 # ------------------ Department Manager ------------------
-
 @app.route('/api/dm-departments', methods=['GET'])
 @jwt_required()
 def get_managed_departments():
-    # Get user identity from JWT
-    user_id = get_jwt_identity()
+    user_id = get_jwt_identity()  # should return int or str user ID
 
-    # Find the user and confirm role
+    print("User ID from token:", user_id)
+
+    # Get the user
     user = User.query.filter_by(id=user_id).first()
+    print("Fetched User:", user)
 
     if not user:
         return jsonify({"error": "User not found"}), 404
 
     if user.role != 'department_manager':
+        print("Unauthorized role:", user.role)
         return jsonify({"error": "Unauthorized access"}), 403
 
-    # Fetch all departments (we'll filter in Python since some use managerIds)
     departments = Department.query.all()
+    print(f"Found {len(departments)} departments in total.")
 
     result = []
     for dept in departments:
-        # Handle both old single managerId and new multiple managerIds
         manager_ids = []
         if hasattr(dept, 'managerIds') and dept.managerIds:
             manager_ids = [mid.strip() for mid in dept.managerIds.split(',')]
         elif dept.managerId:
             manager_ids = [dept.managerId]
 
-        # Include only if this user is one of the managers
+        print(f"Dept {dept.did} managers: {manager_ids}")
+
         if user.eid in manager_ids:
-            dept_data = {
+            result.append({
                 'did': dept.did,
                 'name': dept.name,
                 'oid': dept.oid,
-                'managerId': dept.managerId,        # for backward compatibility
-                'managerIds': manager_ids,          # normalized list
-            }
-            result.append(dept_data)
+                'managerId': dept.managerId,
+                'managerIds': manager_ids,
+            })
 
+    print(f"Returning {len(result)} managed departments.")
     return jsonify(result), 200
 
 @app.route('/api/dm-projects', methods=['GET'])
@@ -1497,7 +1499,7 @@ def get_projects_for_department_manager():
         "departmentId": p.departmentId,
         "startDate": p.startDate.strftime('%Y-%m-%d'),
         "endDate": p.endDate.strftime('%Y-%m-%d'),
-        "budget": p.budget,
+        #"budget": p.budget,
         "createdAt": p.createdAt.isoformat() if p.createdAt else None,
         "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
     } for p in projects])

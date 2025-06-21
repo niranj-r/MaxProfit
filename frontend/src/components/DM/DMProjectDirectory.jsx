@@ -1,3 +1,4 @@
+// Top portion remains the same
 import React, { useState, useEffect } from 'react';
 import '../EmployeeDirectory.css';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
@@ -18,8 +19,7 @@ const DMProjectDirectory = () => {
     name: '',
     departmentId: '',
     startDate: '',
-    endDate: '',
-    budget: ''
+    endDate: ''
   });
   const [editId, setEditId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
@@ -79,7 +79,7 @@ const DMProjectDirectory = () => {
   };
 
   const openAddModal = () => {
-    setForm({ name: '', departmentId: '', startDate: '', endDate: '', budget: '' });
+    setForm({ name: '', departmentId: '', startDate: '', endDate: '' });
     setFormMode('add');
     setEditId(null);
     setFormErrors({});
@@ -92,8 +92,7 @@ const DMProjectDirectory = () => {
       name: project.name || '',
       departmentId: project.departmentId || '',
       startDate: project.startDate?.substring(0, 10) || '',
-      endDate: project.endDate?.substring(0, 10) || '',
-      budget: project.budget?.toString() || ''
+      endDate: project.endDate?.substring(0, 10) || ''
     });
     setFormMode('edit');
     setEditId(project.id);
@@ -114,54 +113,32 @@ const DMProjectDirectory = () => {
 
     switch (name) {
       case 'name':
-        if (!trimmedValue) {
-          errorMsg = 'Project name is required.';
-        } else if (trimmedValue.length < 3 || trimmedValue.length > 30) {
+        if (!trimmedValue) errorMsg = 'Project name is required.';
+        else if (trimmedValue.length < 3 || trimmedValue.length > 30)
           errorMsg = 'Project name must be 3–30 characters.';
-        } else if (!/^[A-Za-z\s]+$/.test(trimmedValue)) {
+        else if (!/^[A-Za-z\s]+$/.test(trimmedValue))
           errorMsg = 'Project name can only contain letters and spaces.';
-        }
         break;
       case 'departmentId':
-        if (!trimmedValue) {
-          errorMsg = 'Department ID is required.';
-        } else if (!departments.some(dep => dep.did === trimmedValue)) {
+        if (!trimmedValue) errorMsg = 'Department ID is required.';
+        else if (!departments.some(dep => dep.did === trimmedValue))
           errorMsg = 'Invalid department ID.';
-        }
         break;
       case 'startDate':
-        if (!trimmedValue) {
-          errorMsg = 'Start date is required.';
-        } else {
+        if (!trimmedValue) errorMsg = 'Start date is required.';
+        else {
           const start = new Date(trimmedValue);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
-          if (start < today) {
-            errorMsg = 'Start date cannot be in the past.';
-          }
+          if (start < today) errorMsg = 'Start date cannot be in the past.';
         }
         break;
       case 'endDate':
-        if (!trimmedValue) {
-          errorMsg = 'End date is required.';
-        } else {
+        if (!trimmedValue) errorMsg = 'End date is required.';
+        else {
           const start = new Date(form.startDate);
           const end = new Date(trimmedValue);
-          if (start >= end) {
-            errorMsg = 'End date must be after start date.';
-          }
-        }
-        break;
-      case 'budget':
-        if (!trimmedValue) {
-          errorMsg = 'Budget is required.';
-        } else {
-          const num = parseFloat(trimmedValue);
-          if (isNaN(num) || num <= 0) {
-            errorMsg = 'Budget must be a positive number.';
-          } else if (!/^\d+(\.\d{1,2})?$/.test(trimmedValue)) {
-            errorMsg = 'Budget can have up to 2 decimal places only.';
-          }
+          if (start >= end) errorMsg = 'End date must be after start date.';
         }
         break;
       default:
@@ -184,7 +161,7 @@ const DMProjectDirectory = () => {
     setGeneralError('');
     setFormErrors({});
 
-    const fields = ['name', 'departmentId', 'startDate', 'endDate', 'budget'];
+    const fields = ['name', 'departmentId', 'startDate', 'endDate'];
     const newErrors = {};
     fields.forEach(field => {
       const errorMsg = validateField(field, form[field]);
@@ -198,19 +175,20 @@ const DMProjectDirectory = () => {
     }
 
     try {
-      if (formMode === 'add') {
-        const res = await axios.post(`${API}/api/projects`, form, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setProjects(prev => [...prev, res.data]);
-        alert('Project added successfully');
-      } else {
-        const res = await axios.put(`${API}/api/projects/${editId}`, form, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setProjects(prev => prev.map(p => p.id === editId ? res.data : p));
-        alert('Project updated successfully');
-      }
+      const url = formMode === 'add'
+        ? `${API}/api/projects`
+        : `${API}/api/projects/${editId}`;
+
+      const method = formMode === 'add' ? 'post' : 'put';
+
+      const res = await axios[method](url, form, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (formMode === 'add') setProjects(prev => [...prev, res.data]);
+      else setProjects(prev => prev.map(p => p.id === editId ? res.data : p));
+
+      alert(`Project ${formMode === 'add' ? 'added' : 'updated'} successfully`);
       closeModal();
       fetchProjects();
     } catch (err) {
@@ -245,7 +223,6 @@ const DMProjectDirectory = () => {
       case 'departmentId': return 'Department';
       case 'startDate': return 'Start Date';
       case 'endDate': return 'End Date';
-      case 'budget': return 'Budget';
       default: return field;
     }
   };
@@ -279,7 +256,6 @@ const DMProjectDirectory = () => {
             <th>Department</th>
             <th>Start</th>
             <th>End</th>
-            <th>Budget</th>
             <th>Total Cost</th>
             <th>Actions</th>
             <th>Assign</th>
@@ -292,7 +268,6 @@ const DMProjectDirectory = () => {
               <td>{proj.departmentId}</td>
               <td>{proj.startDate?.substring(0, 10) || '-'}</td>
               <td>{proj.endDate?.substring(0, 10) || '-'}</td>
-              <td>{proj.budget}</td>
               <td>{projectCosts[proj.id] || 0}</td>
               <td>
                 <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
@@ -307,7 +282,7 @@ const DMProjectDirectory = () => {
           ))}
           {filteredProjects.length === 0 && (
             <tr>
-              <td colSpan="8" className="no-data">No matching projects found.</td>
+              <td colSpan="7" className="no-data">No matching projects found.</td>
             </tr>
           )}
         </tbody>
@@ -320,8 +295,7 @@ const DMProjectDirectory = () => {
         >
           <form onSubmit={handleSubmit} className="modal-form">
             {generalError && <div className="form-error">{generalError}</div>}
-
-            {['name', 'departmentId', 'startDate', 'endDate', 'budget'].map(field => (
+            {['name', 'departmentId', 'startDate', 'endDate'].map(field => (
               <div className="floating-label" key={field}>
                 {field === 'departmentId' ? (
                   <>
@@ -347,17 +321,12 @@ const DMProjectDirectory = () => {
                   <>
                     <input
                       name={field}
-                      type={
-                        field.includes('Date') ? 'date' :
-                        field === 'budget' ? 'number' : 'text'
-                      }
+                      type="date"
                       value={form[field]}
                       onChange={handleChange}
                       placeholder=" "
                       required
                       style={formErrors[field] ? { borderColor: '#c33' } : {}}
-                      step={field === 'budget' ? '0.01' : undefined}
-                      min={field === 'budget' ? '0.01' : undefined}
                     />
                     <label>
                       {getFieldLabel(field)}<span className="required-star">*</span>
