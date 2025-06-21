@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 import Navbar from "./Navbar";
-import Papa from "papaparse"; // <-- Added for CSV export
+import Papa from "papaparse";
 import "./FinancialyearPage.css";
 
 const API = process.env.REACT_APP_API_BASE_URL;
@@ -15,11 +15,15 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
   const [error, setError] = useState(null);
 
   const token = localStorage.getItem("token");
-  const authHeader = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
+
+  // Get current financial year string
+  const getCurrentFinancialYear = () => {
+    const today = new Date();
+    const year = today.getMonth() < 3 ? today.getFullYear() - 1 : today.getFullYear();
+    return `${year}-${year + 1}`;
   };
+  const currentFinancialYear = getCurrentFinancialYear();
 
   useEffect(() => {
     if (!financialYear || financialYear === "null" || financialYear === "undefined") {
@@ -118,7 +122,6 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
   };
 
   if (loading) return <div className="loading">Loading employee data...</div>;
-
   if (error) return (
     <div className="error-container">
       <Navbar />
@@ -137,7 +140,6 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
           <button onClick={goBack} className="back-button">← Back to Financial Years</button>
           <h2 className="fy-heading">Financial Year: {financialYear}</h2>
 
-          {/* CSV Download Button */}
           <button onClick={downloadCSV} className="download-btn">⬇ Download CSV</button>
 
           <div className="table-container">
@@ -220,9 +222,15 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
                               </button>
                             </div>
                           ) : (
-                            <button onClick={() => startEdit(emp)} className="edit-btn">
-                              <FaEdit />
-                            </button>
+                            financialYear === currentFinancialYear ? (
+                              <button onClick={() => startEdit(emp)} className="edit-btn">
+                                <FaEdit />
+                              </button>
+                            ) : (
+                              <button className="edit-btn" disabled style={{ opacity: 0.5, cursor: "not-allowed" }}>
+                                <FaEdit />
+                              </button>
+                            )
                           )}
                         </td>
                       </tr>
