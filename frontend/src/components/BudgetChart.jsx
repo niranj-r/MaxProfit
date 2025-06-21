@@ -146,7 +146,7 @@ const BudgetChart = () => {
     plugins: {
       ...commonOptions.plugins,
       legend: { display: true, position: "right", labels: { boxWidth: 15, padding: 15 } },
-      title: { ...commonOptions.plugins.title, text: "Project Revenue Distribution" }
+      title: { ...commonOptions.plugins.title}
     }
   };
 

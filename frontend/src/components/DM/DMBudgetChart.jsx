@@ -37,15 +37,15 @@ const DMBudgetChart = () => {
     })
       .then(res => {
         const projectNames = res.data.map(p => p.name);
-        const budgets = res.data.map(p => p.budget);
+        const costs = res.data.map(p => p.cost); // changed from p.budget
 
         setChartData({
           labels: projectNames,
           datasets: [
             {
-              label: "", // intentionally removed for clean look
-              data: budgets,
-              backgroundColor: "rgba(37, 99, 235, 0.7)", // semi-transparent blue
+              label: "", // keep clean look
+              data: costs,
+              backgroundColor: "rgba(37, 99, 235, 0.7)",
               borderRadius: 6,
               barThickness: 30,
               maxBarThickness: 40
@@ -62,7 +62,7 @@ const DMBudgetChart = () => {
       legend: { display: false },
       title: {
         display: true,
-        text: "Project Budget Overview",
+        text: "Project Cost Overview",
         font: {
           size: 20,
           weight: "600",
@@ -107,7 +107,7 @@ const DMBudgetChart = () => {
       y: {
         title: {
           display: true,
-          text: "Budget (in $)",
+          text: "Cost (in $)",
           color: "#6B7280",
           font: { size: 14, weight: "500" }
         },

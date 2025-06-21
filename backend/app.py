@@ -609,12 +609,20 @@ def get_pm_project_budgets():
     )
     project_ids = [row[0] for row in db.session.execute(stmt).all()]
 
-    # Step 2: Query only those projects
-    projects = Project.query.filter(Project.id.in_(project_ids)).with_entities(Project.name, Project.budget).all()
+    # Step 2: Query project cost summaries for those projects
+    results = (
+        db.session.query(Project.name, func.sum(ProjectAssignment.cost))
+        .join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+        .filter(Project.id.in_(project_ids))
+        .group_by(Project.name)
+        .all()
+    )
 
     # Step 3: Return formatted data
-    result = [{"name": name, "budget": budget} for name, budget in projects]
-    return jsonify(result), 200
+    return jsonify([
+        {"name": name, "cost": float(cost)} for name, cost in results
+    ]), 200
+
 
 @app.route('/api/pm-my-projects', methods=['GET'])
 @jwt_required()
@@ -1379,14 +1387,10 @@ def remove_assignee(project_id, eid):
     )
 
     # Delete from project_assignment
-    db.session.execute(
-        project_assignment.delete().where(
-            and_(
-                project_assignment.c.project_id == project_id,
-                project_assignment.c.user_id == user.id
-            )
-        )
-    )
+    ProjectAssignment.query.filter_by(
+        project_id=project_id,
+        user_id=user.id
+    ).delete()
 
     db.session.commit()
     print(f"[SUCCESS] Removed EID={eid} from Project ID={project_id}")
@@ -1500,7 +1504,6 @@ def get_projects_for_department_manager():
 def get_dm_project_budgets():
     current_user_id = get_jwt_identity()
 
-    # Get the current user
     user = User.query.filter_by(id=current_user_id).first()
 
     if not user:
@@ -1509,21 +1512,23 @@ def get_dm_project_budgets():
     if user.role != 'department_manager':
         return jsonify({'error': 'Unauthorized'}), 403
 
-    # Step 1: Get department IDs managed by the user
     departments = Department.query.filter_by(managerId=user.eid).all()
     department_ids = [d.did for d in departments]
 
     if not department_ids:
         return jsonify([])
 
-    # Step 2: Get projects under those departments
-    projects = Project.query.filter(Project.departmentId.in_(department_ids)) \
-                            .with_entities(Project.name, Project.budget).all()
+    results = (
+        db.session.query(Project.name, func.sum(ProjectAssignment.cost))
+        .join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+        .filter(Project.departmentId.in_(department_ids))
+        .group_by(Project.name)
+        .all()
+    )
 
-    # Step 3: Return formatted data
-    result = [{"name": name, "budget": budget} for name, budget in projects]
-    return jsonify(result), 200
-
+    return jsonify([
+        {"name": name, "cost": float(cost)} for name, cost in results
+    ]), 200
 
 @app.route('/api/department-projects', methods=['GET'])
 @jwt_required()
