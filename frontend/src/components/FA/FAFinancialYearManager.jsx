@@ -119,7 +119,7 @@ const FAFinancialYearManager = () => {
                                         <td>
                                             <div className="action-buttons">
                                                 <button className="manage-btn" onClick={() => navigate(`/fa-employee-financials/${fy.label}`)}>Manage</button>
-                                                {/* <button className="delete-btn" onClick={() => handleDelete(fy.id)}>Delete</button> */}
+                                                <button className="view-btn" onClick={() => navigate(`/financial-year/${fy.label}`)}>View</button>
                                             </div>
                                         </td>
                                     </tr>
