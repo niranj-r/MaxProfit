@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Line } from "react-chartjs-2";
+import { Line, Bar, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Tooltip,
   Legend,
   Title
@@ -17,6 +19,8 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Tooltip,
   Legend,
   Title
@@ -30,47 +34,43 @@ const BudgetChart = () => {
     datasets: []
   });
 
+  const [chartType, setChartType] = useState("line");
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios.get(`${API}/api/project-budgets`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => {
-        const projectNames = res.data.map(p => p.name);
-        const cost = res.data.map(p => p.cost);
+    .then(res => {
+      const projectNames = res.data.map(p => p.name);
+      const cost = res.data.map(p => p.cost);
 
-        setChartData({
-          labels: projectNames,
-          datasets: [
-            {
-              label: "Revenue",
-              data: cost,
-              borderColor: "rgba(37, 99, 235, 0.7)",
-              backgroundColor: "rgba(37, 99, 235, 0.1)",
-              tension: 0.4,
-              pointBackgroundColor: "#2563EB",
-              fill: true
-            }
-          ]
-        });
-      })
-      .catch(err => console.error("Error fetching chart data", err));
+      setChartData({
+        labels: projectNames,
+        datasets: [
+          {
+            label: "Revenue",
+            data: cost,
+            borderColor: "rgba(37, 99, 235, 0.7)",
+            backgroundColor: "rgba(37, 99, 235, 0.1)",
+            tension: 0.4,
+            pointBackgroundColor: "#2563EB",
+            fill: true,
+          }
+        ]
+      });
+    })
+    .catch(err => console.error("Error fetching chart data", err));
   }, []);
 
-  const options = {
+  // Common options shared across all charts
+  const commonOptions = {
     responsive: true,
     plugins: {
       legend: { display: false },
       title: {
         display: true,
-        text: "Project Revenue Overview",
-        font: {
-          size: 20,
-          weight: "600",
-          family: "Inter, sans-serif"
-        },
+        font: { size: 20, weight: "600", family: "Inter, sans-serif" },
         color: "#1F2937",
         padding: { top: 10, bottom: 20 }
       },
@@ -78,51 +78,115 @@ const BudgetChart = () => {
         backgroundColor: "#1F2937",
         titleColor: "#ffffff",
         bodyColor: "#E5E7EB",
-        titleFont: {
-          family: "Inter",
-          weight: "600",
-          size: 14
-        },
-        bodyFont: {
-          family: "Inter",
-          size: 13
-        },
+        titleFont: { family: "Inter", weight: "600", size: 14 },
+        bodyFont: { family: "Inter", size: 13 },
         cornerRadius: 6,
         padding: 10
       }
-    },
+    }
+  };
+
+  // Line chart options — no horizontal grid lines
+  const lineOptions = {
+    ...commonOptions,
     scales: {
       x: {
-        title: {
-          display: true,
-          text: "Project Name",
-          color: "#6B7280",
-          font: { size: 14, weight: "500" }
-        },
-        ticks: {
-          color: "#6B7280",
-          font: { size: 12 }
-        },
-        grid: {
-          display: false
-        }
+        title: { display: true, text: "Project Name", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { display: false }
       },
       y: {
-        title: {
-          display: true,
-          text: "Revenue (in $)",
-          color: "#6B7280",
-          font: { size: 14, weight: "500" }
-        },
-        ticks: {
-          color: "#6B7280",
-          font: { size: 12 }
-        },
-        grid: {
-          color: "#E5E7EB"
-        },
+        title: { display: true, text: "Revenue (in $)", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { display: false }, // Removes horizontal lines
         beginAtZero: true
       }
+    }
+  };
+
+  // Bar chart options — thinner bars, dark blue color
+  const barOptions = {
+    ...commonOptions,
+    scales: {
+      x: {
+        title: { display: true, text: "Project Name", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { display: false }
+      },
+      y: {
+        title: { display: true, text: "Revenue (in $)", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { color: "#E5E7EB" },
+        beginAtZero: true
+      }
+    },
+    barThickness: 15, // Thinner bars
+  };
+
+  // Pie chart data and options with visible labeled legend
+  const pieData = {
+    labels: chartData.labels,
+    datasets: [{
+      label: "Revenue",
+      data: chartData.datasets[0]?.data || [],
+      backgroundColor: [
+        "#2563EB",
+        "#1CC88A",
+        "#F6C23E",
+        "#E74A3B",
+        "#36B9CC",
+        "#FF6384"
+      ],
+      borderWidth: 1
+    }]
+  };
+
+  const pieOptions = {
+    ...commonOptions,
+    plugins: {
+      ...commonOptions.plugins,
+      legend: { display: true, position: "right", labels: { boxWidth: 15, padding: 15 } },
+      title: { ...commonOptions.plugins.title, text: "Project Revenue Distribution" }
+    }
+  };
+
+  // Chart renderer based on chartType
+  const renderChart = () => {
+    switch (chartType) {
+      case "bar":
+        return (
+          <Bar
+            data={{
+              labels: chartData.labels,
+              datasets: [{
+                label: "Revenue",
+                data: chartData.datasets[0]?.data || [],
+                backgroundColor: "#2563EB", // Dark blue bars
+                barThickness: 15
+              }]
+            }}
+            options={barOptions}
+          />
+        );
+      case "pie":
+        return (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
+              maxWidth: "100%", // Removed width constraint to allow full expansion
+              width: "100%", // Added full width
+              margin: "0 auto",
+              marginTop: "-30px", // Pull it up towards the center
+            }}
+          >
+            <Pie data={pieData} options={pieOptions} />
+          </div>
+        );
+      default:
+        return <Line data={chartData} options={lineOptions} />;
     }
   };
 
@@ -130,14 +194,58 @@ const BudgetChart = () => {
     <div
       style={{
         width: "100%",
-        height: "450px",
+        maxWidth: "900px",
+        height: "480px",
         margin: "32px auto",
         background: "#ffffff",
         borderRadius: "12px",
-        padding: "24px"
+        padding: "24px",
+        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+        display: "flex",
+        flexDirection: "column"
       }}
     >
-      <Line data={chartData} options={options} />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px"
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: "22px",
+            fontWeight: "600",
+            color: "#1F2937"
+          }}
+        >
+          Project Revenue Overview
+        </h3>
+        <select
+          value={chartType}
+          onChange={(e) => setChartType(e.target.value)}
+          style={{
+            padding: "8px 12px",
+            borderRadius: "6px",
+            border: "1px solid #d1d5db",
+            fontSize: "14px",
+            cursor: "pointer",
+            backgroundColor: "#fff",
+            minWidth: "140px"
+          }}
+          aria-label="Select chart type"
+        >
+          <option value="line">Line Chart</option>
+          <option value="bar">Bar Chart</option>
+          <option value="pie">Pie Chart</option>
+        </select>
+      </div>
+
+      <div style={{ flexGrow: 1 }}>
+        {renderChart()}
+      </div>
     </div>
   );
 };

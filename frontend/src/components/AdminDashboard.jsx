@@ -24,9 +24,6 @@ const AdminDashboard = () => {
             <div className="dashboard-welcome">
               <DashboardSummary />
             </div>
-            <div className="dashboard-welcome1">
-              <BudgetChart />
-            </div>
           </div>
         </div>
       </div>
