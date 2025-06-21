@@ -61,9 +61,10 @@ class EmployeeFinancials(db.Model):
     eid = db.Column(db.String(20), nullable=False)  # FK removed
     salary = db.Column(db.Float, nullable=True)
     infrastructure = db.Column(db.Float, nullable=True)
+    hourly_cost = db.Column(db.Float, nullable=True)  # 👈 Added this line
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    financial_year = db.Column(db.String(20), nullable=False)  # 👈 Add this line
+    financial_year = db.Column(db.String(20), nullable=False)
 
 class FinancialYear(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -236,6 +237,8 @@ def update_employee_financials(eid):
 
     financial.salary = salary
     financial.infrastructure = infrastructure
+    financial.hourly_cost = (salary + infrastructure) / 176 if salary is not None and infrastructure is not None else None
+
     db.session.commit()
 
     return jsonify({"message": "Financial data updated"}), 200

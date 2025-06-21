@@ -62,7 +62,7 @@ const DMBudgetChart = () => {
       legend: { display: false },
       title: {
         display: true,
-        text: "Project Cost Overview",
+        text: "Project Revenue Overview",
         font: {
           size: 20,
           weight: "600",
@@ -107,7 +107,7 @@ const DMBudgetChart = () => {
       y: {
         title: {
           display: true,
-          text: "Cost (in $)",
+          text: "Revenue (in $)",
           color: "#6B7280",
           font: { size: 14, weight: "500" }
         },

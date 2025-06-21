@@ -62,7 +62,7 @@ const PMBudgetChart = () => {
       legend: { display: false },
       title: {
         display: true,
-        text: "Project Cost Overview", // ✅ updated title
+        text: "Project Revenue Overview", // ✅ updated title
         font: {
           size: 20,
           weight: "600",
@@ -107,7 +107,7 @@ const PMBudgetChart = () => {
       y: {
         title: {
           display: true,
-          text: "Cost (in $)", // ✅ updated Y-axis label
+          text: "Revenue (in $)", // ✅ updated Y-axis label
           color: "#6B7280",
           font: { size: 14, weight: "500" }
         },
