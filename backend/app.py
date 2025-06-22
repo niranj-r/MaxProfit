@@ -1574,6 +1574,8 @@ def get_dm_project_budgets():
 @app.route('/api/department-projects', methods=['GET'])
 @jwt_required()
 def department_project_summary():
+    import json  # To log JSON response properly in console
+
     user_id = get_jwt_identity()
 
     user = User.query.filter_by(id=user_id).first()
@@ -1583,43 +1585,52 @@ def department_project_summary():
     if user.role != 'department_manager':
         return jsonify({"error": "Unauthorized"}), 403
 
-    # Step 1: Get departments managed by the user
     departments = Department.query.filter_by(managerId=user.eid).all()
-    department_ids = [d.did for d in departments]
+    if not departments:
+        return jsonify([]), 200
 
-    if not department_ids:
-        return jsonify({
-            "projectCount": 0,
-            "totalBudget": 0,
-            "estimatedProfit": 0,
-            "projects": []
+    result = []
+    for dept in departments:
+        projects = Project.query.filter_by(departmentId=dept.did).all()
+        if not projects:
+            continue
+
+        project_ids = [p.id for p in projects]
+
+        # Aggregate revenue and actual cost
+        cost_data = (
+            db.session.query(
+                func.coalesce(func.sum(ProjectAssignment.cost), 0),            # revenue
+                func.coalesce(func.sum(ProjectAssignment.actual_cost), 0)      # actual cost
+            )
+            .filter(ProjectAssignment.project_id.in_(project_ids))
+            .first()
+        )
+
+        total_revenue = float(cost_data[0])
+        total_cost = float(cost_data[1])
+        total_profit = total_revenue - total_cost
+
+        project_list = [{
+            "id": p.id,
+            "name": p.name,
+            "startDate": p.startDate.strftime('%Y-%m-%d'),
+            "endDate": p.endDate.strftime('%Y-%m-%d'),
+            "createdAt": p.createdAt.isoformat() if p.createdAt else None,
+            "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
+        } for p in projects]
+
+        result.append({
+            "departmentId": dept.did,
+            "departmentName": dept.name,
+            "projects": project_list,
+            "cost": total_revenue,           # shown as Revenue in frontend
+            "actual_cost": total_cost,       # shown as Cost in frontend
+            "profit": total_profit           # shown as Profit in frontend
         })
 
-    # Step 2: Get projects under these departments
-    projects = Project.query.filter(Project.departmentId.in_(department_ids)).all()
 
-    # Step 3: Calculate totals
-    total_budget = sum(p.budget or 0 for p in projects)
-    estimated_profit = total_budget * 0.25  # change formula as needed
-
-    # Step 4: Serialize project list if needed
-    project_list = [{
-        "id": p.id,
-        "name": p.name,
-        "departmentId": p.departmentId,
-        "budget": float(p.budget or 0),
-        "startDate": p.startDate.strftime('%Y-%m-%d'),
-        "endDate": p.endDate.strftime('%Y-%m-%d'),
-        "createdAt": p.createdAt.isoformat() if p.createdAt else None,
-        "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
-    } for p in projects]
-
-    return jsonify({
-        "projectCount": len(projects),
-        "totalBudget": total_budget,
-        "estimatedProfit": estimated_profit,
-        "projects": project_list
-    }), 200
+    return jsonify(result), 200
 
 
 # ------------------ MAIN ------------------

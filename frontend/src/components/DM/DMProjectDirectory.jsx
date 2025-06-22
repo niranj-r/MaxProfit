@@ -70,7 +70,10 @@ const DMProjectDirectory = () => {
         const res = await axios.get(`${API}/api/projects/${proj.id}/total-cost`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        costs[proj.id] = res.data.totalCost;
+        costs[proj.id] = {
+          totalCost: res.data.totalCost,
+          actualCost: res.data.actualCost
+        };
       }
       setProjectCosts(costs);
     } catch (err) {
@@ -253,10 +256,12 @@ const DMProjectDirectory = () => {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Department</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Total Cost</th>
+            <th>Department ID</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Total Revenue ($)</th>
+            <th>Actual Cost ($)</th>
+            <th>Margin ($)</th>
             <th>Actions</th>
             <th>Assign</th>
           </tr>
@@ -266,9 +271,15 @@ const DMProjectDirectory = () => {
             <tr key={proj.id}>
               <td>{proj.name}</td>
               <td>{proj.departmentId}</td>
-              <td>{proj.startDate?.substring(0, 10) || '-'}</td>
-              <td>{proj.endDate?.substring(0, 10) || '-'}</td>
-              <td>{projectCosts[proj.id] || 0}</td>
+              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+              <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
+              <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
+              <td>
+                {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
+                  ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
+                  : '—'}
+              </td>
               <td>
                 <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
                 <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
@@ -281,9 +292,7 @@ const DMProjectDirectory = () => {
             </tr>
           ))}
           {filteredProjects.length === 0 && (
-            <tr>
-              <td colSpan="7" className="no-data">No matching projects found.</td>
-            </tr>
+            <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
           )}
         </tbody>
       </table>
@@ -321,7 +330,7 @@ const DMProjectDirectory = () => {
                   <>
                     <input
                       name={field}
-                      type="date"
+                      type={field.includes('Date') ? 'date' : 'text'}
                       value={form[field]}
                       onChange={handleChange}
                       placeholder=" "

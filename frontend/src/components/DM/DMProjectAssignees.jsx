@@ -256,7 +256,8 @@ const DMProjectAssignees = ({ projectId, name, budget, onClose }) => {
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Cost ($)</th>
+              <th>Revenue ($)</th>
+              <th>Cost ($)</th> {/* 👈 NEW COLUMN */}
               <th>Remove</th>
             </tr>
           </thead>
@@ -268,6 +269,7 @@ const DMProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <td>{emp.email}</td>
                 <td>{emp.role}</td>
                 <td>{emp.cost ?? '—'}</td>
+                <td>{emp.actual_cost ?? '—'}</td> {/* 👈 NEW DATA */}
                 <td>
                   <button className="remove-btn" onClick={() => removeAssignee(emp)}>
                     Remove

@@ -256,6 +256,19 @@ const ProjectDirectory = () => {
     (p.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  const getFieldLabel = (field) => {
+    switch (field) {
+      case 'name':
+        return 'Project Name';
+      case 'startDate':
+        return 'Start Date';
+      case 'endDate':
+        return 'End Date';
+      default:
+        return field;
+    }
+  };
+  
   return (
     <div className="employee-table-container">
       <div className="table-header">
@@ -323,7 +336,53 @@ const ProjectDirectory = () => {
           onClose={() => setShowModal(false)}
           title={formMode === 'add' ? 'Add Project' : 'Edit Project'}
         >
-          {/* Form goes here */}
+          <form onSubmit={handleSubmit} className="modal-form">
+            {generalError && (
+              <div className="form-error">{generalError}</div>
+            )}
+
+            {['name', 'startDate', 'endDate'].map(field => (
+              <div className="floating-label" key={field}>
+                <input
+                  name={field}
+                  type={field.includes('Date') ? 'date' : 'text'}
+                  value={form[field]}
+                  onChange={handleChange}
+                  placeholder=" "
+                  required
+                  style={formErrors[field] ? { borderColor: '#c33' } : {}}
+                />
+                <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
+                {formErrors[field] && (
+                  <div className="field-error">{formErrors[field]}</div>
+                )}
+              </div>
+            ))}
+
+            {/* Department ID dropdown */}
+            <div className="floating-label" key="departmentId">
+              <select
+                name="departmentId"
+                value={form.departmentId}
+                onChange={handleChange}
+                required
+                style={formErrors.departmentId ? { borderColor: '#c33' } : {}}
+              >
+                <option value="" disabled>Select Department</option>
+                {departments.map(dep => (
+                  <option key={dep.did} value={dep.did}>
+                    {dep.did} ({dep.name})
+                  </option>
+                ))}
+              </select>
+              <label>Department ID <span className="required-star">*</span></label>
+              {formErrors.departmentId && (
+                <div className="field-error">{formErrors.departmentId}</div>
+              )}
+            </div>
+
+            <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
+          </form>
         </ModalWrapper>
       )}
 
