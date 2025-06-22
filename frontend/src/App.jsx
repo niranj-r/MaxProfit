@@ -16,6 +16,7 @@ import DashboardSummary from './components/DashboardSummary';
 import RecentActivities from './components/RecentActivities';
 import FXRateChart from './components/FXRateChart';
 import BudgetChart from './components/BudgetChart';
+import OverviewDashboardSummary from './components/OverviewDashboardSummary';
 import ModalWrapper from './components/ModalWrapper';
 import ProjectAssignees from './components/ProjectAssignees'; 
 import UpcomingDeadlines from './components/UpcomingDeadlines'; 
@@ -84,6 +85,7 @@ function App() {
       <Route path="/recent-activities" element={<RecentActivities />} />
       <Route path="/fx-rate-chart" element={<FXRateChart />} />
       <Route path="/budget-chart" element={<BudgetChart />} />
+      <Route path="/overview-dashboard-summary" element={<OverviewDashboardSummary />} />
       <Route path="/modal-wrapper" element={<ModalWrapper />} />
       <Route path="/project-assignees" element={<ProjectAssignees />} />
       <Route path="/projects/:id/assignees" element={<ProjectAssignees />} />

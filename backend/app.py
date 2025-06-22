@@ -14,7 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from flask_jwt_extended import get_jwt_identity
 from sqlalchemy import func
-
+from sqlalchemy.orm import aliased
 
 # ------------------ CONFIGURATION ------------------
 
@@ -1654,7 +1654,159 @@ def department_project_summary():
 
     return jsonify(result), 200
 
+@app.route('/api/sum-projects', methods=['GET'])
+@jwt_required()
+def get_projects_summary():
+    try:
+        # Step 1: Get all project IDs
+        results = db.session.query(Project.id).all()
+        project_ids = [row[0] for row in results]
 
+        if not project_ids:
+            return jsonify([]), 200
+
+        # Step 2: Get project financials
+        project_data = (
+            db.session.query(
+                Project.id,
+                Project.name,
+                Project.departmentId,
+                Project.startDate,
+                Project.endDate,
+                Project.createdAt,
+                Project.updatedAt,
+                func.coalesce(func.sum(ProjectAssignment.cost), 0).label("total_cost"),
+                func.coalesce(func.sum(ProjectAssignment.actual_cost), 0).label("actual_cost")
+            )
+            .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+            .filter(Project.id.in_(project_ids))
+            .group_by(Project.id)
+            .all()
+        )
+
+        # Step 3: Format and return response
+        return jsonify([
+            {
+                "id": p.id,
+                "name": p.name,
+                "cost": float(p.total_cost),
+                "actual_cost": float(p.actual_cost),
+                "margin": float(p.total_cost) - float(p.actual_cost),
+                "departmentId": p.departmentId,
+                "startDate": p.startDate.strftime('%Y-%m-%d') if p.startDate else None,
+                "endDate": p.endDate.strftime('%Y-%m-%d') if p.endDate else None,
+                "createdAt": p.createdAt.isoformat() if p.createdAt else None,
+                "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
+            }
+            for p in project_data
+        ]), 200
+
+    except Exception as e:
+        print("🔴 Error in /api/sum-projects:", e)
+        return jsonify({"error": "Internal Server Error"}), 500
+    
+
+@app.route('/api/projects-by-pm', methods=['GET'])
+@jwt_required()
+def get_projects_by_project_manager():
+    try:
+        # Alias tables for clarity
+        pa = aliased(project_assignees)
+
+        results = (
+            db.session.query(
+                User.id.label("user_id"),
+                func.concat(User.fname, ' ', User.lname).label("name"),
+                Project.id.label("project_id"),
+                Project.name.label("project_name"),
+                Project.departmentId,
+                Project.startDate,
+                Project.endDate,
+                func.sum(ProjectAssignment.cost).label("cost"),
+                func.sum(ProjectAssignment.actual_cost).label("actual_cost")
+            )
+            # Join with ProjectAssignees table to filter for PMs
+            .join(pa, and_(pa.c.user_id == User.id, pa.c.role == 'Project Manager'))
+            .join(Project, Project.id == pa.c.project_id)
+            .join(ProjectAssignment, and_(
+                ProjectAssignment.project_id == Project.id,
+                ProjectAssignment.user_id == User.id
+            ))
+            .group_by(
+                User.id, User.fname, User.lname,
+                Project.id, Project.name, Project.departmentId,
+                Project.startDate, Project.endDate
+            )
+            .all()
+        )
+
+        # Group by project manager
+        grouped = {}
+        for row in results:
+            if row.user_id not in grouped:
+                grouped[row.user_id] = {
+                    "project_manager": {
+                        "eid": row.user_id,
+                        "name": row.name
+                    },
+                    "projects": []
+                }
+            grouped[row.user_id]["projects"].append({
+                "id": row.project_id,
+                "name": row.project_name,
+                "departmentId": row.departmentId,
+                "startDate": str(row.startDate),
+                "endDate": str(row.endDate),
+                "cost": float(row.cost or 0),
+                "actual_cost": float(row.actual_cost or 0)
+            })
+
+        return jsonify(list(grouped.values())), 200
+
+    except Exception as e:
+        print("🔴 Error in /api/projects-by-pm:", str(e))
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/api/sum-projects', methods=['GET'])
+@jwt_required()
+def sum_projects():
+    try:
+        # Join Project and ProjectAssignment to get total cost and actual cost
+        projects = (
+            db.session.query(
+                Project.id,
+                Project.name,
+                Project.departmentId,
+                Project.startDate,
+                Project.endDate,
+                func.sum(ProjectAssignment.cost).label('total_cost'),
+                func.sum(ProjectAssignment.actual_cost).label('actual_cost')
+            )
+            .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+            .group_by(Project.id)
+            .all()
+        )
+
+        response = []
+        for p in projects:
+            response.append({
+                "id": p.id,
+                "name": p.name,
+                "departmentId": p.departmentId,
+                "startDate": str(p.startDate),
+                "endDate": str(p.endDate),
+                "totalCost": float(p.total_cost) if p.total_cost else 0.0,
+                "actualCost": float(p.actual_cost) if p.actual_cost else 0.0
+            })
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        print("🔴 Error in /api/sum-projects:", str(e))
+        return jsonify({"error": "Internal server error"}), 500
+    
 # ------------------ MAIN ------------------
 
 if __name__ == '__main__':

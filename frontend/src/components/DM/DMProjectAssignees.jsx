@@ -72,7 +72,11 @@ const DMProjectAssignees = ({ projectId, name, budget, onClose }) => {
         params: { q },
         ...authHeader
       });
-      setSearchResults(res.data.filter(emp => emp && emp.eid && emp.fname && emp.lname));
+      setSearchResults(
+        res.data.filter(emp =>
+          emp && emp.eid && emp.fname && emp.lname && !/^AD\d{2}$/.test(emp.eid)
+        )
+      );
     } catch (err) {
       console.error('Search error', err);
     }

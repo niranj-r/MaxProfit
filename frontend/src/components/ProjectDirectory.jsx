@@ -8,6 +8,12 @@ import ProjectAssignee from './ProjectAssignees';
 import Papa from 'papaparse';
 
 const API = process.env.REACT_APP_API_BASE_URL;
+const authHeader = {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem('token')}`
+  }
+};
+
 
 const ProjectDirectory = () => {
   const [projects, setProjects] = useState([]);
@@ -27,6 +33,8 @@ const ProjectDirectory = () => {
   const [showAssigneesModal, setShowAssigneesModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectCosts, setProjectCosts] = useState({});
+  const [groupedView, setGroupedView] = useState(false);
+  const [groupedData, setGroupedData] = useState([]);
 
   const navigate = useNavigate();
 
@@ -38,6 +46,27 @@ const ProjectDirectory = () => {
   useEffect(() => {
     if (projects.length > 0) fetchProjectCosts();
   }, [projects]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (groupedView) {
+          const res = await axios.get(`${API}/api/projects-by-pm`, authHeader);
+          console.log("🔍 Grouped View Data:", res.data); // ✅ LOG RESPONSE
+          setGroupedData(res.data);
+        } else {
+          const res = await axios.get(`${API}/api/sum-projects`, authHeader);
+          console.log("📊 Flat View Data:", res.data); // ✅ LOG RESPONSE
+          setProjects(res.data);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching projects:", err);
+      }
+    };
+
+    fetchData();
+  }, [groupedView]);
+
 
   const fetchProjectCosts = async () => {
     const costs = {};
@@ -268,7 +297,7 @@ const ProjectDirectory = () => {
         return field;
     }
   };
-  
+
   return (
     <div className="employee-table-container">
       <div className="table-header">
@@ -285,51 +314,99 @@ const ProjectDirectory = () => {
           <button className="add-btn" onClick={handleDownloadCSV}>📥 Download</button>
         </div>
       </div>
+      <div style={{ marginBottom: '16px' }}>
+        <button onClick={() => setGroupedView(prev => !prev)} className="toggle-btn">
+          {groupedView ? "🔁 Switch to Flat View" : "👥 Group by Project Manager"}
+        </button>
+      </div>
 
-      <table className="employee-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Department ID</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Total Revenue ($)</th>
-            <th>Actual Cost ($)</th>
-            <th>Margin ($)</th>
-            <th>Actions</th>
-            <th>Assign</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredProjects.map(proj => (
-            <tr key={proj.id}>
-              <td>{proj.name}</td>
-              <td>{proj.departmentId}</td>
-              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-              <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
-              <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
-              <td>
-                {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
-                  ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
-                  : '—'}
-              </td>
-              <td>
-                <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
-                <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
-              </td>
-              <td>
-                <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                  Assign
-                </button>
-              </td>
+      {groupedView ? (
+        Array.isArray(groupedData) && groupedData.length > 0 ? (
+          groupedData.map(group => (
+            <div key={group.project_manager?.eid || Math.random()} className="group-section">
+              <h3>
+                {group.project_manager?.name || 'Unknown'}
+              </h3>
+              <table className="employee-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Department ID</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Total Revenue ($)</th>
+                    <th>Actual Cost ($)</th>
+                    <th>Margin ($)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.projects.map(p => (
+                    <tr key={p.id}>
+                      <td>{p.name}</td>
+                      <td>{p.departmentId}</td>
+                      <td>{p.startDate?.substring(0, 10)}</td>
+                      <td>{p.endDate?.substring(0, 10)}</td>
+                      <td>{p.cost?.toFixed(2) || '—'}</td>
+                      <td>{p.actual_cost?.toFixed(2) || '—'}</td>
+                      <td>{(p.cost - p.actual_cost)?.toFixed(2) || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))
+        ) : (
+          <div className="no-grouped-data">
+            No grouped project data found.
+          </div>
+        )
+      ) : (
+        <table className="employee-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Department ID</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Total Revenue ($)</th>
+              <th>Actual Cost ($)</th>
+              <th>Margin ($)</th>
+              <th>Actions</th>
+              <th>Assign</th>
             </tr>
-          ))}
-          {filteredProjects.length === 0 && (
-            <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredProjects.map(proj => (
+              <tr key={proj.id}>
+                <td>{proj.name}</td>
+                <td>{proj.departmentId}</td>
+                <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+                <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
+                <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
+                <td>
+                  {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
+                    ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
+                    : '—'}
+                </td>
+                <td>
+                  <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
+                  <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
+                </td>
+                <td>
+                  <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
+                    Assign
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {filteredProjects.length === 0 && (
+              <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
+            )}
+          </tbody>
+        </table>
+      )}
+
 
       {showModal && (
         <ModalWrapper
