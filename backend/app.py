@@ -1734,6 +1734,98 @@ def get_projects_summary():
     except Exception as e:
         print("🔴 Error in /api/sum-projects:", e)
         return jsonify({"error": "Internal Server Error"}), 500
+    
+@app.route('/api/sum-projects-by-fy', methods=['GET'])
+@jwt_required()
+def get_projects_summary_by_fy():
+    start_str = request.args.get('startDate')
+    end_str = request.args.get('endDate')
+
+    if not start_str or not end_str:
+        return jsonify({'error': 'Missing startDate or endDate'}), 400
+
+    try:
+        fy_start = datetime.strptime(start_str, "%Y-%m-%d")
+        fy_end = datetime.strptime(end_str, "%Y-%m-%d")
+
+        # Query projects overlapping FY
+        project_data = (
+            db.session.query(
+                Project.id,
+                Project.name,
+                Project.departmentId,
+                Project.startDate,
+                Project.endDate,
+                Project.createdAt,
+                Project.updatedAt,
+                func.coalesce(func.sum(ProjectAssignment.cost), 0).label("total_cost"),
+                func.coalesce(func.sum(ProjectAssignment.actual_cost), 0).label("actual_cost")
+            )
+            .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+            .filter(
+                and_(
+                    Project.endDate >= fy_start,
+                    Project.startDate <= fy_end
+                )
+            )
+            .group_by(Project.id)
+            .all()
+        )
+
+        return jsonify([
+            {
+                "id": p.id,
+                "name": p.name,
+                "cost": float(p.total_cost),
+                "actual_cost": float(p.actual_cost),
+                "margin": float(p.total_cost) - float(p.actual_cost),
+                "departmentId": p.departmentId,
+                "startDate": p.startDate.strftime('%Y-%m-%d') if p.startDate else None,
+                "endDate": p.endDate.strftime('%Y-%m-%d') if p.endDate else None,
+                "createdAt": p.createdAt.isoformat() if p.createdAt else None,
+                "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
+            }
+            for p in project_data
+        ]), 200
+
+    except Exception as e:
+        print("🔴 Error in /api/sum-projects-by-fy:", e)
+        return jsonify({"error": "Internal Server Error"}), 500
+    
+@app.route('/api/project-budgets-by-fy', methods=['GET'])
+@jwt_required()
+def get_project_budgets_by_fy():
+    try:
+        start_date = request.args.get('startDate')
+        end_date = request.args.get('endDate')
+
+        if not start_date or not end_date:
+            return jsonify([]), 400
+
+        # Query projects active in the given FY range
+        projects = (
+            db.session.query(
+                Project.id,
+                Project.name,
+                func.coalesce(func.sum(ProjectAssignment.cost), 0).label('cost')
+            )
+            .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+            .filter(Project.startDate <= end_date, Project.endDate >= start_date)
+            .group_by(Project.id)
+            .all()
+        )
+
+        result = [
+            {"id": p.id, "name": p.name, "cost": float(p.cost)}
+            for p in projects
+        ]
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print("❌ Error in /api/project-budgets-by-fy:", e)
+        return jsonify({"error": "Internal Server Error"}), 500
+
 
 # ------------------ MAIN ------------------
 

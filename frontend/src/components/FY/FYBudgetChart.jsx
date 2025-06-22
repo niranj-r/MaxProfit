@@ -12,7 +12,8 @@ import {
   Tooltip,
   Legend,
   Title
-} from "chart.js";
+} from 'chart.js';
+import { useParams } from "react-router-dom";
 
 ChartJS.register(
   CategoryScale,
@@ -28,57 +29,53 @@ ChartJS.register(
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
-const FYBudgetChart = ({ financialYear }) => {
-  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+const FYBudgetChart = () => {
+  const { label: fyLabel } = useParams(); // e.g., "2024-2025"
+  const [chartData, setChartData] = useState({
+    labels: [],
+    datasets: []
+  });
   const [chartType, setChartType] = useState("line");
 
   useEffect(() => {
-    if (!financialYear) return;
-
-    const [startYear, endYear] = financialYear.split("-").map(Number);
-    const start = new Date(`${startYear}-04-01`);
-    const end = new Date(`${endYear}-03-31`);
-    console.log("Financial Year Range:", { start, end });
+    if (!fyLabel) return;
 
     const token = localStorage.getItem("token");
+    const [sy, ey] = fyLabel.split('-').map(Number);
+    const fyStart = `${sy}-04-01`;
+    const fyEnd = `${ey}-03-31`;
 
-    axios.get(`${API}/api/projects`, {
-      headers: { Authorization: `Bearer ${token}` }
+    console.log("📊 Fetching budget chart data for FY:", fyStart, "to", fyEnd);
+
+    axios.get(`${API}/api/project-budgets-by-fy`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { startDate: fyStart, endDate: fyEnd }
     })
     .then(res => {
-      console.log("Fetched projects:", res.data);
+      const projectNames = res.data.map(p => p.name);
+      const cost = res.data.map(p => p.cost);
 
-      const filtered = res.data.filter(p => {
-        const startDate = p.startDate ? new Date(p.startDate) : null;
-        const isInRange = startDate && startDate >= start && startDate <= end;
-
-        console.log(`Project: ${p.name}, Start Date: ${p.startDate}, In Range: ${isInRange}`);
-        return isInRange;
-      });
-
-      console.log("Filtered Projects:", filtered);
-
-      const labels = filtered.map(p => p.name);
-      const data = filtered.map(p => p.budget || 0);
-
-      console.log("Chart Labels:", labels);
-      console.log("Chart Data (Budgets):", data);
+      console.log("✅ Chart data received:", res.data);
 
       setChartData({
-        labels,
-        datasets: [{
-          label: "Budget",
-          data,
-          borderColor: "rgba(37, 99, 235, 0.7)",
-          backgroundColor: "rgba(37, 99, 235, 0.1)",
-          tension: 0.4,
-          pointBackgroundColor: "#2563EB",
-          fill: true
-        }]
+        labels: projectNames,
+        datasets: [
+          {
+            label: "Revenue",
+            data: cost,
+            borderColor: "rgba(37, 99, 235, 0.7)",
+            backgroundColor: "rgba(37, 99, 235, 0.1)",
+            tension: 0.4,
+            pointBackgroundColor: "#2563EB",
+            fill: true,
+          }
+        ]
       });
     })
-    .catch(err => console.error("Error fetching project data", err));
-  }, [financialYear]);
+    .catch(err => {
+      console.error("❌ Error fetching chart data", err);
+    });
+  }, [fyLabel]);
 
   const commonOptions = {
     responsive: true,
@@ -86,7 +83,19 @@ const FYBudgetChart = ({ financialYear }) => {
       legend: { display: false },
       title: {
         display: true,
-        text: "Project Revenue Overview"
+        text: "Project Revenue Overview",
+        font: { size: 20, weight: "600", family: "Inter, sans-serif" },
+        color: "#1F2937",
+        padding: { top: 10, bottom: 20 }
+      },
+      tooltip: {
+        backgroundColor: "#1F2937",
+        titleColor: "#ffffff",
+        bodyColor: "#E5E7EB",
+        titleFont: { family: "Inter", weight: "600", size: 14 },
+        bodyFont: { family: "Inter", size: 13 },
+        cornerRadius: 6,
+        padding: 10
       }
     }
   };
@@ -94,16 +103,34 @@ const FYBudgetChart = ({ financialYear }) => {
   const lineOptions = {
     ...commonOptions,
     scales: {
-      x: { grid: { display: false } },
-      y: { grid: { display: false }, beginAtZero: true }
+      x: {
+        title: { display: true, text: "Project Name", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { display: false }
+      },
+      y: {
+        title: { display: true, text: "Revenue (in $)", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { display: false },
+        beginAtZero: true
+      }
     }
   };
 
   const barOptions = {
     ...commonOptions,
     scales: {
-      x: { grid: { display: false } },
-      y: { grid: { color: "#E5E7EB" }, beginAtZero: true }
+      x: {
+        title: { display: true, text: "Project Name", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { display: false }
+      },
+      y: {
+        title: { display: true, text: "Revenue (in $)", color: "#6B7280", font: { size: 14, weight: "500" } },
+        ticks: { color: "#6B7280", font: { size: 12 } },
+        grid: { color: "#E5E7EB" },
+        beginAtZero: true
+      }
     },
     barThickness: 15
   };
@@ -111,9 +138,11 @@ const FYBudgetChart = ({ financialYear }) => {
   const pieData = {
     labels: chartData.labels,
     datasets: [{
-      label: "Budget",
+      label: "Revenue",
       data: chartData.datasets[0]?.data || [],
-      backgroundColor: ["#2563EB", "#1CC88A", "#F6C23E", "#E74A3B", "#36B9CC", "#FF6384"],
+      backgroundColor: [
+        "#2563EB", "#1CC88A", "#F6C23E", "#E74A3B", "#36B9CC", "#FF6384"
+      ],
       borderWidth: 1
     }]
   };
@@ -122,37 +151,101 @@ const FYBudgetChart = ({ financialYear }) => {
     ...commonOptions,
     plugins: {
       ...commonOptions.plugins,
-      legend: { display: true, position: "right", labels: { boxWidth: 15, padding: 15 } }
+      legend: {
+        display: true,
+        position: "right",
+        labels: { boxWidth: 15, padding: 15 }
+      }
     }
   };
 
   const renderChart = () => {
     switch (chartType) {
       case "bar":
-        return <Bar data={chartData} options={barOptions} />;
+        return (
+          <Bar
+            data={{
+              labels: chartData.labels,
+              datasets: [{
+                label: "Revenue",
+                data: chartData.datasets[0]?.data || [],
+                backgroundColor: "#2563EB",
+                barThickness: 15
+              }]
+            }}
+            options={barOptions}
+          />
+        );
       case "pie":
-        return <Pie data={pieData} options={pieOptions} />;
+        return (
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100%",
+            width: "100%",
+            marginTop: "-30px"
+          }}>
+            <Pie data={pieData} options={pieOptions} />
+          </div>
+        );
       default:
         return <Line data={chartData} options={lineOptions} />;
     }
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "900px", margin: "32px auto", background: "#fff", borderRadius: "12px", padding: "24px", boxShadow: "0 0 10px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-        <h3 style={{ margin: 0, fontSize: "22px", fontWeight: "600" }}>
-          Project Revenue Overview ({financialYear})
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "900px",
+        height: "480px",
+        margin: "32px auto",
+        background: "#ffffff",
+        borderRadius: "12px",
+        padding: "24px",
+        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px"
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            fontSize: "22px",
+            fontWeight: "600",
+            color: "#1F2937"
+          }}
+        >
+          Project Revenue Overview
         </h3>
         <select
           value={chartType}
           onChange={(e) => setChartType(e.target.value)}
-          style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "14px", cursor: "pointer", backgroundColor: "#fff" }}
+          style={{
+            padding: "8px 12px",
+            borderRadius: "6px",
+            border: "1px solid #d1d5db",
+            fontSize: "14px",
+            cursor: "pointer",
+            backgroundColor: "#fff",
+            minWidth: "140px"
+          }}
         >
           <option value="line">Line Chart</option>
           <option value="bar">Bar Chart</option>
           <option value="pie">Pie Chart</option>
         </select>
       </div>
+
       <div style={{ flexGrow: 1 }}>
         {renderChart()}
       </div>
