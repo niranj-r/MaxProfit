@@ -719,7 +719,7 @@ def remove_pm_assignee(project_id, eid):
         return jsonify({"error": "Cannot remove the Project Manager from the project"}), 403
 
     # 2️⃣ Delete from project_assignees
-    result1 = db.session.execute(
+    db.session.execute(
         project_assignees.delete().where(
             and_(
                 project_assignees.c.project_id == project_id,
@@ -729,11 +729,11 @@ def remove_pm_assignee(project_id, eid):
     )
 
     # 3️⃣ Delete from project_assignment (task assignments)
-    result2 = db.session.execute(
-        db.delete(project_assignment).where(
+    db.session.execute(
+        db.delete(ProjectAssignment).where(
             and_(
-                project_assignment.c.project_id == project_id,
-                project_assignment.c.user_id == user.id
+                ProjectAssignment.project_id == project_id,
+                ProjectAssignment.user_id == user.id
             )
         )
     )

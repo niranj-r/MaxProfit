@@ -280,7 +280,16 @@ const PMProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <td>{emp.cost ?? '—'}</td>
                 <td>{emp.actual_cost ?? '—'}</td> {/* 👈 NEW DATA */}
                 <td>
-                  <button className="remove-btn" onClick={() => removeAssignee(emp)}>
+                  <button
+                    className="remove-btn"
+                    onClick={() => removeAssignee(emp)}
+                    disabled={emp.role === "Project Manager"}
+                    style={{
+                      backgroundColor: emp.role === "Project Manager" ? "#d1d5db" : "#ef4444",
+                      cursor: emp.role === "Project Manager" ? "not-allowed" : "pointer"
+                    }}
+                    title={emp.role === "Project Manager" ? "Project Manager cannot be removed" : ""}
+                  >
                     Remove
                   </button>
                 </td>
