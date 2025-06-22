@@ -1684,56 +1684,6 @@ def get_projects_by_date_range():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@app.route('/api/sum-projects', methods=['GET'])
-@jwt_required()
-def get_projects_summary():
-    try:
-        # Step 1: Get all project IDs
-        results = db.session.query(Project.id).all()
-        project_ids = [row[0] for row in results]
-
-        if not project_ids:
-            return jsonify([]), 200
-
-        # Step 2: Get project financials
-        project_data = (
-            db.session.query(
-                Project.id,
-                Project.name,
-                Project.departmentId,
-                Project.startDate,
-                Project.endDate,
-                Project.createdAt,
-                Project.updatedAt,
-                func.coalesce(func.sum(ProjectAssignment.cost), 0).label("total_cost"),
-                func.coalesce(func.sum(ProjectAssignment.actual_cost), 0).label("actual_cost")
-            )
-            .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
-            .filter(Project.id.in_(project_ids))
-            .group_by(Project.id)
-            .all()
-        )
-
-        # Step 3: Format and return response
-        return jsonify([
-            {
-                "id": p.id,
-                "name": p.name,
-                "cost": float(p.total_cost),
-                "actual_cost": float(p.actual_cost),
-                "margin": float(p.total_cost) - float(p.actual_cost),
-                "departmentId": p.departmentId,
-                "startDate": p.startDate.strftime('%Y-%m-%d') if p.startDate else None,
-                "endDate": p.endDate.strftime('%Y-%m-%d') if p.endDate else None,
-                "createdAt": p.createdAt.isoformat() if p.createdAt else None,
-                "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
-            }
-            for p in project_data
-        ]), 200
-
-    except Exception as e:
-        print("🔴 Error in /api/sum-projects:", e)
-        return jsonify({"error": "Internal Server Error"}), 500
     
 @app.route('/api/sum-projects-by-fy', methods=['GET'])
 @jwt_required()
