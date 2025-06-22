@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaUsers, FaProjectDiagram, FaSitemap, FaMoneyBillWave } from "react-icons/fa";
 import "./DashboardSummary.css";
-import BudgetChart from "./BudgetChart"; // ✅ import your separate chart component
+import BudgetChart from "./BudgetChart";
+import OverviewDashboardSummary from "./OverviewDashboardSummary";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -57,7 +58,7 @@ const AdminDashboard = () => {
       color: "#4e73df",
     },
     {
-      title: "Total Employees",
+      title: "Total Users",
       value: stats.employees,
       icon: <FaUsers className="icon" />,
       color: "#1cc88a",
@@ -94,8 +95,7 @@ const AdminDashboard = () => {
           </div>
         ))}
       </div>
-
-      {/* ✅ Here we simply render your existing chart component */}
+      <OverviewDashboardSummary />
       <BudgetChart />
     </div>
   );
