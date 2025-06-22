@@ -97,7 +97,7 @@ const ProjectDashboardSummary = () => {
         {userName ? `Welcome, ${userName}` : "Welcome"}
       </h2>
       <div className="filters">
-        <label>
+        <label className="labels">
           Project:
           <select
             value={selectedProject || ""}

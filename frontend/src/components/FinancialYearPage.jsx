@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 import Navbar from "./Navbar";
+import { FaDownload } from 'react-icons/fa';
 import Papa from "papaparse";
 import "./FinancialyearPage.css";
 
@@ -137,11 +138,15 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
       </header>
       <div className="financial-page-wrapper">
         <main className="financial-content">
-          <button onClick={goBack} className="back-button">← Back to Financial Years</button>
-          <h2 className="fy-heading">Financial Year: {financialYear}</h2>
-
-          <button onClick={downloadCSV} className="download-btn">⬇ Download CSV</button>
-
+          <div className="ftop">
+            <h2 className="fy-heading">Financial Year: {financialYear}</h2>
+            <div className="ftopin">
+              <button onClick={goBack} className="back-button">← Back to Financial Years</button>
+              <button className="add-btn" onClick={downloadCSV}>
+                <FaDownload /> Download
+              </button>
+            </div>
+          </div>
           <div className="table-container">
             <table className="employee-table">
               <thead>

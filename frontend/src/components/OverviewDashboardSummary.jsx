@@ -92,9 +92,9 @@ const OverviewDashboardSummary = () => {
   ];
 
   return (
-    <div className="dashboard-summary">
+    <div className="dashboard-summarys">
       <div className="filters">
-        <label>
+        <label className="labels">
           Project:
           <select
             value={selectedProject || ""}

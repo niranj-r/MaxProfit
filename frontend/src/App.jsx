@@ -58,7 +58,6 @@ import FYProjectDashboard from './components/FY/FYProjectDashboard';
 import FYDashboardSummary from './components/FY/FYDashboardSummary';
 import FYAdminDashboard from './components/FY/FYAdminDashboard';
 import FYProjectDirectory from './components/FY/FYProjectDirectory';
-import OverviewDashboardSummary from './components/OverviewDashboardSummary';
 
 // Wrapper to pass year param as prop
 const FinancialYearPageWrapper = () => {

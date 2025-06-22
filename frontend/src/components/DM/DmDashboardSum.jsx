@@ -104,7 +104,7 @@ const DepartmentDashboardSummary = () => {
         {userName ? `Welcome, ${userName}` : "Welcome"}
       </h2>
       <div className="filters">
-        <label>
+        <label className="labels">
           Department:
           <select
             value={selectedDept}

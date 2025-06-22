@@ -4,6 +4,7 @@ import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
 import { useNavigate } from 'react-router-dom';
+import { FaDownload } from 'react-icons/fa';
 import ProjectAssignee from './ProjectAssignees';
 import Papa from 'papaparse';
 
@@ -313,13 +314,13 @@ const ProjectDirectory = () => {
             onChange={e => setSearch(e.target.value)}
           />
           <button className="add-btn" onClick={openAddModal}><FaPlus /> Add Project</button>
-          <button className="add-btn" onClick={handleDownloadCSV}>📥 Download</button>
+          <button onClick={() => setGroupedView(prev => !prev)} className="add-btn">
+            {groupedView ? "🔁View as list" : "Group by Manager"}
+          </button>
+          <button className="add-btn" onClick={handleDownloadCSV}>
+            <FaDownload /> Download
+          </button>
         </div>
-      </div>
-      <div style={{ marginBottom: '16px' }}>
-        <button onClick={() => setGroupedView(prev => !prev)} className="toggle-btn">
-          {groupedView ? "🔁 Switch to Flat View" : "👥 Group by Project Manager"}
-        </button>
       </div>
 
       {groupedView ? (

@@ -1,7 +1,6 @@
 :root {
   --primary-color: #4b6cb7;
   --secondary-color: #182848;
-  --accent-color: #28a745;
   --danger-color: #dc3545;
   --white: #ffffff;
   --gray-light: #f9f9f9;
@@ -210,16 +209,16 @@
   font-size: 16px;
   text-align: center;
 }
-.download-btn {
-  margin: 1rem 0;
-  padding: 8px 16px;
-  background-color: #28a745;
-  color: white;
-  font-weight: 500;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+
+.ftop {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
 }
-.download-btn:hover {
-  background-color: #218838;
+.ftopin {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }

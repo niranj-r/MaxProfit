@@ -155,7 +155,7 @@ const OverviewDashboardSummary = () => {
         Organisation: {stats.organisationName}
       </h2>
       <div className="filters">
-        <label>
+        <label className="labels">
           Project:
           <select
             value={selectedProject}
