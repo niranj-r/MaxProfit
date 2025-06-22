@@ -53,7 +53,12 @@ import FAProjectDashboard from './components/FA/FAProjectDashboard';
 import FAProjectDirectory from './components/FA/FAProjectDirectory';
 import FAFinancialYearManager from './components/FA/FAFinancialYearManager';
 import FAFinancialYearPage from './components/FA/FAFinancialYearPage';
-
+import FYNavbar from './components/FY/FYNavbar'
+import FYProjectDashboard from './components/FY/FYProjectDashboard';
+import FYDashboardSummary from './components/FY/FYDashboardSummary';
+import FYAdminDashboard from './components/FY/FYAdminDashboard';
+import FYProjectDirectory from './components/FY/FYProjectDirectory';
+import OverviewDashboardSummary from './components/OverviewDashboardSummary';
 
 // Wrapper to pass year param as prop
 const FinancialYearPageWrapper = () => {
@@ -122,6 +127,10 @@ function App() {
       <Route path="/fa-project-directory" element={<FAProjectDirectory />} />
       <Route path="/fa-financial-year-manager" element={<FAFinancialYearManager />} />
       <Route path="/fa-employee-financials/:year" element={<FAFinancialYearPageWrapper />} />
+      <Route path="/financial-year/:label" element={<FYAdminDashboard />} />
+      <Route path="/financial-year/:label/projects" element={<FYProjectDashboard />} />
+      <Route path="/fy-projects/:fyLabel" element={<FYProjectDirectory />} />
+      <Route path="/overview-dashboard-summary" element={<OverviewDashboardSummary />} />
     </Routes>
   );
 }

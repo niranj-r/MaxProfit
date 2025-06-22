@@ -61,7 +61,6 @@ const PMProjectDirectory = () => {
     }
   };
 
-
   const fetchProjects = async () => {
     try {
       const res = await axios.get(`${API}/api/pm-my-projects`, {
@@ -114,7 +113,7 @@ const PMProjectDirectory = () => {
     setGeneralError('');
   };
 
-  const validateField = (name, value) => {
+  const validateField = (name, value, mode = 'add') => {
     let errorMsg = '';
     const trimmed = value.trim();
 
@@ -134,6 +133,7 @@ const PMProjectDirectory = () => {
         break;
 
       case 'startDate':
+        if (mode === 'edit') break;
         if (!trimmed) errorMsg = 'Start date is required.';
         else {
           const start = new Date(trimmed);
@@ -169,7 +169,7 @@ const PMProjectDirectory = () => {
   const handleChange = e => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-    const errorMsg = validateField(name, value);
+    const errorMsg = validateField(name, value, formMode);
     setFormErrors(prev => ({ ...prev, [name]: errorMsg }));
     if (generalError) setGeneralError('');
   };
@@ -181,7 +181,7 @@ const PMProjectDirectory = () => {
 
     const newErrors = {};
     for (const key in form) {
-      const error = validateField(key, form[key]);
+      const error = validateField(key, form[key], formMode);
       if (error) newErrors[key] = error;
     }
 

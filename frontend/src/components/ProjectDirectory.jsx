@@ -137,7 +137,8 @@ const ProjectDirectory = () => {
     setGeneralError('');
   };
 
-  const validateField = (name, value) => {
+  const validateField = (name, value, mode = 'add') => {
+
     let errorMsg = '';
     const trimmedValue = value.trim();
 
@@ -157,6 +158,7 @@ const ProjectDirectory = () => {
         break;
 
       case 'startDate':
+        if (mode === 'edit') break;
         if (!trimmedValue) errorMsg = 'Start date is required.';
         else {
           const start = new Date(trimmedValue);
@@ -184,7 +186,7 @@ const ProjectDirectory = () => {
   const handleChange = e => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-    const errorMsg = validateField(name, value);
+    const errorMsg = validateField(name, value, formMode);
     setFormErrors(prev => ({ ...prev, [name]: errorMsg }));
     if (generalError) setGeneralError('');
   };
@@ -198,7 +200,7 @@ const ProjectDirectory = () => {
     const newErrors = {};
 
     fields.forEach(field => {
-      const errorMsg = validateField(field, form[field]);
+      const errorMsg = validateField(field, form[field], formMode);
       if (errorMsg) newErrors[field] = errorMsg;
     });
 
