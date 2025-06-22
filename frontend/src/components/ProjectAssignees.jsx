@@ -72,26 +72,26 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
   };
 
   const handleSearch = async e => {
-  const q = e.target.value;
-  setSearch(q);
-  if (!q.trim()) {
-    setSearchResults([]);
-    return;
-  }
-  try {
-    const res = await axios.get(`${API}/api/search/users`, {
-      params: { q },
-      ...authHeader
-    });
-    setSearchResults(
-      res.data.filter(emp => 
-        emp && emp.eid && emp.fname && emp.lname && !/^AD\d{2}$/.test(emp.eid)
-      )
-    );
-  } catch (err) {
-    console.error('Search error', err);
-  }
-};
+    const q = e.target.value;
+    setSearch(q);
+    if (!q.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const res = await axios.get(`${API}/api/search/users`, {
+        params: { q },
+        ...authHeader
+      });
+      setSearchResults(
+        res.data.filter(emp =>
+          emp && emp.eid && emp.fname && emp.lname && !/^AD\d{2}$/.test(emp.eid)
+        )
+      );
+    } catch (err) {
+      console.error('Search error', err);
+    }
+  };
 
 
   const startAdd = (emp) => {
@@ -263,6 +263,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
               <th>Email</th>
               <th>Role</th>
               <th>Revenue ($)</th>
+              <th>Cost ($)</th> {/* 👈 NEW COLUMN */}
               <th>Remove</th>
             </tr>
           </thead>
@@ -274,6 +275,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
                 <td>{emp.email}</td>
                 <td>{emp.role}</td>
                 <td>{emp.cost ?? '—'}</td>
+                <td>{emp.actual_cost ?? '—'}</td> {/* 👈 NEW DATA */}
                 <td>
                   <button className="remove-btn" onClick={() => removeAssignee(emp)}>
                     Remove

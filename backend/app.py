@@ -93,7 +93,7 @@ class ProjectAssignment(db.Model):
     end_date = db.Column(Date)    # And this line
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
+    actual_cost = db.Column(db.Float, nullable=True)  # 👈 Add this
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -257,20 +257,18 @@ def working_days(start_date, end_date):
 @jwt_required()
 def assign_task():
     from datetime import datetime, timedelta
+
     def working_days(start_date, end_date):
-        """
-        Counts working days (Mon-Fri) between two dates inclusive.
-        """
         day_count = 0
         current_date = start_date
         while current_date <= end_date:
-            if current_date.weekday() < 5:  # 0 = Monday, 6 = Sunday
+            if current_date.weekday() < 5:
                 day_count += 1
             current_date += timedelta(days=1)
         return day_count
+
     try:
         print("📥 Received request to /api/assign-task")
-
         data = request.get_json()
         print(f"🔍 Request JSON: {data}")
 
@@ -330,6 +328,23 @@ def assign_task():
             allocated_hours = working_days_count * HOURS_PER_DAY * (percentage / 100.0)
             cost = billing_rate * allocated_hours
 
+            # 🔁 Actual Cost Calculation (from employee_financials)
+            fy_start = start_date.year if start_date.month >= 4 else start_date.year - 1
+            financial_year = f"{fy_start}-{fy_start + 1}"
+            eid = user.eid
+
+            emp_fin = db.session.execute(
+                db.select(EmployeeFinancials).where(
+                    EmployeeFinancials.eid == eid,
+                    EmployeeFinancials.financial_year == financial_year
+                )
+            ).scalar_one_or_none()
+
+            if not emp_fin:
+                return jsonify({"error": f"No hourly cost found for {eid} in FY {financial_year}"}), 404
+
+            actual_cost = round(emp_fin.hourly_cost * allocated_hours, 2)
+
             allocation_data = {
                 'user_id': user_id,
                 'project_id': project_id,
@@ -338,7 +353,8 @@ def assign_task():
                 'allocated_hours': allocated_hours,
                 'cost': round(cost, 2),
                 'start_date': start_date,
-                'end_date': end_date
+                'end_date': end_date,
+                'actual_cost': actual_cost
             }
 
             total_percentage += percentage
@@ -366,12 +382,12 @@ def assign_task():
                 existing.cost = assignment['cost']
                 existing.start_date = assignment['start_date']
                 existing.end_date = assignment['end_date']
+                existing.actual_cost = assignment['actual_cost']
             else:
                 print(f"➕ Creating new assignment for {assignment['user_id']}")
                 new_assignment = ProjectAssignment(**assignment)
                 db.session.add(new_assignment)
 
-            # Link to project_assignees if not already linked
             assignee_exists = db.session.execute(
                 db.select(project_assignees).where(
                     project_assignees.c.project_id == project_id,
@@ -406,7 +422,6 @@ def assign_task():
         db.session.rollback()
         print(f"❗ Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
-
 
 @app.route('/api/projects/<int:project_id>/assignees/<eid>', methods=['DELETE'])
 @jwt_required()
@@ -572,7 +587,8 @@ def admin_signup():
 @jwt_required()
 def get_my_projects():
     user_id = get_jwt_identity()
-    
+
+    # Get projects where user is Project Manager
     stmt = select(project_assignees.c.project_id).where(
         and_(
             project_assignees.c.user_id == user_id,
@@ -582,21 +598,37 @@ def get_my_projects():
     results = db.session.execute(stmt).fetchall()
     project_ids = [row[0] for row in results]
 
-    projects = Project.query.filter(Project.id.in_(project_ids)).all()
+    # Get project details with total cost
+    project_data = (
+        db.session.query(
+            Project.id,
+            Project.name,
+            Project.departmentId,
+            Project.startDate,
+            Project.endDate,
+            Project.createdAt,
+            Project.updatedAt,
+            func.coalesce(func.sum(ProjectAssignment.cost), 0).label("total_cost")
+        )
+        .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+        .filter(Project.id.in_(project_ids))
+        .group_by(Project.id)
+        .all()
+    )
 
+    # Format and return
     return jsonify([
         {
             "id": p.id,
             "name": p.name,
-            "cost": p.budget,
+            "cost": float(p.total_cost),  # calculated cost
             "departmentId": p.departmentId,
             "startDate": p.startDate.strftime('%Y-%m-%d'),
             "endDate": p.endDate.strftime('%Y-%m-%d'),
             "createdAt": p.createdAt.isoformat() if p.createdAt else None,
             "updatedAt": p.updatedAt.isoformat() if p.updatedAt else None
-        } for p in projects
+        } for p in project_data
     ])
-
 
 @app.route('/api/pm-project-budgets', methods=['GET'])
 @jwt_required()
@@ -1226,8 +1258,13 @@ def get_project_total_cost(project_id):
     total_cost = db.session.query(db.func.sum(ProjectAssignment.cost))\
         .filter_by(project_id=project_id).scalar()
 
-    return jsonify({"totalCost": float(total_cost or 0)})
+    actual_cost = db.session.query(db.func.sum(ProjectAssignment.actual_cost))\
+        .filter_by(project_id=project_id).scalar()
 
+    return jsonify({
+        "totalCost": float(total_cost or 0),
+        "actualCost": float(actual_cost or 0)
+    })
 
 @app.route('/api/projects/upcoming-deadlines', methods=['GET'])
 @jwt_required()
@@ -1259,7 +1296,8 @@ def get_assignees(project_id):
         User.email,
         project_assignees.c.role,
         ProjectAssignment.allocated_hours,
-        ProjectAssignment.billing_rate
+        ProjectAssignment.billing_rate,
+        ProjectAssignment.actual_cost  # 👈 Include this
     ).join(
         project_assignees,
         and_(
@@ -1272,11 +1310,11 @@ def get_assignees(project_id):
             ProjectAssignment.user_id == User.id,
             ProjectAssignment.project_id == project_id
         ),
-        isouter=True  # Just in case not every assignee has an assignment row
+        isouter=True
     ).all()
 
     assignees = []
-    for eid, fname, lname, email, role, hours, rate in result:
+    for eid, fname, lname, email, role, hours, rate, actual_cost in result:
         cost = round((hours or 0) * (rate or 0), 2)
         assignees.append({
             'eid': eid,
@@ -1284,15 +1322,11 @@ def get_assignees(project_id):
             'lname': lname,
             'email': email,
             'role': role,
-            'cost': cost
+            'cost': cost,
+            'actual_cost': round(actual_cost, 2) if actual_cost is not None else None  # 👈 Added
         })
-    
+
     return jsonify(assignees)
-
-
-
-
-
 
 @app.route('/api/projects/<int:project_id>/assignees', methods=['POST'])
 @jwt_required()

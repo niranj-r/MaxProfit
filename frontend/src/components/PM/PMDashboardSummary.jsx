@@ -19,13 +19,13 @@ const ProjectDashboardSummary = () => {
     profit: 0,
   });
   const [userName, setUserName] = useState('');
-  
-    useEffect(() => {
-            const name = localStorage.getItem("userName");
-            if (name) {
-                setUserName(name);
-            }
-        }, []);
+
+  useEffect(() => {
+    const name = localStorage.getItem("userName");
+    if (name) {
+      setUserName(name);
+    }
+  }, []);
 
   useEffect(() => {
     axios
@@ -34,7 +34,7 @@ const ProjectDashboardSummary = () => {
         setProjects(res.data);
         if (res.data.length > 0) {
           const firstProject = res.data[0];
-          setSelectedProject(firstProject.id);
+          setSelectedProject("all");
           setSummary({
             cost: firstProject.cost || 0,
             revenue: 0,
@@ -45,28 +45,42 @@ const ProjectDashboardSummary = () => {
       .catch((err) => console.error("Error fetching projects:", err));
   }, []);
 
-  useEffect(() => {
-    if (!selectedProject) return;
+useEffect(() => {
+  if (!selectedProject || projects.length === 0) return;
+
+  if (selectedProject === "all") {
+    const totalCost = projects.reduce((acc, proj) => acc + (proj.cost || 0), 0);
+    const totalRevenue = projects.reduce((acc, proj) => acc + (proj.revenue || 0), 0); // Add `revenue` to backend if not yet
+    const totalProfit = totalRevenue - totalCost;
+
+    setSummary({
+      cost: totalCost,
+      revenue: totalRevenue,
+      profit: totalProfit,
+    });
+  } else {
     const project = projects.find((p) => p.id === parseInt(selectedProject));
     if (project) {
       setSummary({
         cost: project.cost || 0,
-        revenue: 0,
-        profit: 0,
+        revenue: project.revenue || 0,
+        profit: (project.revenue || 0) - (project.cost || 0),
       });
     }
-  }, [selectedProject, projects]);
+  }
+}, [selectedProject, projects]);
+
 
   const cards = [
     {
       title: "Revenue ($)",
-      value: `$${(summary.revenue ?? 0).toLocaleString()}`,
+      value: `$${(summary.cost ?? 0).toLocaleString()}`,
       icon: <FaChartLine className="icon" />,
       color: "#4e73df",
     },
     {
-      title: "Budget ($)",
-      value: `$${(summary.cost ?? 0).toLocaleString()}`,
+      title: "Cost ($)",
+      value: `$${(summary.revenue ?? 0).toLocaleString()}`,
       icon: <FaCoins className="icon" />,
       color: "#e74a3b",
     },
@@ -81,8 +95,8 @@ const ProjectDashboardSummary = () => {
   return (
     <div className="dashboard-summary">
       <h2 className="org-heading">
-                            {userName ? `Welcome, ${userName}` : "Welcome"}
-                        </h2>
+        {userName ? `Welcome, ${userName}` : "Welcome"}
+      </h2>
       <div className="filters">
         <label>
           Project:
@@ -90,6 +104,7 @@ const ProjectDashboardSummary = () => {
             value={selectedProject || ""}
             onChange={(e) => setSelectedProject(e.target.value)}
           >
+            <option value="all">All Projects</option>
             {projects.map((proj) => (
               <option key={proj.id} value={proj.id}>
                 {proj.name}
