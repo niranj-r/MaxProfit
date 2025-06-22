@@ -321,7 +321,7 @@ const DMProjectDirectory = () => {
                   <>
                     <input
                       name={field}
-                      type="date"
+                      type={field.includes('Date') ? 'date' : 'text'}
                       value={form[field]}
                       onChange={handleChange}
                       placeholder=" "

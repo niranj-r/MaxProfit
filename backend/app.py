@@ -910,6 +910,28 @@ def create_organisation():
         "organisation": {"oid": org.oid, "name": org.name}
     }), 201
 
+@app.route('/api/organisations/<org_id>', methods=['PUT'])
+@jwt_required()
+def update_organisation(org_id):
+    data = request.get_json()
+    new_name = data.get('name', '').strip()
+
+    if not new_name:
+        return jsonify({'error': 'Organisation name is required.'}), 400
+
+    # Fetch using oid, not primary key id
+    organisation = Organisation.query.filter_by(oid=org_id).first()
+    if not organisation:
+        return jsonify({'error': 'Organisation not found.'}), 404
+
+    organisation.name = new_name
+    db.session.commit()
+
+    return jsonify({
+        'oid': organisation.oid,
+        'name': organisation.name
+    }), 200
+
 @app.route('/api/organisations', methods=['GET'])
 @jwt_required()
 def get_organisations():
