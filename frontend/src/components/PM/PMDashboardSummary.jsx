@@ -14,8 +14,8 @@ const ProjectDashboardSummary = () => {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [summary, setSummary] = useState({
-    revenue: 0,
     cost: 0,
+    actual_cost: 0,
     profit: 0,
   });
   const [userName, setUserName] = useState('');
@@ -37,7 +37,6 @@ const ProjectDashboardSummary = () => {
           setSelectedProject("all");
           setSummary({
             cost: firstProject.cost || 0,
-            revenue: 0,
             profit: 0,
           });
         }
@@ -45,30 +44,30 @@ const ProjectDashboardSummary = () => {
       .catch((err) => console.error("Error fetching projects:", err));
   }, []);
 
-useEffect(() => {
-  if (!selectedProject || projects.length === 0) return;
+  useEffect(() => {
+    if (!selectedProject || projects.length === 0) return;
 
-  if (selectedProject === "all") {
-    const totalCost = projects.reduce((acc, proj) => acc + (proj.cost || 0), 0);
-    const totalRevenue = projects.reduce((acc, proj) => acc + (proj.revenue || 0), 0); // Add `revenue` to backend if not yet
-    const totalProfit = totalRevenue - totalCost;
+    if (selectedProject === "all") {
+      const totalCost = projects.reduce((acc, proj) => acc + (proj.cost || 0), 0);
+      const totalActualCost = projects.reduce((acc, proj) => acc + (proj.actual_cost || 0), 0);
+      const totalProfit = totalCost - totalActualCost;
 
-    setSummary({
-      cost: totalCost,
-      revenue: totalRevenue,
-      profit: totalProfit,
-    });
-  } else {
-    const project = projects.find((p) => p.id === parseInt(selectedProject));
-    if (project) {
       setSummary({
-        cost: project.cost || 0,
-        revenue: project.revenue || 0,
-        profit: (project.revenue || 0) - (project.cost || 0),
+        cost: totalCost,
+        actual_cost: totalActualCost,
+        profit: totalProfit,
       });
+    } else {
+      const project = projects.find((p) => p.id === parseInt(selectedProject));
+      if (project) {
+        const cost = project.cost || 0;
+        const actualCost = project.actual_cost || 0;
+        const profit = cost - actualCost;
+        setSummary({ cost, actual_cost: actualCost, profit });
+      }
     }
-  }
-}, [selectedProject, projects]);
+
+  }, [selectedProject, projects]);
 
 
   const cards = [
@@ -80,7 +79,7 @@ useEffect(() => {
     },
     {
       title: "Cost ($)",
-      value: `$${(summary.revenue ?? 0).toLocaleString()}`,
+      value: `$${(summary.actual_cost ?? 0).toLocaleString()}`,
       icon: <FaCoins className="icon" />,
       color: "#e74a3b",
     },

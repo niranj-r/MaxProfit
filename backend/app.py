@@ -608,7 +608,8 @@ def get_my_projects():
             Project.endDate,
             Project.createdAt,
             Project.updatedAt,
-            func.coalesce(func.sum(ProjectAssignment.cost), 0).label("total_cost")
+            func.coalesce(func.sum(ProjectAssignment.cost), 0).label("total_cost"),
+            func.coalesce(func.sum(ProjectAssignment.actual_cost), 0).label("actual_cost")
         )
         .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
         .filter(Project.id.in_(project_ids))
@@ -621,7 +622,8 @@ def get_my_projects():
         {
             "id": p.id,
             "name": p.name,
-            "cost": float(p.total_cost),  # calculated cost
+            "cost": float(p.total_cost), 
+            "actual_cost": float(p.actual_cost), # calculated cost
             "departmentId": p.departmentId,
             "startDate": p.startDate.strftime('%Y-%m-%d'),
             "endDate": p.endDate.strftime('%Y-%m-%d'),

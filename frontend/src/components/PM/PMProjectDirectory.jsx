@@ -50,13 +50,17 @@ const PMProjectDirectory = () => {
         const res = await axios.get(`${API}/api/projects/${proj.id}/total-cost`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        costs[proj.id] = res.data.totalCost;
+        costs[proj.id] = {
+          totalCost: res.data.totalCost,
+          actualCost: res.data.actualCost
+        };
       }
       setProjectCosts(costs);
     } catch (err) {
       console.error('Failed to fetch project costs', err);
     }
   };
+
 
   const fetchProjects = async () => {
     try {
@@ -280,8 +284,9 @@ const PMProjectDirectory = () => {
             <th>Department ID</th>
             <th>Start Date</th>
             <th>End Date</th>
-            <th>Budget ($)</th>
-            <th>Total Cost ($)</th>
+            <th>Total Revenue ($)</th>
+            <th>Actual Cost ($)</th>
+            <th>Margin ($)</th>
             <th>Actions</th>
             <th>Assign</th>
           </tr>
@@ -291,20 +296,24 @@ const PMProjectDirectory = () => {
             <tr key={proj.id}>
               <td>{proj.name}</td>
               <td>{proj.departmentId}</td>
-              <td>{proj.startDate ? proj.startDate.substring(0, 10) : '—'}</td>
-              <td>{proj.endDate ? proj.endDate.substring(0, 10) : '—'}</td>
-              <td>{proj.budget}</td>
-              <td>{projectCosts[proj.id] || 0}</td>
+              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+              <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
+              <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
+              <td>
+                {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
+                  ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
+                  : '—'}
+              </td>
               <td>
                 <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
+                <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
               </td>
-              <td><button
-                className="assignees-btn"
-                onClick={() => handleAssigneesClick(proj)}
-                title="Manage Assignees"
-              >
-                Assign
-              </button></td>
+              <td>
+                <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
+                  Assign
+                </button>
+              </td>
             </tr>
           ))}
           {filteredProjects.length === 0 && (
