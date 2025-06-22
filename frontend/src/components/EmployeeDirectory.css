@@ -397,3 +397,8 @@
   margin-bottom: 8px;
 }
 
+.align-numbers {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-right: 8px;
+}

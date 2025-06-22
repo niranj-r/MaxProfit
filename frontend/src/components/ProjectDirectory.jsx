@@ -1,20 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './EmployeeDirectory.css';
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaDownload } from 'react-icons/fa';
 import axios from 'axios';
 import ModalWrapper from './ModalWrapper';
 import { useNavigate } from 'react-router-dom';
-import { FaDownload } from 'react-icons/fa';
 import ProjectAssignee from './ProjectAssignees';
 import Papa from 'papaparse';
 
 const API = process.env.REACT_APP_API_BASE_URL;
-const authHeader = {
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
-};
-
 
 const ProjectDirectory = () => {
   const [projects, setProjects] = useState([]);
@@ -52,22 +45,23 @@ const ProjectDirectory = () => {
     const fetchData = async () => {
       try {
         if (groupedView) {
-          const res = await axios.get(`${API}/api/projects-by-pm`, authHeader);
-          console.log("🔍 Grouped View Data:", res.data); // ✅ LOG RESPONSE
+          const res = await axios.get(`${API}/api/projects-by-pm`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
           setGroupedData(res.data);
         } else {
-          const res = await axios.get(`${API}/api/sum-projects`, authHeader);
-          console.log("📊 Flat View Data:", res.data); // ✅ LOG RESPONSE
+          const res = await axios.get(`${API}/api/sum-projects`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
           setProjects(res.data);
         }
       } catch (err) {
-        console.error("❌ Error fetching projects:", err);
+        console.error('Error fetching projects:', err);
       }
     };
 
     fetchData();
   }, [groupedView]);
-
 
   const fetchProjectCosts = async () => {
     const costs = {};
@@ -139,7 +133,6 @@ const ProjectDirectory = () => {
   };
 
   const validateField = (name, value, mode = 'add') => {
-
     let errorMsg = '';
     const trimmedValue = value.trim();
 
@@ -351,7 +344,19 @@ const ProjectDirectory = () => {
                       <td>{p.endDate?.substring(0, 10)}</td>
                       <td>{p.cost?.toFixed(2) || '—'}</td>
                       <td>{p.actual_cost?.toFixed(2) || '—'}</td>
-                      <td>{(p.cost - p.actual_cost)?.toFixed(2) || '—'}</td>
+                      <td
+                        className="align-numbers"
+                        style={{
+                          color:
+                            p.cost - p.actual_cost > 0
+                              ? '#1cc88a'
+                              : p.cost - p.actual_cost < 0
+                              ? '#e74a3b'
+                              : '#000000'
+                        }}
+                      >
+                        {(p.cost - p.actual_cost)?.toFixed(2) || '—'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -379,30 +384,44 @@ const ProjectDirectory = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredProjects.map(proj => (
-              <tr key={proj.id}>
-                <td>{proj.name}</td>
-                <td>{proj.departmentId}</td>
-                <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-                <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-                <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
-                <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
-                <td>
-                  {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
-                    ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
-                    : '—'}
-                </td>
-                <td>
-                  <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
-                  <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
-                </td>
-                <td>
-                  <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                    Assign
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {filteredProjects.map(proj => {
+              const totalCost = projectCosts[proj.id]?.totalCost ?? null;
+              const actualCost = projectCosts[proj.id]?.actualCost ?? null;
+              const margin = totalCost !== null && actualCost !== null ? totalCost - actualCost : null;
+
+              return (
+                <tr key={proj.id}>
+                  <td>{proj.name}</td>
+                  <td>{proj.departmentId}</td>
+                  <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                  <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+                  <td className="align-numbers">{totalCost?.toFixed(2) ?? '—'}</td>
+                  <td className="align-numbers">{actualCost?.toFixed(2) ?? '—'}</td>
+                  <td
+                    className="align-numbers"
+                    style={{
+                      color:
+                        margin > 0
+                          ? '#1cc88a' // green
+                          : margin < 0
+                          ? '#e74a3b' // red
+                          : '#000000'  // black for zero or null
+                    }}
+                  >
+                    {margin !== null ? margin.toFixed(2) : '—'}
+                  </td>
+                  <td>
+                    <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
+                    <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
+                  </td>
+                  <td>
+                    <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
+                      Assign
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
             {filteredProjects.length === 0 && (
               <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
             )}
@@ -410,10 +429,9 @@ const ProjectDirectory = () => {
         </table>
       )}
 
-
       {showModal && (
         <ModalWrapper
-          onClose={() => setShowModal(false)}
+          onClose={closeModal}
           title={formMode === 'add' ? 'Add Project' : 'Edit Project'}
         >
           <form onSubmit={handleSubmit} className="modal-form">

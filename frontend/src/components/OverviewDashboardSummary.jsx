@@ -18,12 +18,11 @@ const OverviewDashboardSummary = () => {
     actual_cost: 0,
     profit: 0,
   });
-  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     const name = localStorage.getItem("userName");
     if (name) {
-      setUserName(name);
+      // Optional: set user name
     }
   }, []);
 
@@ -33,8 +32,8 @@ const OverviewDashboardSummary = () => {
       .then((res) => {
         setProjects(res.data);
         if (res.data.length > 0) {
-          const firstProject = res.data[0];
           setSelectedProject("all");
+          const firstProject = res.data[0];
           setSummary({
             cost: firstProject.cost || 0,
             profit: 0,
@@ -66,35 +65,42 @@ const OverviewDashboardSummary = () => {
         setSummary({ cost, actual_cost: actualCost, profit });
       }
     }
-
   }, [selectedProject, projects]);
 
+  const getProfitColor = () => {
+    if (summary.profit > 0) return "#1cc88a";
+    if (summary.profit < 0) return "#e74a3b";
+    return "#000000";
+  };
 
   const cards = [
     {
       title: "Revenue ($)",
-      value: `$${(summary.cost ?? 0).toLocaleString()}`,
+      value: `${(summary.cost ?? 0).toLocaleString()}`,
       icon: <FaChartLine className="icon" />,
       color: "#4e73df",
+      textColor: "#000000"
     },
     {
       title: "Cost ($)",
-      value: `$${(summary.actual_cost ?? 0).toLocaleString()}`,
+      value: `${(summary.actual_cost ?? 0).toLocaleString()}`,
       icon: <FaCoins className="icon" />,
       color: "#e74a3b",
+      textColor: "#000000"
     },
     {
       title: "Margin ($)",
-      value: `$${(summary.profit ?? 0).toLocaleString()}`,
+      value: `${(summary.profit ?? 0).toLocaleString()}`,
       icon: <FaHandHoldingUsd className="icon" />,
-      color: "#1cc88a",
+      color: "#36b9cc",  // You can set any standard card color
+      textColor: getProfitColor()
     },
   ];
 
   return (
-    <div className="dashboard-summarys">
+    <div className="dashboard-summary">
       <div className="filters">
-        <label className="labels">
+        <label>
           Project:
           <select
             value={selectedProject || ""}
@@ -118,15 +124,12 @@ const OverviewDashboardSummary = () => {
             style={{ borderLeftColor: card.color }}
           >
             <div className="card-body">
-              <div
-                className="card-icon1"
-                style={{ backgroundColor: card.color }}
-              >
+              <div className="card-icon1" style={{ backgroundColor: card.color }}>
                 {card.icon}
               </div>
               <div className="card-text">
                 <h4>{card.title}</h4>
-                <p>{card.value}</p>
+                <p style={{ color: card.textColor }}>{card.value}</p>
               </div>
             </div>
           </div>
