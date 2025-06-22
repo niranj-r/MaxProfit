@@ -14,6 +14,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 from flask_jwt_extended import get_jwt_identity
 from sqlalchemy import func
+from models import Project, ProjectAssignment
+
 
 
 # ------------------ CONFIGURATION ------------------
@@ -1584,6 +1586,111 @@ def department_project_summary():
         "estimatedProfit": estimated_profit,
         "projects": project_list
     }), 200
+
+@app.route('/api/financial-year-summary')
+@jwt_required()
+def financial_year_summary():
+    try:
+        year = request.args.get('year')
+        if not year:
+            return jsonify({"error": "Missing year"}), 400
+
+        start_yr, end_yr = map(int, year.split("-"))
+        start_date = datetime(start_yr, 4, 1)
+        end_date = datetime(end_yr, 3, 31, 23, 59, 59)
+
+        # Get all relevant projects in the year
+        projects = Project.query.filter(
+            Project.startDate <= end_date,
+            Project.endDate >= start_date
+        ).all()
+
+        project_ids = [p.id for p in projects]
+
+        # ✅ Calculate Total Revenue from ProjectAssignments
+        revenue = db.session.query(func.sum(ProjectAssignment.billing_rate * ProjectAssignment.allocated_hours))\
+            .filter(ProjectAssignment.project_id.in_(project_ids))\
+            .scalar() or 0
+
+        # ✅ Calculate Total Cost from Employee Financials
+        cost = db.session.query(func.sum(EmployeeFinancials.salary + EmployeeFinancials.infrastructure))\
+            .filter(EmployeeFinancials.financial_year == year)\
+            .scalar() or 0
+
+        profit = revenue - cost
+
+        chart_data = [{"label": year, "profit": round(profit)}]
+
+        return jsonify({
+            "stats": {
+                "revenue": round(revenue),
+                "cost": round(cost),
+                "profit": round(profit),
+                "projects": len(project_ids)
+            },
+            "chartData": chart_data
+        }), 200
+
+    except Exception as e:
+        import traceback
+        print("ERROR IN financial_year_summary():\n", traceback.format_exc())
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+
+@app.route('/api/financial-year-projects')
+@jwt_required()
+def financial_year_projects():
+    from datetime import datetime
+    from sqlalchemy import func
+
+    year = request.args.get('year')
+    if not year:
+        return jsonify({"error": "Year required"}), 400
+
+    start_yr, end_yr = map(int, year.split("-"))
+    start_date = datetime(start_yr, 4, 1)
+    end_date = datetime(end_yr, 3, 31)
+
+    projects = Project.query.filter(
+        Project.startDate <= end_date,
+        Project.endDate >= start_date
+    ).all()
+
+    data = []
+    for p in projects:
+        # Revenue: from ProjectAssignment.billing_rate × allocated_hours
+        revenue = db.session.query(func.sum(
+            ProjectAssignment.billing_rate * ProjectAssignment.allocated_hours
+        )).filter(ProjectAssignment.project_id == p.id).scalar() or 0
+
+        data.append({
+            "id": p.id,
+            "name": p.name,
+            "startDate": p.startDate.strftime("%Y-%m-%d"),
+            "endDate": p.endDate.strftime("%Y-%m-%d"),
+            "revenue": round(revenue)
+        })
+
+    return jsonify(data), 200
+
+@app.route('/api/project-assignments/<int:project_id>')
+@jwt_required()
+def get_project_assignments(project_id):
+    assignments = ProjectAssignment.query.filter_by(project_id=project_id).all()
+    result = []
+
+    for a in assignments:
+        user = User.query.get(a.user_id)
+        result.append({
+            "name": user.fname,
+            "billing_rate": a.billing_rate,
+            "allocated_percentage": a.allocated_percentage,
+            "allocated_hours": a.allocated_hours,
+            "start_date": a.start_date.strftime("%Y-%m-%d"),
+            "end_date": a.end_date.strftime("%Y-%m-%d")
+        })
+
+    return jsonify(result), 200
+
 
 
 # ------------------ MAIN ------------------

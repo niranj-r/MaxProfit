@@ -38,21 +38,10 @@ import DMProjectDirectory from './components/DM/DMProjectDirectory';
 import DMProjectDashboard from './components/DM/DMProjectDashboard';
 import DMDepartmentDirectory from './components/DM/DMDeptDirectory';
 import DMDeptDashboard from './components/DM/DMDeptDashboard';
-import FAAdminDashboard from './components/FA/FAAdminDashboard';
-import FABudgetChart from './components/FA/FABudgetChart';
-import FAAdminDashboardSummary from './components/FA/FADashboardSummary';
-import FADeptDashboard from './components/FA/FADeptDashboard'; 
-import FADeptDirectory from './components/FA/FADeptDirectory'; 
-import FAEmployeeDashboard from './components/FA/FAEmployeeDashBoard';
-import FAEmployeeDirectory from './components/FA/FAEmployeeDirectory';
-import FANavbar from './components/FA/FANavbar';
-import FAOrganisationDashboard from './components/FA/FAOrganisationDashboard'; 
-import FAOrganisationDirectory from './components/FA/FAOrganisationDirectory'; 
-import FAProjectDashboard from './components/FA/FAProjectDashboard'; 
-import FAProjectDirectory from './components/FA/FAProjectDirectory';
-import FAFinancialYearManager from './components/FA/FAFinancialYearManager';
-import FAFinancialYearPage from './components/FA/FAFinancialYearPage';
+import FinancialYearView from './components/FinancialYearView';
 
+
+// Assuming you have a DM dashboard component
 
 // Wrapper to pass year param as prop
 const FinancialYearPageWrapper = () => {
@@ -60,10 +49,7 @@ const FinancialYearPageWrapper = () => {
   return <FinancialYearPage financialYear={year} goBack={() => window.history.back()} />;
 };
 
-const FAFinancialYearPageWrapper = () => {
-  const { year } = useParams();
-  return <FAFinancialYearPage financialYear={year} goBack={() => window.history.back()} />;
-};
+
 
 function App() {
   return (
@@ -106,20 +92,9 @@ function App() {
       <Route path="/dm-project-dashboard" element={<DMProjectDashboard />} />
       <Route path="/dm-dept-directory" element={<DMDepartmentDirectory />} />
       <Route path="/dm-dept-dashboard" element={<DMDeptDashboard />} />
-      <Route path="/fa-admin-dashboard" element={<FAAdminDashboard />} />
-      <Route path="/fa-budget-chart" element={<FABudgetChart />} />
-      <Route path="/fa-admin-dashboard-summary" element={<FAAdminDashboardSummary />} />
-      <Route path="/fa-dept-dashboard" element={<FADeptDashboard />} />
-      <Route path="/fa-dept-directory" element={<FADeptDirectory />} />
-      <Route path="/fa-employee-dashboard" element={<FAEmployeeDashboard />} />
-      <Route path="/fa-employee-directory" element={<FAEmployeeDirectory />} />
-      <Route path="/fa-navbar" element={<FANavbar />} />
-      <Route path="/fa-organisation-dashboard" element={<FAOrganisationDashboard />} />
-      <Route path="/fa-organisation-directory" element={<FAOrganisationDirectory />} />
-      <Route path="/fa-project-dashboard" element={<FAProjectDashboard />} />
-      <Route path="/fa-project-directory" element={<FAProjectDirectory />} />
-      <Route path="/fa-financial-year-manager" element={<FAFinancialYearManager />} />
-      <Route path="/fa-employee-financials/:year" element={<FAFinancialYearPageWrapper />} />
+      <Route path="/financial-years" element={<FinancialYearPage />} />
+      <Route path="/financial-year/:yearLabel" element={<FinancialYearView />} />
+      {/* Add more routes as needed */}
     </Routes>
   );
 }

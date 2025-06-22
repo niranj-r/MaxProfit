@@ -1,9 +1,12 @@
+// ✅ Cleaned and fully working version of FinancialYearPage.jsx
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 import Navbar from "./Navbar";
 import Papa from "papaparse";
 import "./FinancialyearPage.css";
+import { useNavigate } from "react-router-dom";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -13,11 +16,11 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
   const [editValues, setEditValues] = useState({ salary: "", infrastructure: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
   const authHeader = { headers: { Authorization: `Bearer ${token}` } };
 
-  // Get current financial year string
   const getCurrentFinancialYear = () => {
     const today = new Date();
     const year = today.getMonth() < 3 ? today.getFullYear() - 1 : today.getFullYear();
@@ -80,11 +83,11 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
         prev.map((emp) =>
           emp.eid === eid
             ? {
-              ...emp,
-              salary: payload.salary,
-              infrastructure: payload.infrastructure,
-              cost: (payload.salary || 0) + (payload.infrastructure || 0),
-            }
+                ...emp,
+                salary: payload.salary,
+                infrastructure: payload.infrastructure,
+                cost: (payload.salary || 0) + (payload.infrastructure || 0),
+              }
             : emp
         )
       );
@@ -102,12 +105,12 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
       return;
     }
 
-    const dataForCSV = employees.map(emp => ({
+    const dataForCSV = employees.map((emp) => ({
       "Emp ID": emp.eid,
       "Employee Name": `${emp.fname} ${emp.lname}`,
-      "Salary": emp.salary ?? 0,
-      "Infrastructure": emp.infrastructure ?? 0,
-      "Total Cost": (emp.salary ?? 0) + (emp.infrastructure ?? 0)
+      Salary: emp.salary ?? 0,
+      Infrastructure: emp.infrastructure ?? 0,
+      "Total Cost": (emp.salary ?? 0) + (emp.infrastructure ?? 0),
     }));
 
     const csv = Papa.unparse(dataForCSV);
@@ -122,13 +125,14 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
   };
 
   if (loading) return <div className="loading">Loading employee data...</div>;
-  if (error) return (
-    <div className="error-container">
-      <Navbar />
-      <button onClick={goBack} className="back-button">← Back</button>
-      <p className="error-text">{error}</p>
-    </div>
-  );
+  if (error)
+    return (
+      <div className="error-container">
+        <Navbar />
+        <button onClick={goBack} className="back-button">← Back</button>
+        <p className="error-text">{error}</p>
+      </div>
+    );
 
   return (
     <div className="financial-year-page">
@@ -138,7 +142,15 @@ const FinancialYearPage = ({ financialYear, goBack }) => {
       <div className="financial-page-wrapper">
         <main className="financial-content">
           <button onClick={goBack} className="back-button">← Back to Financial Years</button>
+
           <h2 className="fy-heading">Financial Year: {financialYear}</h2>
+          <button
+            className="download-btn"
+            onClick={() => navigate(`/financial-year/${financialYear}`)}
+            style={{ marginLeft: "10px" }}
+          >
+            📊 View Dashboard
+          </button>
 
           <button onClick={downloadCSV} className="download-btn">⬇ Download CSV</button>
 
