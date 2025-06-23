@@ -411,3 +411,49 @@
   font-variant-numeric: tabular-nums;
   padding-right: 8px;
 }
+
+.skeleton-row td {
+  padding: 12px;
+}
+
+.skeleton-box {
+  height: 16px;
+  background: linear-gradient(90deg, #eee, #f5f5f5, #eee);
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+  width: 100%;
+}
+
+.skeleton-box-sm {
+  height: 14px;
+  width: 60px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite ease-in-out;
+  display: inline-block;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+
+@keyframes pulse {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton-box {
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+}
