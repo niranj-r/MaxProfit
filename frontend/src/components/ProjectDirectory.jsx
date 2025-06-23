@@ -308,7 +308,7 @@ const ProjectDirectory = () => {
           />
           <button className="add-btn" onClick={openAddModal}><FaPlus /> Add Project</button>
           <button onClick={() => setGroupedView(prev => !prev)} className="add-btn">
-            {groupedView ? "🔁View as list" : "Group by Manager"}
+            {groupedView ? "View as list" : "Group by Manager"}
           </button>
           <button className="add-btn" onClick={handleDownloadCSV}>
             <FaDownload /> Download
@@ -349,7 +349,7 @@ const ProjectDirectory = () => {
                         style={{
                           color:
                             p.cost - p.actual_cost > 0
-                              ? '#1cc88a'
+                              ? '#006400'
                               : p.cost - p.actual_cost < 0
                               ? '#e74a3b'
                               : '#000000'
@@ -402,7 +402,7 @@ const ProjectDirectory = () => {
                     style={{
                       color:
                         margin > 0
-                          ? '#1cc88a' // green
+                          ? '#008000' // green
                           : margin < 0
                           ? '#e74a3b' // red
                           : '#000000'  // black for zero or null

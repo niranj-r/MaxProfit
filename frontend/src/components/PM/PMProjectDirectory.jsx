@@ -13,7 +13,7 @@ const PMProjectDirectory = () => {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [formMode, setFormMode] = useState('add'); // 'add' or 'edit'
+  const [formMode, setFormMode] = useState('add');
   const [form, setForm] = useState({
     name: '',
     departmentId: '',
@@ -27,8 +27,6 @@ const PMProjectDirectory = () => {
   const [showAssigneesModal, setShowAssigneesModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectCosts, setProjectCosts] = useState({});
-
-
 
   const navigate = useNavigate();
 
@@ -125,13 +123,11 @@ const PMProjectDirectory = () => {
         else if (!/^[A-Za-z\s]+$/.test(trimmed))
           errorMsg = 'Only letters and spaces allowed.';
         break;
-
       case 'departmentId':
         if (!trimmed) errorMsg = 'Department ID is required.';
         else if (!departments.some(dep => dep.did === trimmed))
           errorMsg = 'Invalid department ID.';
         break;
-
       case 'startDate':
         if (mode === 'edit') break;
         if (!trimmed) errorMsg = 'Start date is required.';
@@ -142,7 +138,6 @@ const PMProjectDirectory = () => {
           if (start < today) errorMsg = 'Start date cannot be in the past.';
         }
         break;
-
       case 'endDate':
         if (!trimmed) errorMsg = 'End date is required.';
         else {
@@ -151,14 +146,12 @@ const PMProjectDirectory = () => {
           if (start >= end) errorMsg = 'End date must be after start date.';
         }
         break;
-
       case 'budget':
         const num = parseFloat(trimmed);
         if (!trimmed) errorMsg = 'Budget is required.';
         else if (isNaN(num) || num <= 0) errorMsg = 'Budget must be a positive number.';
         else if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) errorMsg = 'Up to 2 decimal places only.';
         break;
-
       default:
         break;
     }
@@ -214,13 +207,10 @@ const PMProjectDirectory = () => {
     }
   };
 
-
   const handleAssigneesClick = (project) => {
     setSelectedProject(project);
     setShowAssigneesModal(true);
   };
-
-
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this project?')) return;
@@ -228,7 +218,6 @@ const PMProjectDirectory = () => {
       await axios.delete(`${API}/api/projects/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-
       setProjects(prev => prev.filter(p => p._id !== id));
       alert('Project deleted');
       fetchProjects();
@@ -238,29 +227,9 @@ const PMProjectDirectory = () => {
     }
   };
 
-  const convertToIST = (isoString) => {
-    if (!isoString) return '-';
-    const utcDate = new Date(isoString);
-
-    const istOffset = 5.5 * 60;
-    const istTime = new Date(utcDate.getTime() + istOffset * 60 * 1000);
-
-    return istTime.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour12: true,
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-
   const filteredProjects = projects.filter(p =>
     (p.name || '').toLowerCase().includes(search.toLowerCase())
   );
-
 
   return (
     <div className="employee-table-container">
@@ -292,33 +261,38 @@ const PMProjectDirectory = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredProjects.map(proj => (
-            <tr key={proj.id}>
-              <td>{proj.name}</td>
-              <td>{proj.departmentId}</td>
-              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-              <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
-              <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
-              <td>
-                {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
-                  ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
-                  : '—'}
-              </td>
-              <td>
-                <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
-                <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
-              </td>
-              <td>
-                <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                  Assign
-                </button>
-              </td>
-            </tr>
-          ))}
+          {filteredProjects.map(proj => {
+            const cost = projectCosts[proj.id]?.totalCost ?? null;
+            const actual = projectCosts[proj.id]?.actualCost ?? null;
+            const margin = (cost != null && actual != null) ? (cost - actual).toFixed(2) : '—';
+            const marginColor = (cost != null && actual != null)
+              ? ((cost - actual) >= 0 ? '#008000' : '#e74a3b')
+              : '#000000';
+
+            return (
+              <tr key={proj.id}>
+                <td>{proj.name}</td>
+                <td>{proj.departmentId}</td>
+                <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+                <td>{cost?.toFixed(2) ?? '—'}</td>
+                <td>{actual?.toFixed(2) ?? '—'}</td>
+                <td style={{ color: marginColor }}>{margin}</td>
+                <td>
+                  <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
+                  <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
+                </td>
+                <td>
+                  <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
+                    Assign
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
           {filteredProjects.length === 0 && (
             <tr>
-              <td colSpan="6" className="no-data">No matching projects found.</td>
+              <td colSpan="9" className="no-data">No matching projects found.</td>
             </tr>
           )}
         </tbody>
@@ -331,126 +305,65 @@ const PMProjectDirectory = () => {
         >
           <form onSubmit={handleSubmit} className="modal-form">
             {generalError && (
-              <div
-                className="form-error"
-                style={{
-                  backgroundColor: '#fee',
-                  color: '#c33',
-                  padding: '10px',
-                  borderRadius: '4px',
-                  marginBottom: '15px',
-                  border: '1px solid #fcc',
-                }}
-              >
+              <div className="form-error" style={{
+                backgroundColor: '#fee',
+                color: '#c33',
+                padding: '10px',
+                borderRadius: '4px',
+                marginBottom: '15px',
+                border: '1px solid #fcc',
+              }}>
                 {generalError}
               </div>
             )}
 
             <div className="floating-label">
-              <input
-                name="name"
-                type="text"
-                value={form.name}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.name ? { borderColor: '#c33' } : {}}
-              />
+              <input name="name" type="text" value={form.name} onChange={handleChange} placeholder=" " required style={formErrors.name ? { borderColor: '#c33' } : {}} />
               <label>Project Name</label>
-              {formErrors.name && (
-                <div className="field-error">{formErrors.name}</div>
-              )}
+              {formErrors.name && <div className="field-error">{formErrors.name}</div>}
             </div>
 
             <div className="floating-label">
-              <input
-                name="departmentId"
-                type="text"
-                value={form.departmentId}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.departmentId ? { borderColor: '#c33' } : {}}
-              />
+              <input name="departmentId" type="text" value={form.departmentId} onChange={handleChange} placeholder=" " required style={formErrors.departmentId ? { borderColor: '#c33' } : {}} />
               <label>Department ID</label>
-              {formErrors.departmentId && (
-                <div className="field-error">{formErrors.departmentId}</div>
-              )}
+              {formErrors.departmentId && <div className="field-error">{formErrors.departmentId}</div>}
             </div>
 
             <div className="floating-label">
-              <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.startDate ? { borderColor: '#c33' } : {}}
-              />
+              <input type="date" name="startDate" value={form.startDate} onChange={handleChange} placeholder=" " required style={formErrors.startDate ? { borderColor: '#c33' } : {}} />
               <label>Start Date</label>
-              {formErrors.startDate && (
-                <div className="field-error">{formErrors.startDate}</div>
-              )}
+              {formErrors.startDate && <div className="field-error">{formErrors.startDate}</div>}
             </div>
 
             <div className="floating-label">
-              <input
-                type="date"
-                name="endDate"
-                value={form.endDate}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.endDate ? { borderColor: '#c33' } : {}}
-              />
+              <input type="date" name="endDate" value={form.endDate} onChange={handleChange} placeholder=" " required style={formErrors.endDate ? { borderColor: '#c33' } : {}} />
               <label>End Date</label>
-              {formErrors.endDate && (
-                <div className="field-error">{formErrors.endDate}</div>
-              )}
+              {formErrors.endDate && <div className="field-error">{formErrors.endDate}</div>}
             </div>
 
             <div className="floating-label">
-              <input
-                name="budget"
-                type="number"
-                value={form.budget}
-                onChange={handleChange}
-                placeholder=" "
-                required
-                style={formErrors.budget ? { borderColor: '#c33' } : {}}
-              />
+              <input name="budget" type="number" value={form.budget} onChange={handleChange} placeholder=" " required style={formErrors.budget ? { borderColor: '#c33' } : {}} />
               <label>Budget</label>
-              {formErrors.budget && (
-                <div className="field-error">{formErrors.budget}</div>
-              )}
+              {formErrors.budget && <div className="field-error">{formErrors.budget}</div>}
             </div>
 
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
-
         </PMModalWrapper>
       )}
 
       {showAssigneesModal && selectedProject && (
         <PMModalWrapper
           title={`Assign Users to "${selectedProject.name}"`}
-          onClose={() => {
-            setShowAssigneesModal(false);
-            setSelectedProject(null);
-          }}
+          onClose={() => { setShowAssigneesModal(false); setSelectedProject(null); }}
         >
           <ProjectAssignee
             projectId={selectedProject.id}
             projectName={selectedProject.name}
-            onClose={() => {
-              setShowAssigneesModal(false);
-              setSelectedProject(null);
-            }}
+            onClose={() => { setShowAssigneesModal(false); setSelectedProject(null); }}
           />
         </PMModalWrapper>
       )}
-
     </div>
   );
 };

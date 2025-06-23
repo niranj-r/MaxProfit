@@ -111,7 +111,7 @@ const FYProjectDirectory = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={handleDownloadCSV}>📥 Download CSV</button>
+          <button className="add-btn" onClick={handleDownloadCSV}>Download CSV</button>
         </div>
       </div>
 
@@ -129,26 +129,34 @@ const FYProjectDirectory = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredProjects.map(proj => (
-            <tr key={proj.id}>
-              <td>{proj.name}</td>
-              <td>{proj.departmentId}</td>
-              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-              <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
-              <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
-              <td>
-                {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
-                  ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
-                  : '—'}
-              </td>
-              <td>
-                <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                  View Assignees
-                </button>
-              </td>
-            </tr>
-          ))}
+          {filteredProjects.map(proj => {
+            const totalCost = projectCosts[proj.id]?.totalCost ?? null;
+            const actualCost = projectCosts[proj.id]?.actualCost ?? null;
+            const margin = (totalCost != null && actualCost != null) 
+              ? (totalCost - actualCost).toFixed(2) 
+              : '—';
+
+            const marginColor = (totalCost != null && actualCost != null)
+              ? ((totalCost - actualCost) >= 0 ? '#008000' : '#e74a3b')
+              : '#000000';
+
+            return (
+              <tr key={proj.id}>
+                <td>{proj.name}</td>
+                <td>{proj.departmentId}</td>
+                <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+                <td>{totalCost?.toFixed(2) ?? '—'}</td>
+                <td>{actualCost?.toFixed(2) ?? '—'}</td>
+                <td style={{ color: marginColor }}>{margin}</td>
+                <td>
+                  <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
+                    View Assignees
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
           {filteredProjects.length === 0 && (
             <tr><td colSpan="8" className="no-data">No matching projects found.</td></tr>
           )}
@@ -179,4 +187,3 @@ const FYProjectDirectory = () => {
 };
 
 export default FYProjectDirectory;
-
