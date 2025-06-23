@@ -2,30 +2,39 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
-from dotenv import load_dotenv
-import os
-from sqlalchemy import and_
-from jwt_utils import token_required, generate_token
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
-from flask_cors import CORS, cross_origin
+from dotenv import load_dotenv
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
+from sqlalchemy import and_, select, func
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select
-from flask_jwt_extended import get_jwt_identity
-from sqlalchemy import func
 from sqlalchemy.orm import aliased
+import os
+
+# JWT utility functions (assuming you have jwt_utils.py)
+from jwt_utils import token_required, generate_token
 
 # ------------------ CONFIGURATION ------------------
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("MYSQL_URI")
+
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
+print("🔧 DB URI:", app.config['SQLALCHEMY_DATABASE_URI'])
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET')
-jwt = JWTManager(app)
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET")
+
 db = SQLAlchemy(app)
+jwt = JWTManager(app)
 
 # ------------------ CONSTANTS ------------------
 
@@ -143,6 +152,12 @@ class ActivityLog(db.Model):
     name = db.Column(db.String(100))
     action = db.Column(db.String(50))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ------------------ BASIC TEST ROUTE ------------------
+
+@app.route("/")
+def home():
+    return {"message": "Backend running"}, 200
 
 # ------------------ FINANCIAL YEARS ------------------
 
@@ -1920,4 +1935,5 @@ def get_projects_by_project_manager():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
