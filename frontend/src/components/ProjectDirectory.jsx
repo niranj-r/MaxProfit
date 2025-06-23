@@ -29,6 +29,7 @@ const ProjectDirectory = () => {
   const [projectCosts, setProjectCosts] = useState({});
   const [groupedView, setGroupedView] = useState(false);
   const [groupedData, setGroupedData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -63,6 +64,17 @@ const ProjectDirectory = () => {
     fetchData();
   }, [groupedView]);
 
+  const SkeletonRow = () => (
+    <tr className="skeleton-row">
+      {[...Array(9)].map((_, i) => (
+        <td key={i}>
+          <div className="skeleton-box"></div>
+        </td>
+      ))}
+    </tr>
+  );
+
+
   const fetchProjectCosts = async () => {
     const costs = {};
     try {
@@ -82,6 +94,7 @@ const ProjectDirectory = () => {
   };
 
   const fetchProjects = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(`${API}/api/projects`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -90,6 +103,7 @@ const ProjectDirectory = () => {
     } catch (err) {
       console.error('Failed to fetch projects', err);
     }
+    setLoading(false);
   };
 
   const fetchDepartments = async () => {
@@ -351,8 +365,8 @@ const ProjectDirectory = () => {
                             p.cost - p.actual_cost > 0
                               ? '#006400'
                               : p.cost - p.actual_cost < 0
-                              ? '#e74a3b'
-                              : '#000000'
+                                ? '#e74a3b'
+                                : '#000000'
                         }}
                       >
                         {(p.cost - p.actual_cost)?.toFixed(2) || '—'}
@@ -384,22 +398,33 @@ const ProjectDirectory = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredProjects.map(proj => {
-              const totalCost = projectCosts[proj.id]?.totalCost ?? null;
-              const actualCost = projectCosts[proj.id]?.actualCost ?? null;
-              const margin = totalCost !== null && actualCost !== null ? totalCost - actualCost : null;
+            {loading ? (
+              <>
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </>
+            ) : (
+              <>
+                {filteredProjects.map(proj => {
+                  const totalCost = projectCosts[proj.id]?.totalCost ?? null;
+                  const actualCost = projectCosts[proj.id]?.actualCost ?? null;
+                  const margin = totalCost !== null && actualCost !== null ? totalCost - actualCost : null;
 
-              return (
-                <tr key={proj.id}>
-                  <td>{proj.name}</td>
-                  <td>{proj.departmentId}</td>
-                  <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-                  <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-                  <td className="align-numbers">{totalCost?.toFixed(2) ?? '—'}</td>
-                  <td className="align-numbers">{actualCost?.toFixed(2) ?? '—'}</td>
-                  <td
-                    className="align-numbers"
-                    style={{
+                  return (
+                    <tr key={proj.id}>
+                      <td>{proj.name}</td>
+                      <td>{proj.departmentId}</td>
+                      <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                      <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+
+                      <td className="align-numbers">
+                        {totalCost !== null ? totalCost.toFixed(2) : <div className="skeleton-box-sm" />}
+                      </td>
+                      <td className="align-numbers">
+                        {actualCost !== null ? actualCost.toFixed(2) : <div className="skeleton-box-sm" />}
+                      </td>
+                      <td className="align-numbers"  style={{
                       color:
                         margin > 0
                           ? '#008000' // green
@@ -407,25 +432,31 @@ const ProjectDirectory = () => {
                           ? '#e74a3b' // red
                           : '#000000'  // black for zero or null
                     }}
-                  >
-                    {margin !== null ? margin.toFixed(2) : '—'}
-                  </td>
-                  <td>
-                    <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
-                    <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
-                  </td>
-                  <td>
-                    <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                      Assign
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-            {filteredProjects.length === 0 && (
-              <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
+>
+                        {margin !== null ? margin.toFixed(2) : <div className="skeleton-box-sm" />}
+                      </td>
+
+                      <td>
+                        <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
+                        <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
+                      </td>
+                      <td>
+                        <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>Assign</button>
+                      </td>
+                    </tr>
+
+                  );
+                })}
+
+                {filteredProjects.length === 0 && (
+                  <tr>
+                    <td colSpan="9" className="no-data">No matching projects found.</td>
+                  </tr>
+                )}
+              </>
             )}
           </tbody>
+
         </table>
       )}
 

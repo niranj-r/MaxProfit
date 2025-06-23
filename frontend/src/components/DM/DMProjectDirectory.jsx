@@ -26,6 +26,7 @@ const DMProjectDirectory = () => {
   const [showAssigneesModal, setShowAssigneesModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectCosts, setProjectCosts] = useState({});
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -41,6 +42,7 @@ const DMProjectDirectory = () => {
   }, [projects]);
 
   const fetchProjects = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(`${API}/api/dm-projects`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -49,8 +51,18 @@ const DMProjectDirectory = () => {
     } catch (err) {
       console.error('Failed to fetch projects', err);
     }
+    setLoading(false);
   };
 
+    const SkeletonRow = () => (
+    <tr className="skeleton-row">
+      {[...Array(9)].map((_, i) => (
+        <td key={i}>
+          <div className="skeleton-box"></div>
+        </td>
+      ))}
+    </tr>
+  );
   const fetchDepartments = async () => {
     try {
       const res = await axios.get(`${API}/api/dm-departments`, {
@@ -246,9 +258,6 @@ const DMProjectDirectory = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={openAddModal}>
-            <FaPlus /> Add Project
-          </button>
         </div>
       </div>
 
@@ -262,42 +271,61 @@ const DMProjectDirectory = () => {
             <th>Total Revenue ($)</th>
             <th>Actual Cost ($)</th>
             <th>Margin ($)</th>
-            <th>Actions</th>
             <th>Assign</th>
           </tr>
         </thead>
         <tbody>
-          {filteredProjects.map(proj => {
-            const cost = projectCosts[proj.id]?.totalCost ?? null;
-            const actual = projectCosts[proj.id]?.actualCost ?? null;
-            const margin = (cost != null && actual != null) ? (cost - actual).toFixed(2) : '—';
-            const marginColor = (cost != null && actual != null) 
-              ? ((cost - actual) > 0 ? '#008000' : ((cost - actual) < 0 ? '#e74a3b' : '#000000'))
-              : '#000000';
+          {loading ? (
+            <>
+              <SkeletonRow />
+              <SkeletonRow />
+              <SkeletonRow />
+            </>
+          ) : (
+            <>
+              {filteredProjects.map(proj => {
+                const totalCost = projectCosts[proj.id]?.totalCost ?? null;
+                const actualCost = projectCosts[proj.id]?.actualCost ?? null;
+                const margin = totalCost !== null && actualCost !== null ? totalCost - actualCost : null;
 
-            return (
-              <tr key={proj.id}>
-                <td>{proj.name}</td>
-                <td>{proj.departmentId}</td>
-                <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-                <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-                <td>{cost?.toFixed(2) ?? '—'}</td>
-                <td>{actual?.toFixed(2) ?? '—'}</td>
-                <td style={{ color: marginColor }}>{margin}</td>
-                <td>
-                  <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
-                  <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
-                </td>
-                <td>
-                  <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                    Assign
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-          {filteredProjects.length === 0 && (
-            <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
+                return (
+                  <tr key={proj.id}>
+                    <td>{proj.name}</td>
+                    <td>{proj.departmentId}</td>
+                    <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                    <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+
+                    <td className="align-numbers">
+                      {totalCost !== null ? totalCost.toFixed(2) : <div className="skeleton-box-sm" />}
+                    </td>
+                    <td className="align-numbers">
+                      {actualCost !== null ? actualCost.toFixed(2) : <div className="skeleton-box-sm" />}
+                    </td>
+                    <td className="align-numbers" style={{
+                      color:
+                        margin > 0
+                          ? '#008000' // green
+                          : margin < 0
+                            ? '#e74a3b' // red
+                            : '#000000'  // black for zero or null
+                    }}
+                    >
+                      {margin !== null ? margin.toFixed(2) : <div className="skeleton-box-sm" />}
+                    </td>
+                    <td>
+                      <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>Assign</button>
+                    </td>
+                  </tr>
+
+                );
+              })}
+
+              {filteredProjects.length === 0 && (
+                <tr>
+                  <td colSpan="9" className="no-data">No matching projects found.</td>
+                </tr>
+              )}
+            </>
           )}
         </tbody>
       </table>
@@ -321,9 +349,9 @@ const DMProjectDirectory = () => {
                   </>
                 ) : (
                   <>
-                    <input name={field} type={field.includes('Date') ? 'date' : 'text'} value={form[field]} 
-                      onChange={handleChange} placeholder=" " required 
-                      style={formErrors[field] ? { borderColor: '#c33' } : {}}/>
+                    <input name={field} type={field.includes('Date') ? 'date' : 'text'} value={form[field]}
+                      onChange={handleChange} placeholder=" " required
+                      style={formErrors[field] ? { borderColor: '#c33' } : {}} />
                     <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
                   </>
                 )}
@@ -336,9 +364,9 @@ const DMProjectDirectory = () => {
       )}
 
       {showAssigneesModal && selectedProject && (
-        <DMModalWrapper title={`Assign Users to "${selectedProject.name}"`} 
+        <DMModalWrapper title={`Assign Users to "${selectedProject.name}"`}
           onClose={() => { setShowAssigneesModal(false); setSelectedProject(null); }}>
-          <DMProjectAssignee projectId={selectedProject.id} projectName={selectedProject.name} 
+          <DMProjectAssignee projectId={selectedProject.id} projectName={selectedProject.name}
             onClose={() => { setShowAssigneesModal(false); setSelectedProject(null); }} />
         </DMModalWrapper>
       )}

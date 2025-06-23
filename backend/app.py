@@ -646,20 +646,32 @@ def get_pm_project_budgets():
     )
     project_ids = [row[0] for row in db.session.execute(stmt).all()]
 
-    # Step 2: Query project cost summaries for those projects
+    if not project_ids:
+        return jsonify([]), 200
+
+    # Step 2: Query project summaries (revenue, cost, margin)
     results = (
-        db.session.query(Project.name, func.sum(ProjectAssignment.cost))
+        db.session.query(
+            Project.name,
+            func.coalesce(func.sum(ProjectAssignment.cost), 0).label("revenue"),
+            func.coalesce(func.sum(ProjectAssignment.actual_cost), 0).label("actual_cost")
+        )
         .join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
         .filter(Project.id.in_(project_ids))
         .group_by(Project.name)
         .all()
     )
 
-    # Step 3: Return formatted data
+    # Step 3: Format and return the result
     return jsonify([
-        {"name": name, "cost": float(cost)} for name, cost in results
+        {
+            "name": name,
+            "cost": float(revenue),          # revenue is stored under 'cost' (frontend expects this)
+            "actual_cost": float(actual_cost),
+            "margin": float(revenue) - float(actual_cost)
+        }
+        for name, revenue, actual_cost in results
     ]), 200
-
 
 @app.route('/api/pm-my-projects', methods=['GET'])
 @jwt_required()
@@ -1568,7 +1580,6 @@ def get_dm_project_budgets():
     current_user_id = get_jwt_identity()
 
     user = User.query.filter_by(id=current_user_id).first()
-
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
@@ -1579,10 +1590,15 @@ def get_dm_project_budgets():
     department_ids = [d.did for d in departments]
 
     if not department_ids:
-        return jsonify([])
+        return jsonify([]), 200
 
+    # 🧠 Fetch revenue, cost and compute margin per project
     results = (
-        db.session.query(Project.name, func.sum(ProjectAssignment.cost))
+        db.session.query(
+            Project.name,
+            func.coalesce(func.sum(ProjectAssignment.cost), 0).label("revenue"),
+            func.coalesce(func.sum(ProjectAssignment.actual_cost), 0).label("actual_cost")
+        )
         .join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
         .filter(Project.departmentId.in_(department_ids))
         .group_by(Project.name)
@@ -1590,8 +1606,14 @@ def get_dm_project_budgets():
     )
 
     return jsonify([
-        {"name": name, "cost": float(cost)} for name, cost in results
+        {
+            "name": name,
+            "cost": float(revenue),  # frontend expects revenue under 'cost'
+            "actual_cost": float(actual_cost),  # real cost
+            "margin": float(revenue) - float(actual_cost)
+        } for name, revenue, actual_cost in results
     ]), 200
+
 
 @app.route('/api/department-projects', methods=['GET'])
 @jwt_required()
@@ -1891,43 +1913,7 @@ def get_projects_by_project_manager():
         return jsonify({"error": "Internal server error"}), 500
 
 
-@app.route('/api/sum-projects', methods=['GET'])
-@jwt_required()
-def sum_projects():
-    try:
-        # Join Project and ProjectAssignment to get total cost and actual cost
-        projects = (
-            db.session.query(
-                Project.id,
-                Project.name,
-                Project.departmentId,
-                Project.startDate,
-                Project.endDate,
-                func.sum(ProjectAssignment.cost).label('total_cost'),
-                func.sum(ProjectAssignment.actual_cost).label('actual_cost')
-            )
-            .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
-            .group_by(Project.id)
-            .all()
-        )
 
-        response = []
-        for p in projects:
-            response.append({
-                "id": p.id,
-                "name": p.name,
-                "departmentId": p.departmentId,
-                "startDate": str(p.startDate),
-                "endDate": str(p.endDate),
-                "totalCost": float(p.total_cost) if p.total_cost else 0.0,
-                "actualCost": float(p.actual_cost) if p.actual_cost else 0.0
-            })
-
-        return jsonify(response), 200
-
-    except Exception as e:
-        print("🔴 Error in /api/sum-projects:", str(e))
-        return jsonify({"error": "Internal server error"}), 500
     
 # ------------------ MAIN ------------------
 

@@ -15,6 +15,7 @@ const FYProjectDirectory = () => {
   const [showAssigneesModal, setShowAssigneesModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const { label: fyLabel } = useParams();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProjects();
@@ -25,6 +26,7 @@ const FYProjectDirectory = () => {
   }, [projects]);
 
   const fetchProjects = async () => {
+    setLoading(true);
     console.log('📌 Fetching all projects for FYLabel:', fyLabel);
     try {
       const [sy, ey] = fyLabel.split('-').map(Number);
@@ -41,7 +43,20 @@ const FYProjectDirectory = () => {
     } catch (err) {
       console.error('❌ Failed to fetch projects', err);
     }
+    setLoading(false);
   };
+
+
+  const SkeletonRow = () => (
+    <tr className="skeleton-row">
+      {[...Array(9)].map((_, i) => (
+        <td key={i}>
+          <div className="skeleton-box"></div>
+        </td>
+      ))}
+    </tr>
+  );
+
 
   const fetchProjectCosts = async () => {
     const costs = {};
@@ -129,36 +144,57 @@ const FYProjectDirectory = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredProjects.map(proj => {
-            const totalCost = projectCosts[proj.id]?.totalCost ?? null;
-            const actualCost = projectCosts[proj.id]?.actualCost ?? null;
-            const margin = (totalCost != null && actualCost != null) 
-              ? (totalCost - actualCost).toFixed(2) 
-              : '—';
+          {loading ? (
+            <>
+              <SkeletonRow />
+              <SkeletonRow />
+              <SkeletonRow />
+            </>
+          ) : (
+            <>
+              {filteredProjects.map(proj => {
+                const totalCost = projectCosts[proj.id]?.totalCost ?? null;
+                const actualCost = projectCosts[proj.id]?.actualCost ?? null;
+                const margin = totalCost !== null && actualCost !== null ? totalCost - actualCost : null;
 
-            const marginColor = (totalCost != null && actualCost != null)
-              ? ((totalCost - actualCost) >= 0 ? '#008000' : '#e74a3b')
-              : '#000000';
+                return (
+                  <tr key={proj.id}>
+                    <td>{proj.name}</td>
+                    <td>{proj.departmentId}</td>
+                    <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                    <td>{proj.endDate?.substring(0, 10) || '—'}</td>
 
-            return (
-              <tr key={proj.id}>
-                <td>{proj.name}</td>
-                <td>{proj.departmentId}</td>
-                <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-                <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-                <td>{totalCost?.toFixed(2) ?? '—'}</td>
-                <td>{actualCost?.toFixed(2) ?? '—'}</td>
-                <td style={{ color: marginColor }}>{margin}</td>
-                <td>
-                  <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                    View Assignees
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-          {filteredProjects.length === 0 && (
-            <tr><td colSpan="8" className="no-data">No matching projects found.</td></tr>
+                    <td className="align-numbers">
+                      {totalCost !== null ? totalCost.toFixed(2) : <div className="skeleton-box-sm" />}
+                    </td>
+                    <td className="align-numbers">
+                      {actualCost !== null ? actualCost.toFixed(2) : <div className="skeleton-box-sm" />}
+                    </td>
+                    <td className="align-numbers" style={{
+                      color:
+                        margin > 0
+                          ? '#008000' // green
+                          : margin < 0
+                            ? '#e74a3b' // red
+                            : '#000000'  // black for zero or null
+                    }}
+                    >
+                      {margin !== null ? margin.toFixed(2) : <div className="skeleton-box-sm" />}
+                    </td>
+                    <td>
+                      <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>Assign</button>
+                    </td>
+                  </tr>
+
+                );
+              })}
+
+              {filteredProjects.length === 0 && (
+                <tr>
+                  <td colSpan="9" className="no-data">No matching projects found.</td>
+                </tr>
+              )}
+            </>
           )}
         </tbody>
       </table>

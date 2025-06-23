@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaUsers, FaProjectDiagram, FaSitemap, FaMoneyBillWave } from "react-icons/fa";
 import "../DashboardSummary.css";
 import FABudgetChart from "./FABudgetChart"; // ✅ import your separate chart component
+import FAOverviewDashboardSummary from "./FAOverviewDashbaordSummmary";
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -68,12 +69,6 @@ const FAAdminDashboardSummary = () => {
       icon: <FaSitemap className="icon" />,
       color: "#f6c23e",
     },
-    {
-      title: "Total Budget",
-      value: `$${stats.totalBudget.toLocaleString()}`,
-      icon: <FaMoneyBillWave className="icon" />,
-      color: "#e74a3b",
-    },
   ];
 
   return (
@@ -101,7 +96,7 @@ const FAAdminDashboardSummary = () => {
         ))}
       </div>
 
-      {/* ✅ Here we simply render your existing chart component */}
+      <FAOverviewDashboardSummary />
       <FABudgetChart />
     </div>
   );

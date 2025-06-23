@@ -30,15 +30,12 @@ const Login = () => {
       if (user.role === 'admin' || user.role === 'Admin') {
         navigate('/admin-dashboard');
       } else if (user.role === 'department_manager') {
-        alert('Department Manager logged in');
         navigate('/dm-dashboard');
       } else if ((user.role === 'project_manager' || user.role === 'Project Manager') || user.pa_role === 'Project Manager') {
-        alert('Project Manager logged in');
         navigate('/pm-dashboard');
       } else if (user.role === 'employee') {
         alert('Unathorized user');
       } else if (user.role === 'financial_analyst') {
-        alert('Financial Analyst logged in');
         navigate('/fa-admin-dashboard');
       } else {
         alert('Unknown role');
