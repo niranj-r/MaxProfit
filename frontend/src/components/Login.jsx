@@ -86,11 +86,11 @@ const Login = () => {
           {loading ? 'Logging in...' : 'Login'}
         </button>
 
-        <div className="form-footer">
+        {/*<div className="form-footer">
           <p>
             Don't have an account? <Link to="/admin-signup" className="login-link">Sign up here</Link>
           </p>
-        </div>
+        </div>*/}
       </form>
     </div>
   );
