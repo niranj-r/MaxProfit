@@ -135,7 +135,7 @@ const ProjectDashboardSummary = () => {
                         isProfit
                           ? profitValue < 0
                             ? "#e74a3b" // red if negative
-                            : "#1cc88a" // green if zero or positive
+                            : "#008000" // green if zero or positive
                           : "black",
                     }}
                   >

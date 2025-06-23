@@ -68,7 +68,7 @@ const OverviewDashboardSummary = () => {
   }, [selectedProject, projects]);
 
   const getProfitColor = () => {
-    if (summary.profit > 0) return "#1cc88a";
+    if (summary.profit > 0) return "#008000";
     if (summary.profit < 0) return "#e74a3b";
     return "#000000";
   };
