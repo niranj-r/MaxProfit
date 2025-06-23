@@ -39,6 +39,7 @@ const Login = () => {
         alert('Employee logged in');
       } else if (user.role === 'financial_analyst') {
         alert('Financial Analyst logged in');
+        navigate('/fa-admin-dashboard');
       } else {
         alert('Unknown role');
       }
