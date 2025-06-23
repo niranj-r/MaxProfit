@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import '../EmployeeDirectory.css';
+import { FaEdit, FaTrash, FaPlus, FaDownload } from 'react-icons/fa';
 import axios from 'axios';
+import Papa from 'papaparse';
+import { useNavigate } from 'react-router-dom';
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -8,7 +11,24 @@ const FAProjectDirectory = () => {
   const [projects, setProjects] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState('');
+  const [groupedView, setGroupedView] = useState(false); // 🔸 FIXED: Declare groupedView
+  const [showModal, setShowModal] = useState(false);
+  const [formMode, setFormMode] = useState('add');
+  const [form, setForm] = useState({
+    name: '',
+    departmentId: '',
+    startDate: '',
+    endDate: '',
+    budget: ''
+  });
+  const [editId, setEditId] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
+  const [showAssigneesModal, setShowAssigneesModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
   const [projectCosts, setProjectCosts] = useState({});
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProjects();
@@ -18,6 +38,24 @@ const FAProjectDirectory = () => {
   useEffect(() => {
     if (projects.length > 0) fetchProjectCosts();
   }, [projects]);
+
+  const fetchProjectCosts = async () => {
+    const costs = {};
+    try {
+      for (const proj of projects) {
+        const res = await axios.get(`${API}/api/projects/${proj.id}/total-cost`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        costs[proj.id] = {
+          totalCost: res.data.totalCost,
+          actualCost: res.data.actualCost
+        };
+      }
+      setProjectCosts(costs);
+    } catch (err) {
+      console.error('Failed to fetch project costs', err);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -41,19 +79,170 @@ const FAProjectDirectory = () => {
     }
   };
 
-  const fetchProjectCosts = async () => {
-    const costs = {};
+  const openAddModal = () => {
+    setForm({ name: '', departmentId: '', startDate: '', endDate: '' });
+    setFormMode('add');
+    setEditId(null);
+    setFormErrors({});
+    setGeneralError('');
+    setShowModal(true);
+  };
+
+  const openEditModal = (project) => {
+    setForm({
+      name: project.name || '',
+      departmentId: project.departmentId || '',
+      startDate: project.startDate?.substring(0, 10) || '',
+      endDate: project.endDate?.substring(0, 10) || ''
+    });
+    setFormMode('edit');
+    setEditId(project.id);
+    setFormErrors({});
+    setGeneralError('');
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setFormErrors({});
+    setGeneralError('');
+  };
+
+  const validateField = (name, value, mode = 'add') => {
+    let errorMsg = '';
+    const trimmedValue = value.trim();
+
+    switch (name) {
+      case 'name':
+        if (!trimmedValue) errorMsg = 'Project name is required.';
+        else if (trimmedValue.length < 3 || trimmedValue.length > 30)
+          errorMsg = 'Project name must be 3–30 characters.';
+        else if (!/^[A-Za-z\s]+$/.test(trimmedValue))
+          errorMsg = 'Project name can only contain letters and spaces.';
+        break;
+      case 'departmentId':
+        if (!trimmedValue) errorMsg = 'Department ID is required.';
+        else if (!departments.some(dep => dep.did === trimmedValue))
+          errorMsg = 'Invalid department ID. Please select a valid department.';
+        break;
+      case 'startDate':
+        if (mode === 'edit') break;
+        if (!trimmedValue) errorMsg = 'Start date is required.';
+        else {
+          const start = new Date(trimmedValue);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (start < today) errorMsg = 'Start date cannot be in the past.';
+        }
+        break;
+      case 'endDate':
+        if (!trimmedValue) errorMsg = 'End date is required.';
+        else {
+          const start = new Date(form.startDate);
+          const end = new Date(trimmedValue);
+          if (start >= end) errorMsg = 'End date must be after start date.';
+        }
+        break;
+      default:
+        break;
+    }
+
+    return errorMsg;
+  };
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    const errorMsg = validateField(name, value, formMode);
+    setFormErrors(prev => ({ ...prev, [name]: errorMsg }));
+    if (generalError) setGeneralError('');
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setGeneralError('');
+    setFormErrors({});
+    const fields = ['name', 'departmentId', 'startDate', 'endDate'];
+    const newErrors = {};
+    fields.forEach(field => {
+      const errorMsg = validateField(field, form[field], formMode);
+      if (errorMsg) newErrors[field] = errorMsg;
+    });
+    if (Object.keys(newErrors).length > 0) {
+      setFormErrors(newErrors);
+      setGeneralError('Please correct the errors in the form.');
+      return;
+    }
     try {
-      for (const proj of projects) {
-        const res = await axios.get(`${API}/api/projects/${proj.id}/total-cost`, {
+      if (formMode === 'add') {
+        const res = await axios.post(`${API}/api/projects`, form, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        costs[proj.id] = res.data.totalCost;
+        setProjects(prev => [...prev, res.data]);
+        alert('Project added successfully');
+      } else {
+        const res = await axios.put(`${API}/api/projects/${editId}`, form, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setProjects(prev => prev.map(p => p.id === editId ? res.data : p));
+        alert('Project updated successfully');
       }
-      setProjectCosts(costs);
+      closeModal();
+      fetchProjects();
     } catch (err) {
-      console.error('Failed to fetch project costs', err);
+      console.error('Error submitting project', err);
+      const errorMsg = err.response?.data?.error || `Error ${formMode === 'add' ? 'adding' : 'updating'} project`;
+      setGeneralError(errorMsg);
     }
+  };
+
+  const handleAssigneesClick = (project) => {
+    setSelectedProject(project);
+    setShowAssigneesModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this project?')) return;
+    try {
+      await axios.delete(`${API}/api/projects/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setProjects(prev => prev.filter(p => p.id !== id));
+      alert('Project deleted successfully');
+      fetchProjects();
+    } catch (err) {
+      console.error('Error deleting project', err);
+      alert('Error deleting project. Check console.');
+    }
+  };
+
+  const handleDownloadCSV = () => {
+    if (!projects || projects.length === 0) {
+      alert('No project data available to export.');
+      return;
+    }
+
+    const csvData = projects.map(proj => {
+      const total = projectCosts[proj.id]?.totalCost || 0;
+      const actual = projectCosts[proj.id]?.actualCost || 0;
+      return {
+        'Project Name': proj.name,
+        'Department ID': proj.departmentId,
+        'Start Date': proj.startDate?.substring(0, 10) || '',
+        'End Date': proj.endDate?.substring(0, 10) || '',
+        'Total Cost': total,
+        'Actual Cost': actual,
+        'Margin': (total - actual).toFixed(2)
+      };
+    });
+
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'project_directory.csv');
+    link.click();
   };
 
   const filteredProjects = projects.filter(p =>
@@ -72,36 +261,59 @@ const FAProjectDirectory = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          <button className="add-btn" onClick={handleDownloadCSV}>
+            <FaDownload /> Download
+          </button>
         </div>
       </div>
 
       <table className="employee-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Department ID</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Budget ($)</th>
-            <th>Total Revenue ($)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredProjects.map(proj => (
-            <tr key={proj.id}>
-              <td>{proj.name}</td>
-              <td>{proj.departmentId}</td>
-              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-              <td>{proj.budget}</td>
-              <td>{projectCosts[proj.id] || 0}</td>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Department ID</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Total Revenue ($)</th>
+              <th>Actual Cost ($)</th>
+              <th>Margin ($)</th>
             </tr>
-          ))}
-          {filteredProjects.length === 0 && (
-            <tr><td colSpan="6" className="no-data">No matching projects found.</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredProjects.map(proj => {
+              const totalCost = projectCosts[proj.id]?.totalCost ?? null;
+              const actualCost = projectCosts[proj.id]?.actualCost ?? null;
+              const margin = totalCost !== null && actualCost !== null ? totalCost - actualCost : null;
+
+              return (
+                <tr key={proj.id}>
+                  <td>{proj.name}</td>
+                  <td>{proj.departmentId}</td>
+                  <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                  <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+                  <td className="align-numbers">{totalCost?.toFixed(2) ?? '—'}</td>
+                  <td className="align-numbers">{actualCost?.toFixed(2) ?? '—'}</td>
+                  <td
+                    className="align-numbers"
+                    style={{
+                      color:
+                        margin > 0
+                          ? '#008000' // green
+                          : margin < 0
+                          ? '#e74a3b' // red
+                          : '#000000'  // black for zero or null
+                    }}
+                  >
+                    {margin !== null ? margin.toFixed(2) : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredProjects.length === 0 && (
+              <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
+            )}
+          </tbody>
+        </table>
     </div>
   );
 };

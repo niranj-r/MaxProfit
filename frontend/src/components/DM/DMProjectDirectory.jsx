@@ -1,4 +1,3 @@
-// Top portion remains the same
 import React, { useState, useEffect } from 'react';
 import '../EmployeeDirectory.css';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
@@ -268,30 +267,35 @@ const DMProjectDirectory = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredProjects.map(proj => (
-            <tr key={proj.id}>
-              <td>{proj.name}</td>
-              <td>{proj.departmentId}</td>
-              <td>{proj.startDate?.substring(0, 10) || '—'}</td>
-              <td>{proj.endDate?.substring(0, 10) || '—'}</td>
-              <td>{projectCosts[proj.id]?.totalCost?.toFixed(2) || '—'}</td>
-              <td>{projectCosts[proj.id]?.actualCost?.toFixed(2) || '—'}</td>
-              <td>
-                {(projectCosts[proj.id]?.totalCost != null && projectCosts[proj.id]?.actualCost != null)
-                  ? (projectCosts[proj.id].totalCost - projectCosts[proj.id].actualCost).toFixed(2)
-                  : '—'}
-              </td>
-              <td>
-                <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
-                <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
-              </td>
-              <td>
-                <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
-                  Assign
-                </button>
-              </td>
-            </tr>
-          ))}
+          {filteredProjects.map(proj => {
+            const cost = projectCosts[proj.id]?.totalCost ?? null;
+            const actual = projectCosts[proj.id]?.actualCost ?? null;
+            const margin = (cost != null && actual != null) ? (cost - actual).toFixed(2) : '—';
+            const marginColor = (cost != null && actual != null) 
+              ? ((cost - actual) > 0 ? '#008000' : ((cost - actual) < 0 ? '#e74a3b' : '#000000'))
+              : '#000000';
+
+            return (
+              <tr key={proj.id}>
+                <td>{proj.name}</td>
+                <td>{proj.departmentId}</td>
+                <td>{proj.startDate?.substring(0, 10) || '—'}</td>
+                <td>{proj.endDate?.substring(0, 10) || '—'}</td>
+                <td>{cost?.toFixed(2) ?? '—'}</td>
+                <td>{actual?.toFixed(2) ?? '—'}</td>
+                <td style={{ color: marginColor }}>{margin}</td>
+                <td>
+                  <FaEdit className="icon edit-icon" onClick={() => openEditModal(proj)} />
+                  <FaTrash className="icon delete-icon" onClick={() => handleDelete(proj.id)} />
+                </td>
+                <td>
+                  <button className="assignees-btn" onClick={() => handleAssigneesClick(proj)}>
+                    Assign
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
           {filteredProjects.length === 0 && (
             <tr><td colSpan="9" className="no-data">No matching projects found.</td></tr>
           )}
@@ -299,77 +303,43 @@ const DMProjectDirectory = () => {
       </table>
 
       {showModal && (
-        <DMModalWrapper
-          onClose={closeModal}
-          title={formMode === 'add' ? 'Add Project' : 'Edit Project'}
-        >
+        <DMModalWrapper onClose={closeModal} title={formMode === 'add' ? 'Add Project' : 'Edit Project'}>
           <form onSubmit={handleSubmit} className="modal-form">
             {generalError && <div className="form-error">{generalError}</div>}
             {['name', 'departmentId', 'startDate', 'endDate'].map(field => (
               <div className="floating-label" key={field}>
                 {field === 'departmentId' ? (
                   <>
-                    <select
-                      name="departmentId"
-                      value={form.departmentId || ""}
-                      onChange={handleChange}
-                      required
-                      style={formErrors[field] ? { borderColor: '#c33' } : {}}
-                    >
+                    <select name="departmentId" value={form.departmentId || ""} onChange={handleChange} required
+                      style={formErrors[field] ? { borderColor: '#c33' } : {}}>
                       <option value="" disabled>Select Department</option>
                       {departments.map(dep => (
-                        <option key={dep.did} value={dep.did}>
-                          {dep.name} ({dep.did})
-                        </option>
+                        <option key={dep.did} value={dep.did}>{dep.name} ({dep.did})</option>
                       ))}
                     </select>
-                    <label className="select-label">
-                      Department<span className="required-star">*</span>
-                    </label>
+                    <label className="select-label">Department<span className="required-star">*</span></label>
                   </>
                 ) : (
                   <>
-                    <input
-                      name={field}
-                      type={field.includes('Date') ? 'date' : 'text'}
-                      value={form[field]}
-                      onChange={handleChange}
-                      placeholder=" "
-                      required
-                      style={formErrors[field] ? { borderColor: '#c33' } : {}}
-                    />
-                    <label>
-                      {getFieldLabel(field)}<span className="required-star">*</span>
-                    </label>
+                    <input name={field} type={field.includes('Date') ? 'date' : 'text'} value={form[field]} 
+                      onChange={handleChange} placeholder=" " required 
+                      style={formErrors[field] ? { borderColor: '#c33' } : {}}/>
+                    <label>{getFieldLabel(field)}<span className="required-star">*</span></label>
                   </>
                 )}
-                {formErrors[field] && (
-                  <div className="field-error">{formErrors[field]}</div>
-                )}
+                {formErrors[field] && <div className="field-error">{formErrors[field]}</div>}
               </div>
             ))}
-
             <button type="submit">{formMode === 'add' ? 'Add' : 'Update'}</button>
           </form>
         </DMModalWrapper>
       )}
 
       {showAssigneesModal && selectedProject && (
-        <DMModalWrapper
-          title={`Assign Users to "${selectedProject.name}"`}
-          onClose={() => {
-            setShowAssigneesModal(false);
-            setSelectedProject(null);
-          }}
-        >
-          <DMProjectAssignee
-            projectId={selectedProject.id}
-            projectName={selectedProject.name}
-            onClose={() => {
-              setShowAssigneesModal(false);
-              setSelectedProject(null);
-            }}
-          />
+        <DMModalWrapper title={`Assign Users to "${selectedProject.name}"`} 
+          onClose={() => { setShowAssigneesModal(false); setSelectedProject(null); }}>
+          <DMProjectAssignee projectId={selectedProject.id} projectName={selectedProject.name} 
+            onClose={() => { setShowAssigneesModal(false); setSelectedProject(null); }} />
         </DMModalWrapper>
       )}
     </div>
