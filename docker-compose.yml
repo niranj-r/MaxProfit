@@ -8,7 +8,7 @@ services:
       MYSQL_ROOT_PASSWORD: root123*
       MYSQL_DATABASE: dashboardDB
     volumes:
-      - mysql_data:/var/lib/mysql
+      - C:/Users/niran/OneDrive/Desktop/d2/d2/mysql-data:/var/lib/mysql
     networks:
       - app-network
     healthcheck:
@@ -43,6 +43,3 @@ services:
 
 networks:
   app-network:
-
-volumes:
-  mysql_data:
