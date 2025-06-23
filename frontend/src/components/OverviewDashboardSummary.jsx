@@ -100,9 +100,9 @@ const OverviewDashboardSummary = () => {
   return (
     <div className="dashboard-summary">
       <div className="filters">
-        <label>
+        <label className='labels'>
           Project:
-          <select
+          <select 
             value={selectedProject || ""}
             onChange={(e) => setSelectedProject(e.target.value)}
           >
