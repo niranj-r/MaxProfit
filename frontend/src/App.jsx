@@ -58,6 +58,8 @@ import FYProjectDashboard from './components/FY/FYProjectDashboard';
 import FYDashboardSummary from './components/FY/FYDashboardSummary';
 import FYAdminDashboard from './components/FY/FYAdminDashboard';
 import FYProjectDirectory from './components/FY/FYProjectDirectory';
+import MonthWiseReport from './components/MonthWiseReport';
+import MonthWiseDashboard from './components/MonthWiseDashboard';
 
 // Wrapper to pass year param as prop
 const FinancialYearPageWrapper = () => {
@@ -130,6 +132,8 @@ function App() {
       <Route path="/financial-year/:label/projects" element={<FYProjectDashboard />} />
       <Route path="/fy-projects/:fyLabel" element={<FYProjectDirectory />} />
       <Route path="/overview-dashboard-summary" element={<OverviewDashboardSummary />} />
+      <Route path="/month-wise-report" element={<MonthWiseReport />} />
+      <Route path="/month-dashboard" element={<MonthWiseDashboard />} />
     </Routes>
   );
 }
