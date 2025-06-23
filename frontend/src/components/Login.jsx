@@ -36,11 +36,10 @@ const Login = () => {
         alert('Project Manager logged in');
         navigate('/pm-dashboard');
       } else if (user.role === 'employee') {
-        alert('Employee logged in');
+        alert('Unathorized user');
       } else if (user.role === 'financial_analyst') {
         alert('Financial Analyst logged in');
         navigate('/fa-admin-dashboard');
-
       } else {
         alert('Unknown role');
       }

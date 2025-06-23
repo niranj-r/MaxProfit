@@ -77,7 +77,7 @@ const ProjectDashboardSummary = () => {
       color: "#e74a3b",
     },
     {
-      title: "Profit ($)",
+      title: "Margin ($)",
       value: (summary.profit ?? 0).toLocaleString(),
       icon: <FaHandHoldingUsd className="icon" />,
       color: "#1cc88a", // Base green color for icon and border

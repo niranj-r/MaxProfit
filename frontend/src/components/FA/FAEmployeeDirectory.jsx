@@ -177,9 +177,6 @@ const FAEmployeeDirectory = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <button className="add-btn" onClick={openAdd}>
-            <FaPlus /> Add Employee
-          </button>
         </div>
       </div>
 

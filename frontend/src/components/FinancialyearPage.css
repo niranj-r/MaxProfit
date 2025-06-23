@@ -83,7 +83,7 @@
 
 
 .employee-table th {
-  background-color: var(--primary-color);
+  background: linear-gradient(0deg, #1a48a3,#3f5ab5);
   color: var(--white);
   font-weight: 600;
   position: sticky;

@@ -3,7 +3,7 @@
   --secondary-color: #182848;
   --accent-color: #7f5af0;
   --background-light: #f3f4fc;
-  --white: #ffffff;
+  --white: #fdffec;
   --border-color: #dcdcdc;
 }
 
@@ -42,7 +42,7 @@
 }
 
 .add-btn {
-  background-color: var(--accent-color);
+  background: linear-gradient(180deg,#24003a,#313072);
   color: var(--white);
   border: none;
   padding: 8px 14px;
@@ -52,6 +52,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.add-btn:hover {
+  background: var(--white);
+  color: var(--secondary-color);
+  border: 1.5px solid var(--secondary-color);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.05);
 }
 
 .employee-table {
@@ -98,7 +107,7 @@
 }
 
 .assignees-btn {
-  background-color: var(--accent-color);
+  background: linear-gradient(180deg, #24003a, #313072);
   color: var(--white);
   border: none;
   padding: 8px 14px;
