@@ -67,6 +67,12 @@ const DepartmentDashboardSummary = () => {
     }
   }, [selectedDept, departments]);
 
+  const marginValueColor =
+    summary.profit > 0
+      ? "#008000"
+      : summary.profit < 0
+      ? "red"
+      : "black";
   const cards = [
     {
       title: "Projects",
@@ -94,6 +100,7 @@ const DepartmentDashboardSummary = () => {
       value: `${(summary.profit ?? 0).toLocaleString()}`,
       icon: <FaHandHoldingUsd className="icon" />,
       color: "#1cc88a",
+      valueColor: marginValueColor,
       isProfit: true
     },
   ];

@@ -28,8 +28,7 @@ const OverviewDashboardSummary = () => {
     organisationName: "",
   });
 
-
-    useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const headers = { headers: { Authorization: `Bearer ${token}` } };
@@ -55,38 +54,28 @@ const OverviewDashboardSummary = () => {
     };
     fetchData();
   }, [token]);
-  
-  // Fetch projects on fyLabel change
+
   useEffect(() => {
-    if (!fyLabel) {
-      console.log("FY label missing, skipping fetch");
-      return;
-    }
+    if (!fyLabel) return;
 
     const [sy, ey] = fyLabel.split("-").map(Number);
     const fyStart = `${sy}-04-01`;
     const fyEnd = `${ey}-03-31`;
 
-    console.log(`Fetching projects summary for FY: ${fyLabel} (${fyStart} to ${fyEnd})`);
-
-    axios.get(`${API}/api/sum-projects-by-fy`, {
-      headers: { Authorization: `Bearer ${token}` },
-      params: { startDate: fyStart, endDate: fyEnd },
-    })
+    axios
+      .get(`${API}/api/sum-projects-by-fy`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { startDate: fyStart, endDate: fyEnd },
+      })
       .then((res) => {
-        console.log(`Projects fetched: ${res.data.length}`, res.data);
         setProjects(res.data);
         setSelectedProject("all");
       })
       .catch((err) => console.error("Error fetching projects:", err));
   }, [fyLabel, token]);
 
-  // Update summary when selectedProject or projects changes
   useEffect(() => {
-    console.log("Updating summary", { selectedProject, projects });
-
     if (!selectedProject || projects.length === 0) {
-      console.log("No projects or no selected project, clearing summary");
       setSummary({ cost: 0, actual_cost: 0, profit: 0 });
       return;
     }
@@ -95,12 +84,6 @@ const OverviewDashboardSummary = () => {
       const totalCost = projects.reduce((acc, proj) => acc + (proj.cost || 0), 0);
       const totalActualCost = projects.reduce((acc, proj) => acc + (proj.actual_cost || 0), 0);
       const totalProfit = totalCost - totalActualCost;
-
-      console.log("Summary for all projects:", {
-        totalCost,
-        totalActualCost,
-        totalProfit,
-      });
 
       setSummary({
         cost: totalCost,
@@ -114,19 +97,19 @@ const OverviewDashboardSummary = () => {
         const actualCost = project.actual_cost || 0;
         const profit = cost - actualCost;
 
-        console.log("Summary for selected project:", project.name, {
-          cost,
-          actualCost,
-          profit,
-        });
-
         setSummary({ cost, actual_cost: actualCost, profit });
       } else {
-        console.log("Selected project not found in project list");
         setSummary({ cost: 0, actual_cost: 0, profit: 0 });
       }
     }
   }, [selectedProject, projects]);
+
+  const marginValueColor =
+    summary.profit > 0
+      ? "#008000"
+      : summary.profit < 0
+      ? "red"
+      : "black";
 
   const cards = [
     {
@@ -146,23 +129,19 @@ const OverviewDashboardSummary = () => {
       value: `$${(summary.profit ?? 0).toLocaleString()}`,
       icon: <FaHandHoldingUsd className="icon" />,
       color: "#1cc88a",
+      valueColor: marginValueColor,
     },
   ];
 
   return (
     <div className="dashboard-summary">
-      <h2 className="org-heading">
-        Organisation: {stats.organisationName}
-      </h2>
+      <h2 className="org-heading">Organisation: {stats.organisationName}</h2>
       <div className="filters">
         <label className="labels">
           Project:
           <select
             value={selectedProject}
-            onChange={(e) => {
-              console.log("Project selected:", e.target.value);
-              setSelectedProject(e.target.value);
-            }}
+            onChange={(e) => setSelectedProject(e.target.value)}
           >
             <option value="all">All Projects</option>
             {projects.map((proj) => (
@@ -176,21 +155,14 @@ const OverviewDashboardSummary = () => {
 
       <div className="summary-cards">
         {cards.map((card, idx) => (
-          <div
-            className="card"
-            key={idx}
-            style={{ borderLeftColor: card.color }}
-          >
+          <div className="card" key={idx} style={{ borderLeftColor: card.color }}>
             <div className="card-body">
-              <div
-                className="card-icon1"
-                style={{ backgroundColor: card.color }}
-              >
+              <div className="card-icon1" style={{ backgroundColor: card.color }}>
                 {card.icon}
               </div>
               <div className="card-text">
                 <h4>{card.title}</h4>
-                <p>{card.value}</p>
+                <p style={{ color: card.valueColor || "#000" }}>{card.value}</p>
               </div>
             </div>
           </div>
