@@ -1935,16 +1935,18 @@ def get_projects_by_project_manager():
 @jwt_required()
 def get_monthwise_report():
     view = request.args.get('view', 'org')  # org | dept | proj
-    id_filter = request.args.get('id')      # optional id
+    id_filter = request.args.get('id')      # optional: oid, did, or pid
 
+    # Core query based on ProjectAssignment
     query = db.session.query(
         Project.id.label("project_id"),
         Project.name.label("project_name"),
         extract('month', ProjectAssignment.start_date).label("month"),
-        func.sum(ProjectAssignment.cost).label("cost"),
-        func.sum(ProjectAssignment.billing_rate * ProjectAssignment.allocated_hours).label("revenue")
+        func.sum(ProjectAssignment.cost).label("revenue"),         # cost field = revenue
+        func.sum(ProjectAssignment.actual_cost).label("cost")      # actual_cost = cost
     ).join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
 
+    # Apply filters based on view
     if view == 'dept' and id_filter:
         query = query.filter(Project.departmentId == id_filter)
     elif view == 'proj' and id_filter:
@@ -1953,24 +1955,29 @@ def get_monthwise_report():
         dept_ids = [d.did for d in Department.query.filter_by(oid=id_filter).all()]
         query = query.filter(Project.departmentId.in_(dept_ids))
 
+    # Group by project and month
     query = query.group_by("project_id", "project_name", "month").all()
 
-    # Structure result
+    # Construct result structure
     result = {}
     for row in query:
         month = int(row.month)
         pid = row.project_id
+
         if pid not in result:
             result[pid] = {
                 "project_name": row.project_name,
                 "monthly": {i: {"revenue": 0, "cost": 0, "margin": 0} for i in range(1, 13)},
                 "total": {"revenue": 0, "cost": 0, "margin": 0}
             }
-        result[pid]["monthly"][month]["revenue"] += row.revenue or 0
-        result[pid]["monthly"][month]["cost"] += row.cost or 0
-        result[pid]["monthly"][month]["margin"] = (
-            result[pid]["monthly"][month]["revenue"] - result[pid]["monthly"][month]["cost"]
-        )
+
+        revenue = row.revenue or 0
+        cost = row.cost or 0
+        margin = revenue - cost  # Dynamically compute
+
+        result[pid]["monthly"][month]["revenue"] += revenue
+        result[pid]["monthly"][month]["cost"] += cost
+        result[pid]["monthly"][month]["margin"] += margin
 
     # Compute totals
     for proj in result.values():
@@ -1980,7 +1987,6 @@ def get_monthwise_report():
             proj["total"]["margin"] += month_data["margin"]
 
     return jsonify(result), 200
-
 
     
 # ------------------ MAIN ------------------
