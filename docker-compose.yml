@@ -1,21 +1,28 @@
 version: '3.8'
 
 services:
-  frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123*
+      MYSQL_DATABASE: dashboardDB
+    volumes:
+      - mariadb_data:/var/lib/mysql
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
 
   backend:
     build: ./backend
     ports:
       - "5000:5000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DB_HOST=db
       - DB_PORT=3306
@@ -24,20 +31,15 @@ services:
       - DB_NAME=dashboardDB
     networks:
       - app-network
-
-  db:
-    image: mariadb:10.5
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: yourpassword
-      MYSQL_DATABASE: yourdatabase
-    volumes:
-      - mariadb_data:/var/lib/mysql
+      
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     networks:
       - app-network
-
-volumes:
-  mariadb_data:
 
 networks:
   app-network:
