@@ -8,10 +8,12 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from sqlalchemy import and_, select, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import aliased
+from sqlalchemy import extract
 import os
 
 # JWT utility functions (assuming you have jwt_utils.py)
 from jwt_utils import token_required, generate_token
+
 
 # ------------------ CONFIGURATION ------------------
 
@@ -1789,15 +1791,19 @@ def get_project_budgets_by_fy():
         start_date = request.args.get('startDate')
         end_date = request.args.get('endDate')
 
+        print(f"📥 Received FY range: start={start_date}, end={end_date}")
+
         if not start_date or not end_date:
-            return jsonify([]), 400
+            print("⚠️ Missing date range in query params")
+            return jsonify({"error": "Missing date range"}), 400
 
         # Query projects active in the given FY range
         projects = (
             db.session.query(
                 Project.id,
                 Project.name,
-                func.coalesce(func.sum(ProjectAssignment.cost), 0).label('cost')
+                func.coalesce(func.sum(ProjectAssignment.cost), 0).label('revenue'),
+                func.coalesce(func.sum(ProjectAssignment.actual_cost), 0).label('actual_cost')
             )
             .outerjoin(ProjectAssignment, Project.id == ProjectAssignment.project_id)
             .filter(Project.startDate <= end_date, Project.endDate >= start_date)
@@ -1805,16 +1811,30 @@ def get_project_budgets_by_fy():
             .all()
         )
 
-        result = [
-            {"id": p.id, "name": p.name, "cost": float(p.cost)}
-            for p in projects
-        ]
+        print(f"✅ Found {len(projects)} projects in date range")
+
+        result = []
+        for p in projects:
+            revenue = float(p.revenue)
+            actual_cost = float(p.actual_cost)
+            margin = revenue - actual_cost
+
+            print(f"➡️ Project: {p.name}, Revenue: {revenue}, Cost: {actual_cost}, Margin: {margin}")
+
+            result.append({
+                "id": p.id,
+                "name": p.name,
+                "cost": revenue,  # revenue stored under 'cost' for frontend
+                "actual_cost": actual_cost,
+                "margin": margin
+            })
 
         return jsonify(result), 200
 
     except Exception as e:
         print("❌ Error in /api/project-budgets-by-fy:", e)
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 @app.route('/api/sum-projects', methods=['GET'])
 @jwt_required()
@@ -1930,7 +1950,62 @@ def get_projects_by_project_manager():
         import traceback; traceback.print_exc()
         return jsonify({"error": "Internal server error"}), 500
 
+@app.route('/api/monthwise-report', methods=['GET'])
+@jwt_required()
+def get_monthwise_report():
+    view = request.args.get('view', 'org')  # org | dept | proj
+    id_filter = request.args.get('id')      # optional: oid, did, or pid
 
+    # Core query based on ProjectAssignment
+    query = db.session.query(
+        Project.id.label("project_id"),
+        Project.name.label("project_name"),
+        extract('month', ProjectAssignment.start_date).label("month"),
+        func.sum(ProjectAssignment.cost).label("revenue"),         # cost field = revenue
+        func.sum(ProjectAssignment.actual_cost).label("cost")      # actual_cost = cost
+    ).join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+
+    # Apply filters based on view
+    if view == 'dept' and id_filter:
+        query = query.filter(Project.departmentId == id_filter)
+    elif view == 'proj' and id_filter:
+        query = query.filter(Project.id == id_filter)
+    elif view == 'org' and id_filter:
+        dept_ids = [d.did for d in Department.query.filter_by(oid=id_filter).all()]
+        query = query.filter(Project.departmentId.in_(dept_ids))
+
+    # Group by project and month
+    query = query.group_by("project_id", "project_name", "month").all()
+
+    # Construct result structure
+    result = {}
+    for row in query:
+        month = int(row.month)
+        pid = row.project_id
+
+        if pid not in result:
+            result[pid] = {
+                "project_name": row.project_name,
+                "monthly": {i: {"revenue": 0, "cost": 0, "margin": 0} for i in range(1, 13)},
+                "total": {"revenue": 0, "cost": 0, "margin": 0}
+            }
+
+        revenue = row.revenue or 0
+        cost = row.cost or 0
+        margin = revenue - cost  # Dynamically compute
+
+        result[pid]["monthly"][month]["revenue"] += revenue
+        result[pid]["monthly"][month]["cost"] += cost
+        result[pid]["monthly"][month]["margin"] += margin
+
+    # Compute totals
+    for proj in result.values():
+        for month_data in proj["monthly"].values():
+            proj["total"]["revenue"] += month_data["revenue"]
+            proj["total"]["cost"] += month_data["cost"]
+            proj["total"]["margin"] += month_data["margin"]
+
+    return jsonify(result), 200
 
     
 # ------------------ MAIN ------------------
