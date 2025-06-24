@@ -30,6 +30,7 @@ const Navbar = () => {
                 <ul className="nav-links">
                     <li><NavLink to="/admin-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Dashboard</NavLink></li>
                     <li><NavLink to="/project-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Projects</NavLink></li>
+                    <li><NavLink to="/month-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Month</NavLink></li>
                     <li><NavLink to="/org-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Organisation</NavLink></li>
                     <li><NavLink to="/dept-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Departments</NavLink></li>
                     <li><NavLink to="/employee-dashboard" className={({ isActive }) => isActive ? "active" : ""}>Users</NavLink></li>
