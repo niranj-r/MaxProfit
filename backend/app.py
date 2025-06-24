@@ -528,8 +528,11 @@ def login():
 
     # Check if the user is a project manager in the assignments table
     stmt = select(project_assignees).where(project_assignees.c.user_id == user.id)
-    pa_result = db.session.execute(stmt).first()
-    pa_role = pa_result.role if pa_result else None
+    pa_results = db.session.execute(stmt).fetchall()
+
+    # Set role to 'Project Manager' if any assignment has that role
+    pa_role = 'Project Manager' if any(row.role == 'Project Manager' for row in pa_results) else None
+
 
     return jsonify({
         "user": {
