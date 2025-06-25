@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root123*
+      MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: dashboardDB
     volumes:
-      - C:/Users/hp/Desktop/MaxProfit-master/MaxProfit-main/MaxProfit/mysql-data:/var/lib/mysql
+      - C:/Users/hp/Desktop/project/MaxProfit/mysql-data:/var/lib/mysql
     networks:
       - app-network
     healthcheck:
@@ -27,7 +27,7 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_USER=root
-      - DB_PASSWORD=root123*
+      - DB_PASSWORD=root123
       - DB_NAME=dashboardDB
     networks:
       - app-network
