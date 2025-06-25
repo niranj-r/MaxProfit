@@ -174,7 +174,7 @@ const ProjectAssignees = ({ projectId, name, budget, onClose }) => {
       <div className="search-container">
         <input
           type="text"
-          placeholder="Search employees…"
+          placeholder="Search to add employees…"
           value={search}
           onChange={handleSearch}
           className="search-bar-assign"
