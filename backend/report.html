@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>results.xml</title>
+    <style type="text/css">
+        body {
+    background-color: white;
+    padding-bottom: 20em;
+    margin: 0;
+    min-height: 15cm;
+}
+
+h1, h2, h3, h4, h5, h6, h7 {
+    font-family: sans-serif;
+}
+
+h1 {
+    background-color: #007acc;
+    color: white;
+    padding: 3mm;
+    margin-top: 0;
+    margin-bottom: 1mm;
+}
+
+.footer {
+    font-style: italic;
+    font-size: small;
+    text-align: right;
+    padding: 1em;
+}
+
+.testsuite {
+    padding-bottom: 2em;
+    margin-left: 1em;
+}
+
+.proplist {
+    width: 100%;
+    margin-bottom: 2em;
+    border-collapse: collapse;
+    border: 1px solid grey;
+}
+
+.proplist th {
+    background-color: silver;
+    width: 5em;
+    padding: 2px;
+    padding-right: 1em;
+    text-align: left;
+}
+
+.proplist td {
+    padding: 2px;
+    word-break: break-all;
+}
+
+.index-table {
+    width: 90%;
+    margin-left: 1em;
+}
+
+.index-table td {
+    vertical-align: top;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.failure-index {
+
+}
+
+.toc {
+    margin-bottom: 2em;
+    font-family: monospace;
+}
+
+.stdio, pre {
+    min-height: 1em;
+    background-color: #1e1e1e;
+    color: silver;
+    padding: 0.5em;
+}
+.tdpre {
+    background-color: #1e1e1e;
+}
+
+.test {
+    margin-left: 0.5cm;
+}
+
+.toc {
+    list-style: none;
+}
+
+.toc li.outcome {
+    list-style: none;
+}
+
+.toc li.outcome::before {
+    content: "\2022";
+    color: black;
+    font-weight: bold;
+    display: inline-block;
+    width: 1.27em;
+    margin-left: -1.27em;
+    font-size: 1.2em;
+}
+
+.toc li.outcome-failed {
+    background-color: lightcoral;
+}
+
+.toc li.outcome-failed::before {
+    color: red;
+}
+
+.toc li.outcome-passed::before {
+    color: green;
+}
+
+.toc li.outcome-skipped::before {
+    color: orange;
+}
+
+.testcases .outcome {
+    border-left: 1em;
+    padding: 2px;
+}
+
+.testcases .outcome-failed {
+    border-left: 1em solid lightcoral;
+}
+
+
+.outcome-passed {
+    border-left: 1em solid lightgreen;
+}
+
+.outcome-skipped {
+    border-left: 1em dotted silver;
+}
+
+.testcases .outcome-passed {
+    border-left: 1em solid lightgreen;
+}
+
+.testcases .outcome-skipped {
+    border-left: 1em solid #FED8B1;
+}
+
+.stats-table {
+}
+
+.stats-table td {
+    min-width: 4em;
+    text-align: right;
+}
+
+.stats-table .failed {
+    background-color: lightcoral;
+}
+
+.stats-table .passed {
+    background-color: lightgreen;
+}
+
+.matrix-table {
+    table-layout: fixed;
+    border-spacing: 0;
+    width: available;
+    margin-left: 1em;
+}
+
+.matrix-table td {
+    vertical-align: center;
+}
+
+.matrix-table td:last-child {
+    width: 0;
+}
+
+.matrix-table tr:hover {
+    background-color: yellow;
+}
+
+.matrix-axis-name {
+    white-space: nowrap;
+    padding-right: 0.5em;
+    border-left: 1px solid black;
+    border-top: 1px solid black;
+    text-align: right;
+}
+
+.matrix-axis-line {
+    border-left: 1px solid black;
+    width: 0.5em;
+}
+
+.matrix-classname {
+    text-align: left;
+    width: 100%;
+    border-top: 2px solid grey;
+    border-bottom: 1px solid silver;
+}
+
+.matrix-casename {
+    text-align: left;
+    font-weight: normal;
+    font-style: italic;
+    padding-left: 1em;
+    border-bottom: 1px solid silver;
+}
+
+.matrix-result {
+    display: block;
+    width: 1em;
+    text-align: center;
+    padding: 1mm;
+    margin: 0;
+}
+
+.matrix-result-combined {
+    white-space: nowrap;
+    padding-right: 0.2em;
+    text-align: right;
+}
+
+.matrix-result-failed {
+    background-color: lightcoral;
+}
+
+.matrix-result-passed {
+    background-color: lightgreen;
+}
+
+.matrix-result-skipped {
+    background-color: lightyellow;
+}
+
+.matrix-even {
+    background-color: lightgray;
+}
+    </style>
+</head>
+<body>
+    
+<h1>
+    Test Report : results.xml
+</h1>
+
+
+<a id="toc"></a>
+<table class="index-table">
+    <tr>
+        <td>
+            <ul class="toc">
+            
+                
+                <li>test_app.TestLogin
+                <ul>
+                    
+                    <li class="outcome outcome-failed"><a href="#dc10d93e-04ed-4735-b774-86423cae0056">test_login_failure</a></li>
+                    
+                    <li class="outcome outcome-failed"><a href="#0ca95ab8-d04c-4f05-99df-75f5f4be8e3a">test_login_success</a></li>
+                    
+                </ul>
+                </li>
+                
+            
+            </ul>
+        </td>
+        <td class="failure-index">
+            <ul class="toc">
+            
+                
+                    
+                    
+                    <li><a href="#dc10d93e-04ed-4735-b774-86423cae0056">[F] test_app.TestLogin : test_login_failure</a></li>
+                    
+                    
+                    
+                    <li><a href="#0ca95ab8-d04c-4f05-99df-75f5f4be8e3a">[F] test_app.TestLogin : test_login_success</a></li>
+                    
+                    
+                
+            
+            </ul>
+        </td>
+    </tr>
+</table>
+
+
+
+    <div class="testsuite">
+        <h2>Test Suite: test_app.TestLogin-20250625230121</h2>
+        <a id="deb45d10-2262-4f38-8cdd-bd84388cf6c7"></a>
+        
+        
+        <h3>Results</h3>
+        <table class="proplist">
+            <tr>
+                <th>Duration</th><td>5.57 sec</td>
+            </tr>
+            <tr>
+                <th>Tests</th><td>2</td>
+            </tr>
+            <tr>
+                <th>Failures</th><td>2</td>
+            </tr>
+        </table>
+
+        <div class="testclasses">
+            <h3>Tests</h3>
+            
+            <div class="testclass">
+                <h4>test_app.TestLogin</h4>
+                <div class="testcases">
+                
+                    <div class="test outcome outcome-failed">
+                        <a id="dc10d93e-04ed-4735-b774-86423cae0056"></a>
+                        <table class="proplist">
+                            <tr><th>Test case:</th><td><b>test_login_failure</b></td></tr>
+                            <tr><th>Outcome:</th><td>Failed</td></tr>
+                            <tr><th>Duration:</th><td>2.789 sec</td></tr>
+                        
+                            <tr><th>Failed</th><td>500 != 401</td></tr>
+                        
+                        
+                        </table>
+
+                        
+                        <pre>Traceback (most recent call last):
+  File &#34;C:\Users\sidha\desktop\project\MaxProfit\backend\tests\test_app.py&#34;, line 23, in test_login_failure
+    self.assertEqual(response.status_code, 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 401
+</pre>
+                        
+                        
+
+                        
+                        
+                        
+                        <div class="stderr"><i>Stderr</i><br>
+                            <pre>[2025-06-25 23:01:24,639] ERROR in app: Exception on /api/login [POST]
+Traceback (most recent call last):
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 649, in connect
+    sock = socket.create_connection(
+        (self.host, self.port), self.connect_timeout, **kwargs
+    )
+  File &#34;C:\Python313\Lib\socket.py&#34;, line 840, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Python313\Lib\socket.py&#34;, line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 3297, in raw_connection
+    return self.pool.connect()
+           ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 713, in checkout
+    rec = pool._do_get()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 179, in _do_get
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 177, in _do_get
+    return self._create_connection()
+           ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 390, in _create_connection
+    return _ConnectionRecord(self)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 675, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 901, in __connect
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\create.py&#34;, line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\default.py&#34;, line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 361, in __init__
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 716, in connect
+    raise exc
+pymysql.err.OperationalError: (2003, &#34;Can&#39;t connect to MySQL server on &#39;None&#39; ([Errno 11001] getaddrinfo failed)&#34;)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask_cors\extension.py&#34;, line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\desktop\project\MaxProfit\backend\app.py&#34;, line 525, in login
+    user = User.query.filter_by(email=data.get(&#34;email&#34;)).first()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\query.py&#34;, line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\query.py&#34;, line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={&#34;_sa_orm_load_options&#34;: self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 2365, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...&lt;4 lines&gt;...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;&lt;string&gt;&#34;, line 2, in _connection_for_bind
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\state_changes.py&#34;, line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 1189, in _connection_for_bind
+    conn = bind.connect()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 3273, in connect
+    return self._connection_cls(self)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 147, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        err, dialect, engine
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 2436, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 3297, in raw_connection
+    return self.pool.connect()
+           ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 713, in checkout
+    rec = pool._do_get()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 179, in _do_get
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 177, in _do_get
+    return self._create_connection()
+           ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 390, in _create_connection
+    return _ConnectionRecord(self)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 675, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 901, in __connect
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\create.py&#34;, line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\default.py&#34;, line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 361, in __init__
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 716, in connect
+    raise exc
+sqlalchemy.exc.OperationalError: (pymysql.err.OperationalError) (2003, &#34;Can&#39;t connect to MySQL server on &#39;None&#39; ([Errno 11001] getaddrinfo failed)&#34;)
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+</pre>
+                        </div>
+                        
+                    </div>
+                
+                    <div class="test outcome outcome-failed">
+                        <a id="0ca95ab8-d04c-4f05-99df-75f5f4be8e3a"></a>
+                        <table class="proplist">
+                            <tr><th>Test case:</th><td><b>test_login_success</b></td></tr>
+                            <tr><th>Outcome:</th><td>Failed</td></tr>
+                            <tr><th>Duration:</th><td>2.781 sec</td></tr>
+                        
+                            <tr><th>Failed</th><td>500 != 200</td></tr>
+                        
+                        
+                        </table>
+
+                        
+                        <pre>Traceback (most recent call last):
+  File &#34;C:\Users\sidha\desktop\project\MaxProfit\backend\tests\test_app.py&#34;, line 15, in test_login_success
+    self.assertEqual(response.status_code, 200)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 200
+</pre>
+                        
+                        
+
+                        
+                        
+                        
+                        <div class="stderr"><i>Stderr</i><br>
+                            <pre>[2025-06-25 23:01:27,421] ERROR in app: Exception on /api/login [POST]
+Traceback (most recent call last):
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 649, in connect
+    sock = socket.create_connection(
+        (self.host, self.port), self.connect_timeout, **kwargs
+    )
+  File &#34;C:\Python313\Lib\socket.py&#34;, line 840, in create_connection
+    for res in getaddrinfo(host, port, 0, SOCK_STREAM):
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Python313\Lib\socket.py&#34;, line 977, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 3297, in raw_connection
+    return self.pool.connect()
+           ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 713, in checkout
+    rec = pool._do_get()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 179, in _do_get
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 177, in _do_get
+    return self._create_connection()
+           ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 390, in _create_connection
+    return _ConnectionRecord(self)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 675, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 901, in __connect
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\create.py&#34;, line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\default.py&#34;, line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 361, in __init__
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 716, in connect
+    raise exc
+pymysql.err.OperationalError: (2003, &#34;Can&#39;t connect to MySQL server on &#39;None&#39; ([Errno 11001] getaddrinfo failed)&#34;)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask_cors\extension.py&#34;, line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\flask\app.py&#34;, line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\desktop\project\MaxProfit\backend\app.py&#34;, line 525, in login
+    user = User.query.filter_by(email=data.get(&#34;email&#34;)).first()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\query.py&#34;, line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\query.py&#34;, line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+        params,
+        ^^^^^^^
+        execution_options={&#34;_sa_orm_load_options&#34;: self.load_options},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 2365, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...&lt;4 lines&gt;...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;&lt;string&gt;&#34;, line 2, in _connection_for_bind
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\state_changes.py&#34;, line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\orm\session.py&#34;, line 1189, in _connection_for_bind
+    conn = bind.connect()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 3273, in connect
+    return self._connection_cls(self)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 147, in __init__
+    Connection._handle_dbapi_exception_noconnection(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        err, dialect, engine
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 2436, in _handle_dbapi_exception_noconnection
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 145, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\base.py&#34;, line 3297, in raw_connection
+    return self.pool.connect()
+           ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 449, in connect
+    return _ConnectionFairy._checkout(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 713, in checkout
+    rec = pool._do_get()
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 179, in _do_get
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\impl.py&#34;, line 177, in _do_get
+    return self._create_connection()
+           ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 390, in _create_connection
+    return _ConnectionRecord(self)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 675, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 901, in __connect
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\util\langhelpers.py&#34;, line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\pool\base.py&#34;, line 897, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\create.py&#34;, line 646, in connect
+    return dialect.connect(*cargs, **cparams)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\sqlalchemy\engine\default.py&#34;, line 625, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 361, in __init__
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File &#34;C:\Users\sidha\AppData\Roaming\Python\Python313\site-packages\pymysql\connections.py&#34;, line 716, in connect
+    raise exc
+sqlalchemy.exc.OperationalError: (pymysql.err.OperationalError) (2003, &#34;Can&#39;t connect to MySQL server on &#39;None&#39; ([Errno 11001] getaddrinfo failed)&#34;)
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+</pre>
+                        </div>
+                        
+                    </div>
+                
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+
+
+
+<p class="footer">
+    Generated by junit2html
+</p>
+</body>
+</html>
