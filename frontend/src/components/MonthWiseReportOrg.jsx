@@ -5,7 +5,7 @@ import "./EmployeeDirectory.css";
 const API = process.env.REACT_APP_API_BASE_URL;
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const MonthWiseReport = () => {
   const [view, setView] = useState("org");
@@ -89,6 +89,8 @@ const MonthWiseReport = () => {
           <div className="table-header cursor-pointer" onClick={() => toggleExpand(pid)}>
             <h3>{proj.project_name}</h3>
             <span className="status-active">Total Revenue: ₹{proj.total.revenue.toFixed(2)}</span>
+            <span className="status-active">Total Cost: ₹{proj.total.cost.toFixed(2)}</span>
+            <span className="status-active">Total Margin: ₹{proj.total.margin.toFixed(2)}</span>
           </div>
           {expanded === pid && (
             <table className="employee-table mt-2">

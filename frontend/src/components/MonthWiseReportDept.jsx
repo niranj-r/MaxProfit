@@ -85,7 +85,9 @@ const MonthWiseReportDept = () => {
         <div key={key} className={`summary-card ${expanded[key] ? 'expanded' : ''}`}>
           <div className="card-header cursor-pointer" onClick={() => toggleExpand(key)}>
             <h4>{entry.department_name}</h4>
-            <span className="status-active">Revenue: ₹{entry.total.revenue.toFixed(2)}</span>
+            <span className="status-active">Total Revenue: ₹{entry.total.revenue.toFixed(2)}</span>
+            <span className="status-active">Total Cost: ₹{entry.total.cost.toFixed(2)}</span>
+            <span className="status-active">Total Margin: ₹{entry.total.margin.toFixed(2)}</span>
           </div>
 
           {expanded[key] && (
@@ -124,6 +126,8 @@ const MonthWiseReportDept = () => {
                       <div className="table-header">
                         <h5>{proj.project_name}</h5>
                         <span className="status-active">Total Revenue: ₹{proj.total.revenue.toFixed(2)}</span>
+                        <span className="status-active">Total Cost: ₹{proj.total.cost.toFixed(2)}</span>
+                        <span className="status-active">Total Margin: ₹{proj.total.margin.toFixed(2)}</span>
                       </div>
                       <table className="employee-table mt-2">
                         <thead>
