@@ -58,7 +58,7 @@ import FYProjectDashboard from './components/FY/FYProjectDashboard';
 import FYDashboardSummary from './components/FY/FYDashboardSummary';
 import FYAdminDashboard from './components/FY/FYAdminDashboard';
 import FYProjectDirectory from './components/FY/FYProjectDirectory';
-import MonthWiseReport from './components/MonthWiseReport';
+import MonthWiseReport from './components/MonthWiseReportOrg';
 import MonthWiseDashboard from './components/MonthWiseDashboard';
 
 // Wrapper to pass year param as prop

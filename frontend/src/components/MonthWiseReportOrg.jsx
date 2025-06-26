@@ -54,25 +54,8 @@ const MonthWiseReport = () => {
 
   return (
     <div className="employee-table-container">
-      <div className="table-header mb-4">
-        <h2>Month Wise Report</h2>
-        <div className="controls">
-          <label htmlFor="view">View by:</label>
-          <select
-            id="view"
-            className="search-bar"
-            value={view}
-            onChange={(e) => setView(e.target.value)}
-          >
-            <option value="org">Organization</option>
-            <option value="dept">Department</option>
-            <option value="proj">Project</option>
-          </select>
-        </div>
-      </div>
-
       <div className="group-section">
-        <h3>Consolidated Summary</h3>
+        <h3>Consolidated Organisation Summary</h3>
         <table className="employee-table">
           <thead>
             <tr>

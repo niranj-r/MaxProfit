@@ -457,3 +457,32 @@
   background-size: 200px 100%;
   background-repeat: no-repeat;
 }
+.summary-card {
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f9f9ff;
+  transition: all 0.3s ease;
+}
+
+.summary-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.summary-card .card-body {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.status-active {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  font-weight: 600;
+}

@@ -1953,59 +1953,137 @@ def get_projects_by_project_manager():
 @app.route('/api/monthwise-report', methods=['GET'])
 @jwt_required()
 def get_monthwise_report():
-    view = request.args.get('view', 'org')  # org | dept | proj
-    id_filter = request.args.get('id')      # optional: oid, did, or pid
+    from sqlalchemy import extract
 
-    # Core query based on ProjectAssignment
-    query = db.session.query(
-        Project.id.label("project_id"),
-        Project.name.label("project_name"),
-        extract('month', ProjectAssignment.start_date).label("month"),
-        func.sum(ProjectAssignment.cost).label("revenue"),         # cost field = revenue
-        func.sum(ProjectAssignment.actual_cost).label("cost")      # actual_cost = cost
-    ).join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+    view = request.args.get('view', 'org')
+    id_filter = request.args.get('id')
 
-    # Apply filters based on view
-    if view == 'dept' and id_filter:
-        query = query.filter(Project.departmentId == id_filter)
-    elif view == 'proj' and id_filter:
-        query = query.filter(Project.id == id_filter)
-    elif view == 'org' and id_filter:
-        dept_ids = [d.did for d in Department.query.filter_by(oid=id_filter).all()]
-        query = query.filter(Project.departmentId.in_(dept_ids))
+    def empty_months():
+        return {i: {"revenue": 0, "cost": 0, "margin": 0} for i in range(1, 13)}
 
-    # Group by project and month
-    query = query.group_by("project_id", "project_name", "month").all()
+    def calculate_totals(monthly_data):
+        return {
+            "revenue": sum(m["revenue"] for m in monthly_data.values()),
+            "cost": sum(m["cost"] for m in monthly_data.values()),
+            "margin": sum(m["margin"] for m in monthly_data.values())
+        }
 
-    # Construct result structure
     result = {}
-    for row in query:
-        month = int(row.month)
-        pid = row.project_id
 
-        if pid not in result:
-            result[pid] = {
-                "project_name": row.project_name,
-                "monthly": {i: {"revenue": 0, "cost": 0, "margin": 0} for i in range(1, 13)},
+    if view == 'proj':
+        # Project-level single project summary
+        query = db.session.query(
+            Project.id.label("project_id"),
+            Project.name.label("project_name"),
+            extract('month', ProjectAssignment.start_date).label("month"),
+            func.sum(ProjectAssignment.cost).label("revenue"),
+            func.sum(ProjectAssignment.actual_cost).label("cost")
+        ).join(ProjectAssignment, Project.id == ProjectAssignment.project_id)
+
+        if id_filter:
+            query = query.filter(Project.id == id_filter)
+
+        query = query.group_by("project_id", "project_name", "month").all()
+
+        for row in query:
+            pid = row.project_id
+            month = int(row.month)
+            revenue = row.revenue or 0
+            cost = row.cost or 0
+            margin = revenue - cost
+
+            if pid not in result:
+                result[pid] = {
+                    "project_name": row.project_name,
+                    "monthly": empty_months(),
+                    "total": {"revenue": 0, "cost": 0, "margin": 0}
+                }
+
+            result[pid]["monthly"][month]["revenue"] += revenue
+            result[pid]["monthly"][month]["cost"] += cost
+            result[pid]["monthly"][month]["margin"] += margin
+
+        for proj in result.values():
+            proj["total"] = calculate_totals(proj["monthly"])
+
+    elif view == 'org':
+        # Organisation-level grouped by project
+        projects = Project.query.all()
+
+        for proj in projects:
+            query = db.session.query(
+                extract('month', ProjectAssignment.start_date).label("month"),
+                func.sum(ProjectAssignment.cost).label("revenue"),
+                func.sum(ProjectAssignment.actual_cost).label("cost")
+            ).filter(ProjectAssignment.project_id == proj.id).group_by("month").all()
+
+            result[proj.id] = {
+                "project_name": proj.name,
+                "monthly": empty_months(),
                 "total": {"revenue": 0, "cost": 0, "margin": 0}
             }
 
-        revenue = row.revenue or 0
-        cost = row.cost or 0
-        margin = revenue - cost  # Dynamically compute
+            for row in query:
+                month = int(row.month)
+                revenue = row.revenue or 0
+                cost = row.cost or 0
+                margin = revenue - cost
 
-        result[pid]["monthly"][month]["revenue"] += revenue
-        result[pid]["monthly"][month]["cost"] += cost
-        result[pid]["monthly"][month]["margin"] += margin
+                result[proj.id]["monthly"][month]["revenue"] += revenue
+                result[proj.id]["monthly"][month]["cost"] += cost
+                result[proj.id]["monthly"][month]["margin"] += margin
 
-    # Compute totals
-    for proj in result.values():
-        for month_data in proj["monthly"].values():
-            proj["total"]["revenue"] += month_data["revenue"]
-            proj["total"]["cost"] += month_data["cost"]
-            proj["total"]["margin"] += month_data["margin"]
+            result[proj.id]["total"] = calculate_totals(result[proj.id]["monthly"])
+
+    elif view == 'dept':
+        # Department-level view with each dept's summary and its projects
+        departments = Department.query.all()
+
+        for dept in departments:
+            dept_data = {
+                "department_name": dept.name,
+                "monthly": empty_months(),
+                "total": {"revenue": 0, "cost": 0, "margin": 0},
+                "projects": {}
+            }
+
+            dept_projects = Project.query.filter_by(departmentId=dept.did).all()
+
+            for proj in dept_projects:
+                query = db.session.query(
+                    extract('month', ProjectAssignment.start_date).label("month"),
+                    func.sum(ProjectAssignment.cost).label("revenue"),
+                    func.sum(ProjectAssignment.actual_cost).label("cost")
+                ).filter(ProjectAssignment.project_id == proj.id).group_by("month").all()
+
+                proj_monthly = empty_months()
+
+                for row in query:
+                    month = int(row.month)
+                    revenue = row.revenue or 0
+                    cost = row.cost or 0
+                    margin = revenue - cost
+
+                    proj_monthly[month]["revenue"] += revenue
+                    proj_monthly[month]["cost"] += cost
+                    proj_monthly[month]["margin"] += margin
+
+                    # Add to department totals
+                    dept_data["monthly"][month]["revenue"] += revenue
+                    dept_data["monthly"][month]["cost"] += cost
+                    dept_data["monthly"][month]["margin"] += margin
+
+                dept_data["projects"][proj.id] = {
+                    "project_name": proj.name,
+                    "monthly": proj_monthly,
+                    "total": calculate_totals(proj_monthly)
+                }
+
+            dept_data["total"] = calculate_totals(dept_data["monthly"])
+            result[dept.did] = dept_data
 
     return jsonify(result), 200
+
 
     
 # ------------------ MAIN ------------------
