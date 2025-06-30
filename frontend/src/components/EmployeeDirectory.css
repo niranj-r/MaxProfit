@@ -42,7 +42,7 @@
 }
 
 .add-btn {
-  background: linear-gradient(180deg,#24003a,#313072);
+  background: linear-gradient(180deg, #24003a, #313072);
   color: var(--white);
   border: none;
   padding: 8px 14px;
@@ -277,12 +277,12 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .manager-tag {
     justify-content: space-between;
     border-radius: 4px;
   }
-  
+
   .manager-dropdown {
     max-height: 150px;
   }
@@ -314,7 +314,8 @@
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background-color: var(--white);
-  appearance: none; /* Remove default arrow for consistent styling */
+  appearance: none;
+  /* Remove default arrow for consistent styling */
   -webkit-appearance: none;
   -moz-appearance: none;
   cursor: pointer;
@@ -329,8 +330,8 @@
 }
 
 /* Position the label above the select when a value is selected */
-.floating-label select:valid + label,
-.floating-label select:not([value=""]) + label {
+.floating-label select:valid+label,
+.floating-label select:not([value=""])+label {
   transform: translateY(-22px);
   font-size: 12px;
   color: var(--primary-color);
@@ -381,7 +382,7 @@
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .group-section h3 {
@@ -438,6 +439,7 @@
   0% {
     background-position: -100% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -448,6 +450,7 @@
   0% {
     background-position: -200px 0;
   }
+
   100% {
     background-position: calc(200px + 100%) 0;
   }
@@ -457,6 +460,7 @@
   background-size: 200px 100%;
   background-repeat: no-repeat;
 }
+
 .summary-card {
   margin-bottom: 1rem;
   border: 1px solid #ddd;
@@ -477,12 +481,76 @@
   margin-top: 1rem;
   display: flex;
   flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
 }
 
-.status-active {
-  background-color: #d1fae5;
-  color: #065f46;
-  padding: 0.3rem 0.6rem;
-  border-radius: 5px;
-  font-weight: 600;
+.status-chip {
+  background: linear-gradient(180deg, #24003a, #313072);
+  color: #fbf9ff;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.assignees-btn {
+  background-color: #4b0082;
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.assignees-btn:hover {
+  background-color: #37005f;
+}
+
+.card-body-org {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.card-header h4 {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c2c2c;
+}
+
+.card-header .status-chip {
+  background: linear-gradient(180deg, #24003a, #313072);
+  color: #fbf9ff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-header .status-chip {
+    margin-top: 0.25rem;
+  }
 }

@@ -1353,7 +1353,11 @@ def get_assignees(project_id):
         project_assignees.c.role,
         ProjectAssignment.allocated_hours,
         ProjectAssignment.billing_rate,
-        ProjectAssignment.actual_cost  # 👈 Include this
+        ProjectAssignment.actual_cost,
+        ProjectAssignment.allocated_percentage,
+        ProjectAssignment.start_date,
+        ProjectAssignment.end_date  
+
     ).join(
         project_assignees,
         and_(
@@ -1370,7 +1374,7 @@ def get_assignees(project_id):
     ).all()
 
     assignees = []
-    for eid, fname, lname, email, role, hours, rate, actual_cost in result:
+    for eid, fname, lname, email, role, hours, rate, actual_cost, allocated_percentage, start_date, end_date in result:
         cost = round((hours or 0) * (rate or 0), 2)
         assignees.append({
             'eid': eid,
@@ -1379,7 +1383,11 @@ def get_assignees(project_id):
             'email': email,
             'role': role,
             'cost': cost,
-            'actual_cost': round(actual_cost, 2) if actual_cost is not None else None  # 👈 Added
+            'actual_cost': round(actual_cost, 2) if actual_cost is not None else None,
+            'start_date': start_date.isoformat() if start_date else None,
+            'end_date': end_date.isoformat() if end_date else None,
+            'allocation_percentage': allocated_percentage if allocated_percentage is not None else None,
+
         })
 
     return jsonify(assignees)

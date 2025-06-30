@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./EmployeeDirectory.css";
+import ModalWrapper from "./ModalWrapper";
+import ViewAssigneesModal from "./ViewAssigneesModal";
+
 
 const API = process.env.REACT_APP_API_BASE_URL;
 
@@ -11,6 +14,9 @@ const MonthWiseReport = () => {
   const [view, setView] = useState("org");
   const [projects, setProjects] = useState({});
   const [expanded, setExpanded] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalProjectId, setModalProjectId] = useState(null);
+  const [modalProjectName, setModalProjectName] = useState("");
 
   const fetchData = async () => {
     const token = localStorage.getItem("token");
@@ -48,6 +54,11 @@ const MonthWiseReport = () => {
       summary.margin += p.total.margin;
     });
     return summary;
+  };
+  const openAssigneesModal = (pid, name) => {
+    setModalProjectId(pid);
+    setModalProjectName(name);
+    setShowModal(true);
   };
 
   const summary = getSummaryTotals();
@@ -88,9 +99,15 @@ const MonthWiseReport = () => {
         <div className="group-section" key={pid}>
           <div className="table-header cursor-pointer" onClick={() => toggleExpand(pid)}>
             <h3>{proj.project_name}</h3>
-            <span className="status-active">Total Revenue: ₹{proj.total.revenue.toFixed(2)}</span>
-            <span className="status-active">Total Cost: ₹{proj.total.cost.toFixed(2)}</span>
-            <span className="status-active">Total Margin: ₹{proj.total.margin.toFixed(2)}</span>
+            <div className="card-body-org">
+              <span className="status-chip">Total Revenue: ₹{proj.total.revenue.toFixed(2)}</span>
+              <span className="status-chip">Total Cost: ₹{proj.total.cost.toFixed(2)}</span>
+              <span className="status-chip">Total Margin: ₹{proj.total.margin.toFixed(2)}</span>
+              <button className="assignees-btn" onClick={() => openAssigneesModal(pid, proj.project_name)}>
+                View Assignees
+              </button>
+            </div>
+
           </div>
           {expanded === pid && (
             <table className="employee-table mt-2">
@@ -120,6 +137,19 @@ const MonthWiseReport = () => {
           )}
         </div>
       ))}
+      {showModal && modalProjectId && (
+        <ModalWrapper
+          title={`Assignees for "${modalProjectName}"`}
+          onClose={() => {
+            setShowModal(false);
+            setModalProjectId(null);
+            setModalProjectName("");
+          }}
+        >
+          <ViewAssigneesModal projectId={modalProjectId} />
+        </ModalWrapper>
+      )}
+
     </div>
   );
 };

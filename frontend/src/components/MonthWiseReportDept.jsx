@@ -83,12 +83,14 @@ const MonthWiseReportDept = () => {
       {/* ⬛ Department Summary Cards */}
       {Object.entries(data).map(([key, entry]) => (
         <div key={key} className={`summary-card ${expanded[key] ? 'expanded' : ''}`}>
-          <div className="card-header cursor-pointer" onClick={() => toggleExpand(key)}>
+          <div className="card-body-org" onClick={() => toggleExpand(key)}>
             <h4>{entry.department_name}</h4>
-            <span className="status-active">Total Revenue: ₹{entry.total.revenue.toFixed(2)}</span>
-            <span className="status-active">Total Cost: ₹{entry.total.cost.toFixed(2)}</span>
-            <span className="status-active">Total Margin: ₹{entry.total.margin.toFixed(2)}</span>
+            
+            <span className="status-chip">Total Revenue: ₹{entry.total.revenue.toFixed(2)}</span>
+            <span className="status-chip">Total Cost: ₹{entry.total.cost.toFixed(2)}</span>
+            <span className="status-chip">Total Margin: ₹{entry.total.margin.toFixed(2)}</span>
           </div>
+
 
           {expanded[key] && (
             <div className="card-body">
@@ -125,9 +127,11 @@ const MonthWiseReportDept = () => {
                     <div key={pid} className="project-summary">
                       <div className="table-header">
                         <h5>{proj.project_name}</h5>
-                        <span className="status-active">Total Revenue: ₹{proj.total.revenue.toFixed(2)}</span>
-                        <span className="status-active">Total Cost: ₹{proj.total.cost.toFixed(2)}</span>
-                        <span className="status-active">Total Margin: ₹{proj.total.margin.toFixed(2)}</span>
+                        <div className="card-body-org">
+                          <span className="status-chip">Total Revenue: ₹{proj.total.revenue.toFixed(2)}</span>
+                          <span className="status-chip">Total Cost: ₹{proj.total.cost.toFixed(2)}</span>
+                          <span className="status-chip">Total Margin: ₹{proj.total.margin.toFixed(2)}</span>
+                        </div>
                       </div>
                       <table className="employee-table mt-2">
                         <thead>
